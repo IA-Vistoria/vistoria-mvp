@@ -115,7 +115,7 @@ src/main/java/br/com/vistoriapredial/
 
 | System | Integration method |
 | --- | --- |
-| Login e cadastro | `POST /api/auth/login` e `POST /api/auth/register`, sem inferir perfil pelo e-mail. |
+| Login e cadastro | `POST /api/auth/login` e `POST /api/auth/register`, sem inferir perfil pelo e-mail; cadastro de engenheiro exige convite configurado no ambiente. |
 | Vistorias do cliente | `POST /api/vistorias`, `GET /api/vistorias/minhas`, upload e submissão autenticados. |
 | Revisão técnica | `GET /api/vistorias/pendentes` e `POST /api/vistorias/{id}/analisar`. |
 | Evidências | Metadados dentro de `VistoriaResponseDto` e conteúdo em rota autenticada dedicada. |
@@ -274,11 +274,12 @@ Os doze `ProtocolItemCode` serão: `SALA_PISO`, `SALA_PAREDES_REVESTIMENTOS`, `S
 
 ## Security and Data Flow
 
-1. O token é persistido somente em `vistoria.session`; senha nunca é persistida.
+1. O token é persistido somente em `vistoria.session`; senha e convite profissional nunca são persistidos e são limpos após falha.
 2. Toda rota de evidência exige JWT e autorização sobre o recurso no caso de uso, não apenas no `@PreAuthorize`.
 3. Nomes de arquivo são gerados no servidor por UUID e extensão derivada do conteúdo validado; o nome original não compõe o destino.
 4. A API expõe somente URL lógica autenticada. O frontend faz `fetch` Bearer do blob, cria `objectURL` temporária e a revoga no cleanup.
 5. Mutação não é repetida automaticamente após 401 ou erro de rede.
+6. O backend falha ao iniciar sem segredo JWT forte e compara o convite de engenharia sem atalho de elevação de papel.
 
 ---
 

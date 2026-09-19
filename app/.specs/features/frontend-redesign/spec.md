@@ -49,6 +49,7 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 | Pré-laudo estruturado | Transformar o texto do pré-laudo em resumo e achados quando houver itens reconhecíveis; gravidade e confiança ausentes serão omitidas ou marcadas como não informadas. | Preserva o bloco visual aprovado sem apresentar inferências como dados técnicos. | n |
 | Contrato de evidências | Acrescentar metadados das imagens e uma rota autenticada de leitura, sem expor o caminho físico do servidor. | O engenheiro não consegue revisar fotos usando o contrato atual. | n |
 | Persistência da sessão | Manter JWT no navegador para esta entrega, com chave `vistoria.session`, limpeza em logout/401 e sem registrar o token em logs. | É compatível com o backend stateless atual e limita a mudança ao escopo aprovado. | n |
+| Cadastro profissional | Exigir `CREA` e `codigoConvite` para `ROLE_ENGENHEIRO`; o convite vem do ambiente, é mascarado e descartado após falha ou troca de perfil. | Impede que um visitante se atribua o papel técnico sem autorização administrativa no MVP. | y |
 | Estratégia de testes do frontend | Adicionar Vitest, React Testing Library e `user-event` como dependências de desenvolvimento, após a confirmação operacional exigida pelo projeto. | O projeto não possui runner capaz de provar componentes e interações do React. | n |
 | Compatibilidade de rotas | Preservar `/login`, `/client` e `/engineer`; adicionar `/register` e rotas filhas de vistoria. | Evita quebra gratuita das URLs já existentes. | n |
 
@@ -68,14 +69,14 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 
 1. The frontend SHALL exibir a marca `Vistor.IA` e não SHALL exibir o nome `MedFlow` nas páginas, metadata ou textos de ajuda.
 2. WHEN a API autenticar um usuário THEN the frontend SHALL persistir os dados mínimos da sessão e direcionar `ROLE_CLIENTE` para `/client` e `ROLE_ENGENHEIRO` para `/engineer` usando o campo `perfil` retornado.
-3. WHEN um visitante enviar cadastro válido THEN the frontend SHALL enviar nome, e-mail, senha, perfil e CREA condicional para `/api/auth/register` e iniciar a sessão com a resposta recebida.
-4. WHILE o perfil selecionado for `ROLE_ENGENHEIRO` the frontend SHALL exigir o CREA; WHILE o perfil for `ROLE_CLIENTE` the frontend SHALL ocultar e excluir o CREA do payload.
-5. IF login ou cadastro retornar um `ProblemDetail` THEN the frontend SHALL manter os dados não sensíveis preenchidos e exibir `detail` como mensagem de erro associada ao formulário.
+3. WHEN um visitante enviar cadastro válido THEN the frontend SHALL enviar nome, e-mail, senha, perfil e, para `ROLE_ENGENHEIRO`, CREA e código de convite para `/api/auth/register`, iniciando a sessão somente com uma resposta bem-sucedida.
+4. WHILE o perfil selecionado for `ROLE_ENGENHEIRO` the frontend SHALL exigir CREA e código de convite mascarado; WHILE o perfil for `ROLE_CLIENTE` the frontend SHALL ocultar, limpar e excluir ambos do payload.
+5. IF login ou cadastro retornar um `ProblemDetail` THEN the frontend SHALL manter apenas os dados não sensíveis preenchidos, limpar senha e convite e exibir `detail` como mensagem de erro associada ao formulário; convite profissional inválido SHALL retornar 403.
 6. IF uma rota protegida for aberta sem sessão válida THEN the frontend SHALL redirecionar para `/login` sem renderizar conteúdo do papel protegido.
 7. IF uma resposta autenticada retornar HTTP 401 THEN the frontend SHALL limpar a sessão e direcionar para `/login` com uma mensagem de sessão expirada.
 8. IF o perfil autenticado tentar abrir a área do outro papel THEN the frontend SHALL direcionar para sua própria área sem enviar a requisição protegida incompatível.
 
-**Independent Test**: Cadastrar e autenticar um cliente e um engenheiro, verificar o redirecionamento por `perfil`, bloquear a área oposta e validar os erros 401/409/422 na interface.
+**Independent Test**: Cadastrar e autenticar um cliente e um engenheiro com convite válido, recusar convite ausente ou inválido, verificar o redirecionamento por `perfil`, bloquear a área oposta e validar os erros 401/403/409/422 na interface.
 
 ---
 
@@ -202,10 +203,10 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 
 | Dimension | Resolution |
 | --- | --- |
-| Input validation & bounds | Endereço, CREA, parecer, protocolo, tipo e limite de 10 MB estão cobertos pelos critérios. |
+| Input validation & bounds | Endereço, CREA, convite profissional, parecer, protocolo, tipo e limite de 10 MB estão cobertos pelos critérios. |
 | Failure / partial-failure states | Upload parcial, leitura, mutação, imagem ausente, IA e sessão expirada têm estados explícitos. |
 | Idempotency / retry / duplicate handling | A UI bloqueia mutações concorrentes; retries só ocorrem por ação explícita e usam o mesmo recurso quando aplicável. Não será criado mecanismo geral de idempotency-key nesta entrega porque os endpoints atuais protegem transições por estado. |
-| Auth boundaries & rate limits | Papéis, ownership, 401 e 403 estão cobertos. Rate limiting é N/A porque pertence à infraestrutura/backend transversal, não ao redesenho. |
+| Auth boundaries & rate limits | Papéis, ownership, convite administrativo de engenharia, 401 e 403 estão cobertos. Rate limiting é N/A porque pertence à infraestrutura/backend transversal, não ao redesenho. |
 | Concurrency / ordering | Estado retornado pelo servidor prevalece e casos processados deixam de ser editáveis. |
 | Data lifecycle / expiry | Sessão é removida em logout/401; evidências seguem o ciclo da vistoria. Exclusão e retenção de evidências são N/A porque não há operação de exclusão nesta feature. |
 | Observability | Falhas são visíveis na UI e dados sensíveis não são logados. Telemetria externa é N/A porque não há provedor configurado. |
@@ -216,27 +217,27 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| FUX-01 | P1: Identidade, cadastro e acesso por perfil | Specify | Pending |
-| FUX-02 | P1: Jornada guiada de auto-vistoria do cliente | Specify | Pending |
-| FUX-03 | P1: Fila e revisão técnica do engenheiro | Specify | Pending |
-| FUX-04 | P1: Contrato autenticado de evidências | Specify | Pending |
-| FUX-05 | P1: Sistema visual responsivo e acessível | Specify | Pending |
-| FUX-06 | P1: Cliente HTTP, estados e falhas observáveis | Specify | Pending |
+| FUX-01 | P1: Identidade, cadastro e acesso por perfil | Validate | Verified |
+| FUX-02 | P1: Jornada guiada de auto-vistoria do cliente | Validate | Verified |
+| FUX-03 | P1: Fila e revisão técnica do engenheiro | Validate | Verified |
+| FUX-04 | P1: Contrato autenticado de evidências | Validate | Verified |
+| FUX-05 | P1: Sistema visual responsivo e acessível | Validate | Verified |
+| FUX-06 | P1: Cliente HTTP, estados e falhas observáveis | Validate | Verified |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 6 total, 0 mapped to tasks, 6 unmapped until the Tasks phase.
+**Coverage:** 6 total, 6 mapped to tasks and verified in `validation.md`.
 
 ## Success Criteria
 
-- [ ] Cliente consegue cadastrar-se, criar rascunho, enviar evidência válida, revisar e submeter usando a interface em uma execução integrada local.
-- [ ] Engenheiro consegue autenticar-se, abrir evidências e pré-laudo, registrar parecer e aprovar ou devolver em uma execução integrada local.
-- [ ] Nenhuma área protegida é renderizada para sessão ausente ou papel incompatível.
-- [ ] Lint, testes automatizados do frontend, build Next.js e suíte Maven passam na execução final.
-- [ ] Um teste de contexto Spring real sobe a aplicação com Flyway e segurança configurados; método de teste vazio não conta como evidência.
-- [ ] Os contratos usados pelo frontend têm testes backend para autenticação, listagem, criação, upload, leitura de evidência, submissão, aprovação e devolução.
-- [ ] Uma execução integrada com frontend e backend ativos comprova requisições HTTP e CORS reais, sem interceptação ou dados mockados no navegador.
-- [ ] Login, jornada do cliente e revisão do engenheiro são verificadas visualmente em 375 px, 768 px e 1440 px sem overflow horizontal.
-- [ ] A interface final não contém `MedFlow`, ações sem efeito, dados técnicos inventados, logs sensíveis ou caminhos físicos de upload.
+- [x] Cliente consegue cadastrar-se, criar rascunho, enviar evidência válida, revisar e submeter usando a interface em uma execução integrada local.
+- [x] Engenheiro consegue autenticar-se, abrir evidências e pré-laudo, registrar parecer e aprovar ou devolver em uma execução integrada local.
+- [x] Nenhuma área protegida é renderizada para sessão ausente ou papel incompatível.
+- [x] Lint, testes automatizados do frontend, build Next.js e suíte Maven passam na execução final.
+- [x] Um teste de contexto Spring real sobe a aplicação com Flyway e segurança configurados; método de teste vazio não conta como evidência.
+- [x] Os contratos usados pelo frontend têm testes backend para autenticação, listagem, criação, upload, leitura de evidência, submissão, aprovação e devolução.
+- [x] Uma execução integrada com frontend e backend ativos comprova requisições HTTP e CORS reais, sem interceptação ou dados mockados no navegador.
+- [x] Login, jornada do cliente e revisão do engenheiro são verificadas visualmente em 375 px, 768 px e 1440 px sem overflow horizontal.
+- [x] A interface final não contém `MedFlow`, ações sem efeito, dados técnicos inventados, logs sensíveis ou caminhos físicos de upload.

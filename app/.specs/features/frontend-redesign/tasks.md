@@ -16,7 +16,7 @@
 - A paleta usa concreto quente `#F3EFE7`, calcário `#DDD4C6`, grafite `#252A2E`, azul de projeto `#17324D`, terracota `#A95736`, verde estrutural `#2F6657` e âmbar `#C8912F`, sem gradientes.
 - O frontend não inventa severidade, confiança, diagnóstico, cliente, data ou evidência ausente do contrato da API.
 - A API Spring Boot real configurada por `NEXT_PUBLIC_API_URL` é a única fonte de dados do navegador; não há fallback mock no frontend.
-- JWT, senha, conteúdo integral de evidência e parecer não podem ser registrados em logs.
+- JWT, senha, convite profissional, conteúdo integral de evidência e parecer não podem ser registrados em logs.
 - O token permanece em `localStorage` nesta entrega; cookies HttpOnly, refresh token, PDF, assinatura digital e provedor real de IA ficam fora do escopo.
 - Todo comportamento novo ou alterado recebe teste derivado dos critérios de aceitação, com RED observado antes da produção e GREEN antes do commit.
 - Um commit Conventional Commit em português por tarefa; somente arquivos da tarefa entram no stage.
@@ -42,7 +42,7 @@ If any required skill cannot be activated, stop before changing production code 
 ---
 
 **Design**: `.specs/features/frontend-redesign/design.md`
-**Status**: In Progress
+**Status**: Complete
 
 ---
 
@@ -621,7 +621,7 @@ it("routes an engineer from the API profile without inspecting the email", async
 })
 ```
 
-Completar a suíte com: `ROLE_CLIENTE -> /client`; CREA visível/obrigatório só para engenheiro; payload cliente sem `crea`; campos não sensíveis preservados em 409/422; visitante redirecionado antes do filho montar; papel errado enviado à própria home; aviso `aria-live` de sessão expirada.
+Completar a suíte com: `ROLE_CLIENTE -> /client`; CREA e convite mascarado visíveis/obrigatórios só para engenheiro; payload cliente sem `crea`/`codigoConvite`; convite limpo após 403 ou troca de perfil; campos não sensíveis preservados em 409/422; visitante redirecionado antes do filho montar; papel errado enviado à própria home; aviso `aria-live` de sessão expirada.
 
 - [x] **Step 2: Executar RED focado**
 
@@ -678,7 +678,7 @@ git commit -m "feat(frontend): implementa identidade e acesso Vistor.IA"
 **Done when**:
 
 - [x] Login e cadastro direcionam pelo `perfil` real.
-- [x] CREA é condicional e senha/token não aparecem em logs.
+- [x] CREA e convite são condicionais; senha, convite e token não aparecem em logs nem persistem após falha.
 - [x] Área errada não monta nem dispara chamada protegida.
 - [x] Marca, metadata, paleta, foco e movimento reduzido obedecem a spec.
 - [x] Pelo menos 16 testes frontend, lint e build passam.
@@ -958,7 +958,7 @@ git commit -m "feat(engenheiro): implementa revisão técnica de vistorias"
 - MCP: terminal local e navegador controlado
 - Skills: `tlc-spec-driven`, `browser:control-in-app-browser`, `superpowers:verification-before-completion`, `product-design:audit`
 
-- [ ] **Step 1: Executar gates backend atuais**
+- [x] **Step 1: Executar gates backend atuais**
 
 ```powershell
 .\mvnw.cmd test
@@ -967,7 +967,7 @@ git commit -m "feat(engenheiro): implementa revisão técnica de vistorias"
 
 Expected: no mínimo 58 testes backend, contexto Spring/Flyway/Security verde e migration PostgreSQL verde.
 
-- [ ] **Step 2: Executar gates frontend atuais**
+- [x] **Step 2: Executar gates frontend atuais**
 
 ```powershell
 npm run test
@@ -977,27 +977,27 @@ npm run build
 
 Expected: no mínimo 38 testes frontend, zero erro ESLint/TypeScript e build Next 16 verde.
 
-- [ ] **Step 3: Subir os dois processos e testar o contrato real**
+- [x] **Step 3: Subir os dois processos e testar o contrato real**
 
 Backend usa porta 8080 e diretório de upload temporário; frontend usa `NEXT_PUBLIC_API_URL=http://localhost:8080/api`. Criar por API/UI um cliente e um engenheiro exclusivos do UAT, sem serviço externo pago.
 
-- [ ] **Step 4: Executar UAT cliente**
+- [x] **Step 4: Executar UAT cliente**
 
 Validar: cadastro/login por perfil; lista vazia; criação de um único rascunho; rejeição de arquivo inválido; upload JPEG válido; refresh preservando progresso; submissão única; acompanhamento; acesso de outro cliente à foto recebendo 403.
 
-- [ ] **Step 5: Executar UAT engenheiro**
+- [x] **Step 5: Executar UAT engenheiro**
 
 Validar: fila pendente; abertura do caso; evidência autenticada; pré-laudo preliminar sem dados inventados; parecer vazio bloqueado; devolução e complementação do cliente; nova submissão; aprovação final.
 
-- [ ] **Step 6: Auditar acessibilidade e responsividade**
+- [x] **Step 6: Auditar acessibilidade e responsividade**
 
 Repetir jornadas essenciais por teclado em 375, 768 e 1440 px; conferir foco visível, labels, nomes de ícone, `aria-live`, ausência de overflow horizontal e preferência de movimento reduzido.
 
-- [ ] **Step 7: Executar verificação independente standalone e sensor**
+- [x] **Step 7: Executar verificação independente standalone e sensor**
 
 Sem subagente autorizado, fazer uma segunda passagem de olhos frescos: mapear cada AC para `arquivo:linha` e teste; em cópia temporária isolada, mutar no mínimo redirecionamento por perfil, header FormData, ownership de evidência e parecer obrigatório. Cada mutante deve ser morto pelo gate correspondente; descartar a cópia e confirmar que `git status --porcelain` do repositório real não mudou.
 
-- [ ] **Step 8: Escrever o relatório e validar o estado**
+- [x] **Step 8: Escrever o relatório e validar o estado**
 
 `validation.md` deve conter `Status: PASS`, evidência por AC, comandos/contagens, UAT, sensor e diff range. Depois executar:
 
@@ -1005,7 +1005,7 @@ Sem subagente autorizado, fazer uma segunda passagem de olhos frescos: mapear ca
 python C:\Users\vine\.codex\skills\tlc-spec-driven\scripts\validate_state.py frontend-redesign --root .
 ```
 
-- [ ] **Step 9: Atualizar status e commitar validação**
+- [x] **Step 9: Atualizar status e commitar validação**
 
 Marcar T10, `tasks.md` e `design.md` como Done/Approved somente depois do PASS.
 
@@ -1015,7 +1015,7 @@ git add .specs/features/frontend-redesign/design.md .specs/features/frontend-red
 git commit -m "test(frontend): valida experiência Vistor.IA integrada"
 ```
 
-- [ ] **Step 10: Revisar commits e fazer push autorizado**
+- [x] **Step 10: Revisar commits e fazer push autorizado**
 
 ```powershell
 git status --short
@@ -1027,11 +1027,11 @@ Push só ocorre se o status não contiver mudanças da feature fora de commit e 
 
 **Done when**:
 
-- [ ] Backend, PostgreSQL, frontend, CORS e fluxos reais estão comprovados por execução atual.
-- [ ] UAT passa em cliente/engenheiro e nas três larguras, inclusive teclado.
-- [ ] Sensor mata os quatro defeitos e árvore real permanece intacta.
-- [ ] `validate_state.py` retorna zero erros.
-- [ ] Commit de validação e push de `main` concluem sem force-push.
+- [x] Backend, PostgreSQL, frontend, CORS e fluxos reais estão comprovados por execução atual.
+- [x] UAT passa em cliente/engenheiro e nas três larguras, inclusive teclado.
+- [x] Sensor mata os quatro defeitos e árvore real permanece intacta.
+- [x] `validate_state.py` retorna zero erros.
+- [x] Commit de validação e push de `main` concluem sem force-push.
 
 **Tests**: integração + UAT + sensor de discriminação
 **Gate**: Integrated + TLC completion
