@@ -5,8 +5,8 @@ import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,7 +24,7 @@ class PostgreSqlMigrationIntegrationTest {
             MigrateResult result = flyway.migrate();
 
             assertThat(result.success).isTrue();
-            assertThat(result.targetSchemaVersion).isEqualTo("5");
+            assertThat(result.targetSchemaVersion).isEqualTo("6");
 
             try (var connection = postgres.createConnection("");
                  var statement = connection.prepareStatement("""
@@ -43,15 +43,25 @@ class PostgreSqlMigrationIntegrationTest {
 
             try (var connection = postgres.createConnection("");
                  var statement = connection.prepareStatement("""
-                         SELECT indexname FROM pg_indexes
+                         SELECT indexname, indexdef FROM pg_indexes
                           WHERE schemaname = 'public' AND tablename = 'tb_vistoria'
                          """);
                  var indexes = statement.executeQuery()) {
-                List<String> indexNames = new ArrayList<>();
+                Map<String, String> indexDefinitions = new HashMap<>();
                 while (indexes.next()) {
-                    indexNames.add(indexes.getString("indexname"));
+                    indexDefinitions.put(
+                            indexes.getString("indexname"),
+                            indexes.getString("indexdef"));
                 }
-                assertThat(indexNames).contains("idx_vistoria_cliente_id", "idx_vistoria_status");
+                assertThat(indexDefinitions).containsKeys(
+                        "idx_vistoria_cliente_id",
+                        "idx_vistoria_status",
+                        "idx_vistoria_cliente_criacao_id",
+                        "idx_vistoria_status_criacao_id");
+                assertThat(indexDefinitions.get("idx_vistoria_cliente_criacao_id"))
+                        .contains("(cliente_id, data_criacao DESC, id DESC)");
+                assertThat(indexDefinitions.get("idx_vistoria_status_criacao_id"))
+                        .contains("(status, data_criacao DESC, id DESC)");
             }
         }
     }

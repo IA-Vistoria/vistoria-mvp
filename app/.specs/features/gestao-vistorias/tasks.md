@@ -19,6 +19,7 @@ Implement these tasks with the `tlc-spec-driven` skill.
 - [x] **T6**: Endpoints do cliente em `VistoriaController`, com `VistoriaControllerTest`.
 - [x] **T7**: Endpoints do engenheiro em `VistoriaController`, com `VistoriaControllerTest`.
 - [x] **T8**: Ordenação determinística e segura nas listagens paginadas.
+- [x] **T9**: Índices compostos para filtros e ordenação das listagens.
 
 Pendências identificadas em revisões anteriores e já resolvidas: índices de banco para `cliente_id`/`status` (`V5__add_vistoria_indexes.sql`), separação da chamada de IA em transações curtas (`VistoriaService.submeterVistoria`) e paginação de `/minhas` e `/pendentes` (`PaginaResponseDto`, com `GET /api/vistorias/{id}` adicionado para o cliente buscar um recurso específico sem depender da lista).
 
@@ -194,6 +195,22 @@ T6 → T7
 - [x] `/minhas` envia ao serviço a página e o tamanho solicitados com ordenação fixa por `dataCriacao DESC, id DESC`.
 - [x] `/pendentes` envia ao serviço a página e o tamanho solicitados com ordenação fixa por `dataCriacao DESC, id DESC`.
 - [x] Um parâmetro `sort` externo inválido não altera a ordenação nem causa erro HTTP.
+
+**Tests**: integration
+**Gate**: Full
+
+---
+
+### T9: [Adicionar Índices Compostos das Listagens]
+**What**: Criar uma migration aditiva com índices alinhados aos filtros e à ordenação determinística das duas listagens.
+**Where**: `src/main/resources/db/migration/` e `PostgreSqlMigrationIntegrationTest`
+**Depends on**: T8
+**Requirement**: VISTORIA-01, VISTORIA-03
+
+**Done when**:
+- [x] Flyway aplica a migration V6 em um PostgreSQL vazio.
+- [x] `tb_vistoria` possui índice por `cliente_id, data_criacao DESC, id DESC`.
+- [x] `tb_vistoria` possui índice por `status, data_criacao DESC, id DESC`.
 
 **Tests**: integration
 **Gate**: Full

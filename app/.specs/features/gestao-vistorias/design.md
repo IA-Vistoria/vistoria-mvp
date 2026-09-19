@@ -67,6 +67,7 @@ graph TD
 - **Location**: `src/main/java/br/com/vistoriapredial/vistoria/application/`
 - **Detalhe relevante**: `submeterVistoria` não é `@Transactional` como um todo — usa `TransactionTemplate` para abrir e fechar duas transações curtas, deixando a chamada de IA fora de qualquer transação (ver ADR em `docs/architecture.md`, seção 6).
 - **Paginação**: o controller preserva `page` e `size`, mas fixa `dataCriacao DESC, id DESC` e ignora `sort` externo. `listarVistoriasCliente`/`listarPendentesEngenharia` buscam a página sem `@EntityGraph` (evita paginação em memória) e recarregam `imagens` da página em lote via `findByIdIn`.
+- **Índices**: a V6 adiciona `(cliente_id, data_criacao DESC, id DESC)` e `(status, data_criacao DESC, id DESC)`, alinhados aos filtros e à ordenação das listagens.
 
 ### `IaIntegrationService`
 - **Purpose**: Porta que abstrai a geração do pré-laudo. `MockIaIntegrationService` é o único adaptador ativo nesta versão; a integração real com OCI Generative AI está fora do escopo desta feature — ver `.specs/features/integracao-oci/`.
@@ -93,4 +94,4 @@ graph TD
 | --- | --- | --- | --- |
 | Upload de grandes arquivos síncrono | `VistoriaController` | Ocupar threads e memória. | `spring.servlet.multipart.max-file-size=10MB` já configurado; `EvidenceFileValidator` valida tamanho antes de gravar. |
 | Chamada da IA trava a thread | `VistoriaService` | Gargalo se a IA demorar. | Resolvido: a chamada roda fora de transação (`TransactionTemplate`), então não segura conexão de banco. O tempo de resposta HTTP ainda depende da IA ser síncrona — se a integração real (`.specs/features/integracao-oci/`) vier assíncrona, o frontend já tem polling para refletir a conclusão sem bloquear a requisição. |
-| `@EntityGraph` de coleção junto com `Pageable` | `VistoriaRepository` | Faria o Hibernate paginar em memória, anulando os índices de `V5`. | Resolvido: buscas paginadas não usam `@EntityGraph`; `imagens` da página é recarregado em lote via `findByIdIn`. |
+| `@EntityGraph` de coleção junto com `Pageable` | `VistoriaRepository` | Faria o Hibernate paginar em memória, anulando os índices de paginação. | Resolvido: buscas paginadas não usam `@EntityGraph`; `imagens` da página é recarregado em lote via `findByIdIn`. |
