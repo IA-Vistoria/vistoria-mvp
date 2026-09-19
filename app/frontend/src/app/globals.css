@@ -668,6 +668,125 @@ a {
 
 .inspection-form small { color: var(--muted); line-height: 1.45; }
 
+.workflow-page { max-width: 74rem; margin: 0 auto; }
+
+.workflow-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.workflow-heading h1 {
+  max-width: 25ch;
+  margin: 0;
+  color: var(--blueprint);
+  font-family: var(--display);
+  font-size: clamp(2rem, 5vw, 4.2rem);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.engineer-note,
+.tracking-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--safety);
+  background: #fff5d9;
+  color: var(--blueprint);
+}
+
+.tracking-panel { align-items: center; border-left-color: var(--structural); background: var(--paper); }
+.tracking-panel > svg,
+.engineer-note > svg { flex: 0 0 auto; color: var(--structural); }
+.engineer-note > svg { color: var(--safety); }
+.tracking-panel .button { margin-left: auto; }
+.tracking-panel h2,
+.engineer-note h2 { margin: 0; font-family: var(--display); font-size: 1.5rem; }
+.tracking-panel p,
+.engineer-note p { margin: 0.25rem 0 0; line-height: 1.5; }
+
+.workflow-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 26rem);
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.2rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--line);
+  background: var(--blueprint);
+  color: white;
+}
+
+.workflow-progress strong,
+.workflow-progress span { display: block; }
+.workflow-progress span { margin-top: 0.25rem; color: rgba(255, 255, 255, 0.68); font-size: 0.79rem; }
+.workflow-progress progress { width: 100%; height: 0.55rem; accent-color: var(--safety); }
+
+.protocol-groups { display: grid; gap: 1rem; }
+.protocol-group { border: 1px solid var(--line); background: var(--paper); }
+
+.protocol-group > header {
+  display: flex;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: #ece7dc;
+}
+
+.protocol-group > header > span {
+  color: var(--clay);
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.protocol-group h2,
+.protocol-group h3 { margin: 0; color: var(--blueprint); }
+.protocol-group h2 { font-family: var(--display); font-size: 1.45rem; }
+.protocol-group header p { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.82rem; }
+
+.protocol-items { display: grid; }
+.protocol-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.8rem 1rem; padding: 1.15rem 1.25rem; }
+.protocol-item + .protocol-item { border-top: 1px solid var(--line); }
+.protocol-item__copy { display: flex; gap: 0.8rem; min-width: 0; }
+.protocol-check { width: 1.65rem; height: 1.65rem; display: grid; flex: 0 0 auto; place-items: center; border: 1px solid var(--limestone); border-radius: 50%; color: white; }
+.protocol-check.is-complete { border-color: var(--structural); background: var(--structural); }
+.protocol-item h3 { font-size: 0.98rem; }
+.protocol-item__copy p { margin: 0.25rem 0; color: var(--muted); font-size: 0.8rem; line-height: 1.45; }
+.protocol-item__copy small { color: var(--structural); font-weight: 700; }
+.protocol-item__actions { display: flex; align-items: center; gap: 0.75rem; }
+.protocol-item__actions .button { min-height: 2.6rem; padding: 0.55rem 0.8rem; font-size: 0.78rem; }
+.protocol-item__actions .is-disabled { cursor: wait; opacity: 0.6; }
+.retry-link { display: inline-flex; align-items: center; gap: 0.35rem; border: 0; background: transparent; color: var(--clay); font-size: 0.78rem; font-weight: 750; cursor: pointer; }
+.item-error { grid-column: 1 / -1; margin: 0; padding: 0.65rem 0.8rem; border-left: 3px solid var(--clay); background: #f7e8df; color: #74351f; font-size: 0.8rem; }
+
+.evidence-strip { grid-column: 1 / -1; display: flex; gap: 0.55rem; overflow-x: auto; }
+.evidence-thumb { width: 6.2rem; height: 4.2rem; display: grid; flex: 0 0 auto; place-items: center; border: 1px solid var(--line); background: #edf2f6; color: var(--muted); object-fit: cover; font-size: 0.65rem; text-align: center; }
+.evidence-thumb--failed { gap: 0.2rem; color: var(--clay); }
+
+.workflow-submit {
+  position: sticky;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-top: 1.2rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 253, 249, 0.96);
+  box-shadow: var(--shadow);
+}
+
+.workflow-submit h2 { margin: 0; color: var(--blueprint); font-family: var(--display); font-size: 1.35rem; }
+.workflow-submit > div > p:not(.eyebrow) { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.82rem; }
+
 @media (max-width: 800px) {
   .auth-page {
     grid-template-columns: 1fr;
@@ -733,6 +852,13 @@ a {
     grid-template-columns: 1fr;
     min-height: auto;
   }
+
+  .tracking-panel,
+  .workflow-submit { align-items: stretch; flex-direction: column; }
+  .tracking-panel .button { margin-left: 0; }
+  .workflow-progress { grid-template-columns: 1fr; }
+  .protocol-item { grid-template-columns: 1fr; }
+  .protocol-item__actions { grid-column: 1; }
 }
 
 @media (max-width: 520px) {

@@ -779,7 +779,7 @@ git commit -m "feat(cliente): cria painel e rascunho de vistoria"
 - MCP: editor local
 - Skills: `tlc-spec-driven`, `superpowers:test-driven-development`, `product-design:image-to-code`
 
-- [ ] **Step 1: Escrever ao menos 8 testes RED**
+- [x] **Step 1: Escrever ao menos 8 testes RED**
 
 ```tsx
 it("submits once and renders the returned status", async () => {
@@ -798,7 +798,7 @@ it("submits once and renders the returned status", async () => {
 
 Completar a suíte com: cinco grupos/doze códigos; progresso por itens únicos persistidos; arquivo vazio/grande/MIME inválido sem fetch; FormData com código exato; retry preservando evidências; bloqueio sem evidência; parecer e edição em `DEVOLVIDA_CLIENTE`; retry somente em `FALHA_IA` usando o mesmo id.
 
-- [ ] **Step 2: Executar RED e implementar helpers puros**
+- [x] **Step 2: Executar RED e implementar helpers puros**
 
 ```typescript
 export const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024
@@ -809,7 +809,7 @@ export function calculateProgress(evidence: Evidence[]): number {
 }
 ```
 
-- [ ] **Step 3: Implementar upload e estados**
+- [x] **Step 3: Implementar upload e estados**
 
 ```typescript
 const body = new FormData()
@@ -820,7 +820,7 @@ return apiFetch<Inspection>(`/vistorias/${id}/imagens`, { method: "POST", body }
 
 Cada item mantém erro/ocupado local; envio final exige evidência confirmada, exibe revisão e bloqueia clique concorrente. Estados não editáveis renderizam acompanhamento somente leitura.
 
-- [ ] **Step 4: Implementar rota dinâmica conforme Next 16**
+- [x] **Step 4: Implementar rota dinâmica conforme Next 16**
 
 ```tsx
 export default async function Page({ params }: PageProps<"/client/vistorias/[id]">) {
@@ -829,7 +829,7 @@ export default async function Page({ params }: PageProps<"/client/vistorias/[id]
 }
 ```
 
-- [ ] **Step 5: Executar frontend full e commitar**
+- [x] **Step 5: Executar frontend full e commitar**
 
 Expected: pelo menos 30 testes frontend totais, lint e build verdes.
 
@@ -841,11 +841,11 @@ git commit -m "feat(cliente): implementa protocolo guiado de evidências"
 
 **Done when**:
 
-- [ ] Cinco grupos/doze itens e progresso vêm do contrato compartilhado.
-- [ ] Upload inválido não chama API; falha não apaga rascunho/evidências.
-- [ ] Submissão é única e somente após evidência confirmada.
-- [ ] Retorno, falha IA e acompanhamento respeitam estados do backend.
-- [ ] Pelo menos 30 testes frontend, lint e build passam.
+- [x] Cinco grupos/doze itens e progresso vêm do contrato compartilhado.
+- [x] Upload inválido não chama API; falha não apaga rascunho/evidências.
+- [x] Submissão é única e somente após evidência confirmada.
+- [x] Retorno, falha IA e acompanhamento respeitam estados do backend.
+- [x] Pelo menos 30 testes frontend, lint e build passam.
 
 **Tests**: component + unit
 **Gate**: Frontend focused + Frontend full

@@ -1,5 +1,5 @@
 import { ApiError, apiFetch, fetchEvidenceBlob } from "@/lib/api";
-import type { Inspection } from "./types";
+import type { Inspection, ProtocolItemCode } from "./types";
 
 export const listMyInspections = () => apiFetch<Inspection[]>("/vistorias/minhas");
 
@@ -22,7 +22,7 @@ export const createInspection = (endereco: string) =>
     body: JSON.stringify({ endereco: endereco.trim() }),
   });
 
-export const uploadEvidence = (inspectionId: number, protocoloItem: string, file: File) => {
+export const uploadEvidence = (inspectionId: number, protocoloItem: ProtocolItemCode, file: File) => {
   const body = new FormData();
   body.append("protocoloItem", protocoloItem);
   body.append("file", file);
@@ -33,4 +33,3 @@ export const submitInspection = (inspectionId: number) =>
   apiFetch<Inspection>(`/vistorias/${inspectionId}/submeter`, { method: "POST" });
 
 export const loadEvidence = (url: string) => fetchEvidenceBlob(url);
-
