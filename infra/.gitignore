@@ -15,7 +15,6 @@
 !*.tfvars.example
 crash.log
 crash.*.log
-.terraform.lock.hcl
 
 # Ansible
 *.retry
@@ -33,3 +32,8 @@ target/
 *.iml
 .DS_Store
 Thumbs.db
+
+# Skills do Claude Code (tooling local, symlinks com caminho absoluto da máquina)
+.agents/
+.claude/
+skills-lock.json

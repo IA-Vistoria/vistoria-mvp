@@ -1,0 +1,29 @@
+# Copie para terraform.tfvars (já está no .gitignore) e preencha os valores reais.
+# Nunca commitar terraform.tfvars.
+
+tenancy_ocid = "ocid1.tenancy.oc1..CHANGE_ME"
+region       = "CHANGE_ME" # ex: sa-saopaulo-1 — confirmar com o time, ver docs/spec-terraform.md
+
+oci_config_profile = "DEFAULT"
+
+project_name       = "vistoria-mvp"
+compartment_name   = "vistoria-mvp-dev"
+devs_group_name    = "vistoria-mvp-devs"
+dynamic_group_name = "vistoria-mvp-vm-dg"
+
+vcn_cidr         = "10.0.0.0/16"
+subnet_cidr      = "10.0.1.0/24"
+ssh_allowed_cidr = "203.0.113.4/32" # CHANGE_ME: CIDR conhecido do time, nunca 0.0.0.0/0
+
+bucket_name = "vistoria-fotos"
+
+db_name            = "VISTORIADB"
+db_display_name    = "vistoria-mvp-db"
+db_version         = "23ai"
+db_admin_password  = "CHANGE_ME" # 12-30 caracteres, ver requisitos da Autonomous DB
+
+ssh_public_key         = "ssh-ed25519 AAAA... CHANGE_ME"
+instance_display_name  = "vistoria-mvp-vm"
+instance_shape         = "VM.Standard.A1.Flex"
+instance_ocpus         = 2
+instance_memory_in_gbs = 12
