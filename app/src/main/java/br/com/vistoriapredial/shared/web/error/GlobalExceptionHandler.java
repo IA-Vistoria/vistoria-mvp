@@ -91,7 +91,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .toList();
 
         ProblemDetail problem = createProblem(
-                HttpStatus.UNPROCESSABLE_CONTENT,
+                HttpStatus.UNPROCESSABLE_ENTITY,
                 ProblemTypes.VALIDATION_ERROR,
                 "Dados inválidos",
                 "Um ou mais campos estão inválidos.",
@@ -99,7 +99,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         );
         problem.setProperty("errors", errors);
 
-        return createObjectResponse(problem, headers, HttpStatus.UNPROCESSABLE_CONTENT);
+        return createObjectResponse(problem, headers, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     /**

@@ -34,13 +34,21 @@
 - **Date**: 2026-09-18
 - **Status**: active
 
+### AD-005
+- **Decision**: Decompor o monólito em entregas de valor vertical (features).
+- **Reason**: Evitar tarefas massivas e não-atômicas; focar em fluxos completos e testáveis (Backend + Integrações + Validações).
+- **Trade-off**: Overhead inicial de criação de documentação e pacotes isolados por sub-módulo.
+- **Scope**: Planejamento e estrutura de features.
+- **Date**: 2026-09-19
+- **Status**: active
+
 ## Handoff
 
-- **Feature**: .specs/features/vistoria-predial
+- **Feature**: .specs/features/autenticacao-e-acesso
 - **Phase / Task**: Phase 1 - Specify (criando spec.md)
-- **Completed**: none
-- **In-progress**: .specs/features/vistoria-predial/spec.md
-- **Next step**: Validar spec.md com validate_spec.py e apresentar para confirmação
+- **Completed**: infraestrutura transversal, database migrations V1, tratamento de erros RFC 9457, storage service
+- **In-progress**: .specs/features/autenticacao-e-acesso/spec.md
+- **Next step**: Validar a spec da nova feature com validate_spec.py
 - **Blockers**: none
-- **Uncommitted files**: none
+- **Uncommitted files**: yes (spec realignments)
 - **Branch**: main

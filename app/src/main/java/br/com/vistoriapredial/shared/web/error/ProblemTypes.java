@@ -14,10 +14,7 @@ public final class ProblemTypes {
             URI.create("urn:vistoria:problem:usuario-not-found");
     public static final URI EMAIL_ALREADY_EXISTS =
             URI.create("urn:vistoria:problem:email-already-exists");
-    public static final URI VISTORIA_NOT_FOUND =
-            URI.create("urn:vistoria:problem:vistoria-not-found");
-    public static final URI LAUDO_NOT_FOUND =
-            URI.create("urn:vistoria:problem:laudo-not-found");
+
     public static final URI INVALID_DOMAIN_STATE =
             URI.create("urn:vistoria:problem:invalid-domain-state");
     public static final URI INVALID_REQUEST =
