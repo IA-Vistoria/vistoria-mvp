@@ -16,6 +16,9 @@ import br.com.vistoriapredial.vistoria.application.exception.VistoriaAccessDenie
 import br.com.vistoriapredial.vistoria.application.exception.VistoriaNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +27,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class VistoriaService {
@@ -65,11 +71,11 @@ public class VistoriaService {
     }
 
     @Transactional(readOnly = true)
-    public List<Vistoria> listarVistoriasCliente(Usuario cliente) {
+    public Page<Vistoria> listarVistoriasCliente(Usuario cliente, Pageable pageable) {
         if (cliente.getPerfil() != PerfilEnum.ROLE_CLIENTE) {
             throw new IllegalArgumentException("Somente clientes podem listar suas vistorias");
         }
-        return vistoriaRepository.findByCliente(cliente);
+        return comImagensCarregadas(vistoriaRepository.findByCliente(cliente, pageable));
     }
 
     @Transactional
@@ -203,14 +209,63 @@ public class VistoriaService {
         return vistoria;
     }
 
+    @Transactional(readOnly = true)
+    public Vistoria buscarVistoria(Long vistoriaId, Usuario usuario) {
+        Vistoria vistoria = vistoriaRepository.findById(vistoriaId)
+                .orElseThrow(VistoriaNotFoundException::new);
+        autorizarAcessoAVistoria(vistoria, usuario);
+        return vistoria;
+    }
+
+    /**
+     * Mesma regra de {@link #autorizarLeitura}, mas lançando as exceções de
+     * vistoria (não de evidência): este método serve a leitura do recurso
+     * inteiro (GET /vistorias/{id}), não o conteúdo de um arquivo.
+     */
+    private void autorizarAcessoAVistoria(Vistoria vistoria, Usuario usuario) {
+        if (usuario.getPerfil() == PerfilEnum.ROLE_CLIENTE) {
+            if (!vistoria.getCliente().getId().equals(usuario.getId())) {
+                throw new VistoriaAccessDeniedException();
+            }
+            return;
+        }
+
+        if (usuario.getPerfil() == PerfilEnum.ROLE_ENGENHEIRO) {
+            if (vistoria.getStatus() != VistoriaStatus.AGUARDANDO_ENGENHEIRO) {
+                throw new StaleInspectionException();
+            }
+            return;
+        }
+
+        throw new VistoriaAccessDeniedException();
+    }
+
+    /**
+     * findByCliente/findByStatus não trazem `imagens` junto (ver comentário em
+     * VistoriaRepository) para não paginar em memória. Busca-se aqui, em uma
+     * segunda consulta com IN, apenas as vistorias da página já resolvida —
+     * uma consulta extra por página, não uma por vistoria.
+     */
+    private Page<Vistoria> comImagensCarregadas(Page<Vistoria> pagina) {
+        List<Long> ids = pagina.getContent().stream().map(Vistoria::getId).toList();
+        if (ids.isEmpty()) {
+            return pagina;
+        }
+        Map<Long, Vistoria> porId = vistoriaRepository.findByIdIn(ids).stream()
+                .collect(Collectors.toMap(Vistoria::getId, Function.identity()));
+        List<Vistoria> comImagens = ids.stream().map(porId::get).toList();
+        return new PageImpl<>(comImagens, pagina.getPageable(), pagina.getTotalElements());
+    }
+
     // Fluxo Engenheiro
 
     @Transactional(readOnly = true)
-    public List<Vistoria> listarPendentesEngenharia(Usuario engenheiro) {
+    public Page<Vistoria> listarPendentesEngenharia(Usuario engenheiro, Pageable pageable) {
         if (engenheiro.getPerfil() != PerfilEnum.ROLE_ENGENHEIRO) {
             throw new IllegalArgumentException("Somente engenheiros podem listar pendentes");
         }
-        return vistoriaRepository.findByStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
+        return comImagensCarregadas(
+                vistoriaRepository.findByStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO, pageable));
     }
 
     @Transactional

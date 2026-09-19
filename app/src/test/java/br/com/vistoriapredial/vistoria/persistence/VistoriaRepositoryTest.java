@@ -11,9 +11,12 @@ import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,9 +55,9 @@ class VistoriaRepositoryTest {
     }
 
     @Test
-    void shouldLoadEvidenceCollectionForClientAndStatusLists() {
+    void shouldPaginateByClienteAndByStatusWithoutEagerImagens() {
         Usuario cliente = usuarioRepository.saveAndFlush(new Usuario(
-                "Cliente", "cliente-graph@test.com", "hash", PerfilEnum.ROLE_CLIENTE, null));
+                "Cliente", "cliente-pagina@test.com", "hash", PerfilEnum.ROLE_CLIENTE, null));
         Vistoria vistoria = new Vistoria();
         vistoria.setCliente(cliente);
         vistoria.setStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
@@ -64,14 +67,36 @@ class VistoriaRepositoryTest {
         vistoriaRepository.saveAndFlush(vistoria);
         entityManager.clear();
 
-        Vistoria porCliente = vistoriaRepository.findByCliente(cliente).getFirst();
-        Vistoria porStatus = vistoriaRepository
-                .findByStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO).getFirst();
+        Page<Vistoria> porCliente = vistoriaRepository.findByCliente(cliente, PageRequest.of(0, 10));
+        Page<Vistoria> porStatus = vistoriaRepository
+                .findByStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO, PageRequest.of(0, 10));
 
-        assertThat(entityManagerFactory.getPersistenceUnitUtil().isLoaded(porCliente, "imagens")).isTrue();
-        assertThat(porCliente.getImagens()).hasSize(1);
-        assertThat(entityManagerFactory.getPersistenceUnitUtil().isLoaded(porStatus, "imagens")).isTrue();
-        assertThat(porStatus.getImagens()).hasSize(1);
+        // Deliberado: sem @EntityGraph aqui (ver VistoriaRepository), então
+        // "imagens" não vem carregado por essas duas consultas paginadas.
+        assertThat(porCliente.getTotalElements()).isEqualTo(1);
+        assertThat(porStatus.getTotalElements()).isEqualTo(1);
+        assertThat(entityManagerFactory.getPersistenceUnitUtil()
+                .isLoaded(porCliente.getContent().getFirst(), "imagens")).isFalse();
+    }
+
+    @Test
+    void shouldLoadImagensEagerlyByIdIn() {
+        Usuario cliente = usuarioRepository.saveAndFlush(new Usuario(
+                "Cliente", "cliente-idin@test.com", "hash", PerfilEnum.ROLE_CLIENTE, null));
+        Vistoria vistoria = new Vistoria();
+        vistoria.setCliente(cliente);
+        ImagemVistoria imagem = new ImagemVistoria(
+                vistoria, "uploads/b.jpg", "SALA_PISO", LocalDateTime.now());
+        vistoria.getImagens().add(imagem);
+        Long id = vistoriaRepository.saveAndFlush(vistoria).getId();
+        entityManager.clear();
+
+        List<Vistoria> comImagens = vistoriaRepository.findByIdIn(List.of(id));
+
+        assertThat(comImagens).hasSize(1);
+        assertThat(entityManagerFactory.getPersistenceUnitUtil()
+                .isLoaded(comImagens.getFirst(), "imagens")).isTrue();
+        assertThat(comImagens.getFirst().getImagens()).hasSize(1);
     }
 
     @Test

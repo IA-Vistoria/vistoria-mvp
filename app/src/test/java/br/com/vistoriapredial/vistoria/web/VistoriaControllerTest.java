@@ -21,6 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mock.web.MockMultipartFile;
@@ -173,11 +175,73 @@ class VistoriaControllerTest {
         v.setStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
         ReflectionTestUtils.setField(v, "id", 10L);
 
-        when(vistoriaService.listarPendentesEngenharia(any())).thenReturn(List.of(v));
+        when(vistoriaService.listarPendentesEngenharia(any(), any()))
+                .thenReturn(new PageImpl<>(List.of(v), PageRequest.of(0, 10), 1));
 
         mockMvc.perform(get("/api/vistorias/pendentes"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(10));
+                .andExpect(jsonPath("$.content[0].id").value(10))
+                .andExpect(jsonPath("$.totalElementos").value(1))
+                .andExpect(jsonPath("$.pagina").value(0));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldListMinhasComPaginacao() throws Exception {
+        Vistoria v = new Vistoria();
+        v.setCliente(cliente);
+        v.setStatus(VistoriaStatus.EM_RASCUNHO);
+        ReflectionTestUtils.setField(v, "id", 11L);
+
+        when(vistoriaService.listarVistoriasCliente(any(), any()))
+                .thenReturn(new PageImpl<>(List.of(v), PageRequest.of(1, 5), 6));
+
+        mockMvc.perform(get("/api/vistorias/minhas?page=1&size=5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(11))
+                .andExpect(jsonPath("$.pagina").value(1))
+                .andExpect(jsonPath("$.tamanho").value(5))
+                .andExpect(jsonPath("$.totalElementos").value(6))
+                .andExpect(jsonPath("$.totalPaginas").value(2));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldBuscarVistoriaPorId() throws Exception {
+        Vistoria v = new Vistoria();
+        v.setCliente(cliente);
+        v.setStatus(VistoriaStatus.EM_RASCUNHO);
+        ReflectionTestUtils.setField(v, "id", 10L);
+
+        when(vistoriaService.buscarVistoria(eq(10L), any())).thenReturn(v);
+
+        mockMvc.perform(get("/api/vistorias/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnNotFoundWhenBuscandoVistoriaInexistente() throws Exception {
+        when(vistoriaService.buscarVistoria(eq(999L), any()))
+                .thenThrow(new VistoriaNotFoundException());
+
+        mockMvc.perform(get("/api/vistorias/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:vistoria-not-found"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnForbiddenWhenBuscandoVistoriaDeOutroCliente() throws Exception {
+        when(vistoriaService.buscarVistoria(eq(10L), any()))
+                .thenThrow(new VistoriaAccessDeniedException());
+
+        mockMvc.perform(get("/api/vistorias/10"))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:forbidden"));
     }
 
     @Test

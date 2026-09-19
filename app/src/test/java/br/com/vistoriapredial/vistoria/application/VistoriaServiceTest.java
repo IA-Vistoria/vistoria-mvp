@@ -23,6 +23,11 @@ import org.springframework.core.io.ByteArrayResource;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
@@ -93,6 +98,88 @@ class VistoriaServiceTest {
         assertEquals(cliente, result.getCliente());
         assertEquals(VistoriaStatus.EM_RASCUNHO, result.getStatus());
         assertEquals("Endereço Teste", result.getEndereco());
+    }
+
+    @Test
+    void shouldListarVistoriasClienteComPaginacaoEImagensCarregadas() {
+        Vistoria semImagens = new Vistoria();
+        semImagens.setId(10L);
+        semImagens.setCliente(cliente);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(vistoriaRepository.findByCliente(cliente, pageable))
+                .thenReturn(new PageImpl<>(List.of(semImagens), pageable, 1));
+
+        Vistoria comImagens = editableInspection();
+        comImagens.getImagens().add(evidence("uploads/a.jpg"));
+        when(vistoriaRepository.findByIdIn(List.of(10L))).thenReturn(List.of(comImagens));
+
+        Page<Vistoria> pagina = vistoriaService.listarVistoriasCliente(cliente, pageable);
+
+        assertThat(pagina.getTotalElements()).isEqualTo(1);
+        assertThat(pagina.getContent()).containsExactly(comImagens);
+        assertThat(pagina.getContent().getFirst().getImagens()).hasSize(1);
+    }
+
+    @Test
+    void shouldRejectListarVistoriasClienteForNonCliente() {
+        assertThatThrownBy(() -> vistoriaService.listarVistoriasCliente(engenheiro, PageRequest.of(0, 10)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldListarPendentesEngenhariaComPaginacao() {
+        Vistoria pendente = inspectionWithEvidence(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(vistoriaRepository.findByStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO, pageable))
+                .thenReturn(new PageImpl<>(List.of(pendente), pageable, 1));
+        when(vistoriaRepository.findByIdIn(List.of(10L))).thenReturn(List.of(pendente));
+
+        Page<Vistoria> pagina = vistoriaService.listarPendentesEngenharia(engenheiro, pageable);
+
+        assertThat(pagina.getContent()).containsExactly(pendente);
+    }
+
+    @Test
+    void shouldBuscarVistoriaForOwner() {
+        Vistoria vistoria = editableInspection();
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThat(vistoriaService.buscarVistoria(10L, cliente)).isSameAs(vistoria);
+    }
+
+    @Test
+    void shouldBuscarVistoriaForEngineerWhilePending() {
+        Vistoria vistoria = inspectionWithEvidence(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThat(vistoriaService.buscarVistoria(10L, engenheiro)).isSameAs(vistoria);
+    }
+
+    @Test
+    void shouldDenyBuscarVistoriaForAnotherClient() {
+        Usuario outroCliente = new Usuario("Outro", "outro3@test.com", "pass", PerfilEnum.ROLE_CLIENTE, null);
+        ReflectionTestUtils.setField(outroCliente, "id", 77L);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(editableInspection()));
+
+        assertThatThrownBy(() -> vistoriaService.buscarVistoria(10L, outroCliente))
+                .isInstanceOf(VistoriaAccessDeniedException.class);
+    }
+
+    @Test
+    void shouldDenyBuscarVistoriaForEngineerWhenNotPending() {
+        when(vistoriaRepository.findById(10L))
+                .thenReturn(Optional.of(inspectionWithEvidence(VistoriaStatus.CONCLUIDA)));
+
+        assertThatThrownBy(() -> vistoriaService.buscarVistoria(10L, engenheiro))
+                .isInstanceOf(StaleInspectionException.class);
+    }
+
+    @Test
+    void shouldThrowVistoriaNotFoundWhenBuscandoVistoriaInexistente() {
+        when(vistoriaRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> vistoriaService.buscarVistoria(999L, cliente))
+                .isInstanceOf(VistoriaNotFoundException.class);
     }
 
     @Test
