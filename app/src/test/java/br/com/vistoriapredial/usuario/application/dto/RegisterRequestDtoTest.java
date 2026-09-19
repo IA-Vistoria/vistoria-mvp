@@ -31,7 +31,7 @@ class RegisterRequestDtoTest {
         RegisterRequestDto dto = new RegisterRequestDto(
                 "João Silva",
                 "joao@example.com",
-                "123456",
+                "12345678",
                 PerfilEnum.ROLE_CLIENTE,
                 null,
                 null
