@@ -590,6 +590,8 @@ git commit -m "feat(integracao): conecta frontend à API com sessão tipada"
 
 ### T6: Implementar identidade visual, cadastro e proteção por papel
 
+**Status**: Complete
+
 **What**: Aplicar os tokens Vistor.IA, metadata pt-BR, login/cadastro real, layouts protegidos e shell compartilhado com variação de densidade por papel.
 **Where**: `frontend/src/features/auth/`
 **Depends on**: T5
@@ -601,7 +603,7 @@ git commit -m "feat(integracao): conecta frontend à API com sessão tipada"
 - MCP: editor local
 - Skills: `tlc-spec-driven`, `superpowers:test-driven-development`, `product-design:image-to-code`
 
-- [ ] **Step 1: Escrever ao menos 8 testes RED de autenticação e guard**
+- [x] **Step 1: Escrever ao menos 8 testes RED de autenticação e guard**
 
 ```tsx
 it("routes an engineer from the API profile without inspecting the email", async () => {
@@ -621,11 +623,11 @@ it("routes an engineer from the API profile without inspecting the email", async
 
 Completar a suíte com: `ROLE_CLIENTE -> /client`; CREA visível/obrigatório só para engenheiro; payload cliente sem `crea`; campos não sensíveis preservados em 409/422; visitante redirecionado antes do filho montar; papel errado enviado à própria home; aviso `aria-live` de sessão expirada.
 
-- [ ] **Step 2: Executar RED focado**
+- [x] **Step 2: Executar RED focado**
 
 Expected: FAIL pela inexistência de `AuthForm`, `ProtectedArea`, `/register` e shell novo.
 
-- [ ] **Step 3: Implementar design tokens e metadata**
+- [x] **Step 3: Implementar design tokens e metadata**
 
 Em `globals.css`, declarar os tokens aprovados e foco consistente:
 
@@ -646,7 +648,7 @@ Em `globals.css`, declarar os tokens aprovados e foco consistente:
 
 `layout.tsx` deve usar `lang="pt-BR"`, title `Vistor.IA | Vistoria predial inteligente` e descrição sem MedFlow.
 
-- [ ] **Step 4: Implementar formulários e guards**
+- [x] **Step 4: Implementar formulários e guards**
 
 ```tsx
 <ProtectedArea allowedRole="ROLE_CLIENTE">
@@ -656,7 +658,7 @@ Em `globals.css`, declarar os tokens aprovados e foco consistente:
 
 O submit usa `perfil` da resposta para `writeSession` e `router.replace(roleHome(perfil))`; `ProtectedArea` só monta `children` depois da validação cliente.
 
-- [ ] **Step 5: Executar gates, buscar MedFlow e commitar**
+- [x] **Step 5: Executar gates, buscar MedFlow e commitar**
 
 ```powershell
 rg -n "MedFlow|medflow" frontend/src
@@ -675,11 +677,11 @@ git commit -m "feat(frontend): implementa identidade e acesso Vistor.IA"
 
 **Done when**:
 
-- [ ] Login e cadastro direcionam pelo `perfil` real.
-- [ ] CREA é condicional e senha/token não aparecem em logs.
-- [ ] Área errada não monta nem dispara chamada protegida.
-- [ ] Marca, metadata, paleta, foco e movimento reduzido obedecem a spec.
-- [ ] Pelo menos 16 testes frontend, lint e build passam.
+- [x] Login e cadastro direcionam pelo `perfil` real.
+- [x] CREA é condicional e senha/token não aparecem em logs.
+- [x] Área errada não monta nem dispara chamada protegida.
+- [x] Marca, metadata, paleta, foco e movimento reduzido obedecem a spec.
+- [x] Pelo menos 16 testes frontend, lint e build passam.
 
 **Tests**: component + unit
 **Gate**: Frontend focused + Frontend full
