@@ -45,10 +45,10 @@
 ## Handoff
 
 - **Feature**: .specs/features/autenticacao-e-acesso
-- **Phase / Task**: Phase 1 - Specify (criando spec.md)
-- **Completed**: infraestrutura transversal, database migrations V1, tratamento de erros RFC 9457, storage service
-- **In-progress**: .specs/features/autenticacao-e-acesso/spec.md
-- **Next step**: Validar a spec da nova feature com validate_spec.py
+- **Phase / Task**: Phase 4 - Validate & Close
+- **Completed**: Implementação completa de Usuario (T1), DTOs (T2), Segurança (T3), Service (T4) e API (T5). Testes unitários e de integração concluídos. Commits atômicos feitos.
+- **In-progress**: n/a
+- **Next step**: Iniciar planejamento da próxima feature (ex: Geração de Laudos ou Gestão de Vistorias)
 - **Blockers**: none
-- **Uncommitted files**: yes (spec realignments)
+- **Uncommitted files**: none
 - **Branch**: main
