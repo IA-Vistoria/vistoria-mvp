@@ -5,13 +5,18 @@ import br.com.vistoriapredial.usuario.application.dto.AuthResponseDto;
 import br.com.vistoriapredial.usuario.application.dto.LoginRequestDto;
 import br.com.vistoriapredial.usuario.application.dto.RegisterRequestDto;
 import br.com.vistoriapredial.usuario.application.exception.UsuarioConflictException;
+import br.com.vistoriapredial.usuario.application.exception.EngineerRegistrationDeniedException;
 import br.com.vistoriapredial.usuario.domain.PerfilEnum;
 import br.com.vistoriapredial.usuario.domain.Usuario;
 import br.com.vistoriapredial.usuario.persistence.UsuarioRepository;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 @Service
 public class UsuarioService {
@@ -19,11 +24,17 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final String engineerRegistrationCode;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public UsuarioService(
+            UsuarioRepository usuarioRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            @Value("${app.engineer-registration-code:}") String engineerRegistrationCode) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.engineerRegistrationCode = engineerRegistrationCode;
     }
 
     @Transactional
@@ -35,8 +46,13 @@ public class UsuarioService {
         String crea = request.crea();
         if (request.perfil() == PerfilEnum.ROLE_CLIENTE) {
             crea = null;
-        } else if (request.perfil() == PerfilEnum.ROLE_ENGENHEIRO && (crea == null || crea.isBlank())) {
-            throw new IllegalArgumentException("Engenheiro deve informar o CREA");
+        } else if (request.perfil() == PerfilEnum.ROLE_ENGENHEIRO) {
+            if (crea == null || crea.isBlank()) {
+                throw new IllegalArgumentException("Engenheiro deve informar o CREA");
+            }
+            if (!codigoConviteValido(request.codigoConvite())) {
+                throw new EngineerRegistrationDeniedException();
+            }
         }
 
         Usuario usuario = new Usuario(
@@ -66,5 +82,15 @@ public class UsuarioService {
         String token = jwtService.generateToken(usuario.getEmail(), usuario.getId(), usuario.getPerfil().name());
 
         return new AuthResponseDto(token, usuario.getId(), usuario.getNome(), usuario.getPerfil().name());
+    }
+
+    private boolean codigoConviteValido(String codigoInformado) {
+        if (engineerRegistrationCode == null || engineerRegistrationCode.isBlank()
+                || codigoInformado == null || codigoInformado.isBlank()) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                engineerRegistrationCode.getBytes(StandardCharsets.UTF_8),
+                codigoInformado.getBytes(StandardCharsets.UTF_8));
     }
 }

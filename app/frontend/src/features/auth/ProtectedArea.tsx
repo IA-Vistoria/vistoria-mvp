@@ -43,7 +43,7 @@ export function ProtectedArea({ allowedRole, children }: ProtectedAreaProps) {
     function handleExpiredSession() {
       removeSession();
       setNotice("Sua sessão expirou. Entre novamente para continuar.");
-      replace("/login");
+      replace("/login?motivo=sessao-expirada");
     }
 
     window.addEventListener(SESSION_EXPIRED_EVENT, handleExpiredSession);

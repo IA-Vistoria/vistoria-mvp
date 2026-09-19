@@ -6,6 +6,8 @@ import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceExce
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
+import br.com.vistoriapredial.usuario.application.exception.EngineerRegistrationDeniedException;
+import br.com.vistoriapredial.usuario.application.exception.UsuarioConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.net.URI;
 import java.util.List;
@@ -42,6 +45,32 @@ import java.util.stream.Stream;
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(UsuarioConflictException.class)
+    public ResponseEntity<ProblemDetail> handleUsuarioConflict(
+            UsuarioConflictException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.CONFLICT,
+                ProblemTypes.EMAIL_ALREADY_EXISTS,
+                "E-mail já cadastrado",
+                exception.getMessage(),
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(EngineerRegistrationDeniedException.class)
+    public ResponseEntity<ProblemDetail> handleEngineerRegistrationDenied(
+            EngineerRegistrationDeniedException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.FORBIDDEN,
+                ProblemTypes.FORBIDDEN,
+                "Cadastro profissional não autorizado",
+                "O código de convite profissional é inválido ou não está configurado.",
+                URI.create(request.getRequestURI())
+        );
+    }
 
     /**
      * Trata erros de invariantes e validações do construtor de entidades.
@@ -109,7 +138,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 HttpStatus.CONFLICT,
                 ProblemTypes.STALE_INSPECTION,
                 "Vistoria desatualizada",
-                exception.getMessage(),
+                "A vistoria já foi processada ou alterada por outra sessão.",
                 URI.create(request.getRequestURI())
         );
     }
@@ -297,8 +326,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return createResponse(
                 HttpStatus.UNAUTHORIZED,
                 ProblemTypes.UNAUTHORIZED,
-                "Unauthorized",
+                "Não autenticado",
                 exception.getMessage(),
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ProblemDetail> handleAccessDenied(
+            AccessDeniedException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.FORBIDDEN,
+                ProblemTypes.FORBIDDEN,
+                "Acesso negado",
+                "Seu perfil não possui permissão para acessar este recurso.",
                 URI.create(request.getRequestURI())
         );
     }

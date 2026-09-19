@@ -3,7 +3,7 @@
 import { ArrowRight, Building2, HardHat, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { ApiError } from "@/lib/api";
 import { setSession, type UserRole } from "@/lib/auth";
@@ -14,6 +14,8 @@ interface AuthFormProps {
   mode: "login" | "register";
 }
 
+const subscribeLocation = () => () => undefined;
+
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const [nome, setNome] = useState("");
@@ -21,10 +23,19 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [senha, setSenha] = useState("");
   const [perfil, setPerfil] = useState<UserRole>("ROLE_CLIENTE");
   const [crea, setCrea] = useState("");
+  const [codigoConvite, setCodigoConvite] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   const isRegister = mode === "register";
+  const expiredSession = useSyncExternalStore(
+    subscribeLocation,
+    () => new URLSearchParams(window.location.search).get("motivo") === "sessao-expirada",
+    () => false,
+  );
+  const notice = !isRegister && expiredSession
+    ? "Sua sessão expirou. Entre novamente para continuar."
+    : "";
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,13 +50,16 @@ export function AuthForm({ mode }: AuthFormProps) {
             email: email.trim(),
             senha,
             perfil,
-            ...(perfil === "ROLE_ENGENHEIRO" ? { crea: crea.trim() } : {}),
+            ...(perfil === "ROLE_ENGENHEIRO"
+              ? { crea: crea.trim(), codigoConvite: codigoConvite.trim() }
+              : {}),
           })
         : await login({ email: email.trim(), senha });
       setSession(session);
       router.replace(roleHome(session.perfil));
     } catch (reason: unknown) {
       setSenha("");
+      setCodigoConvite("");
       setError(
         reason instanceof ApiError
           ? reason.problem.detail
@@ -92,9 +106,9 @@ export function AuthForm({ mode }: AuthFormProps) {
               : "Acesse suas vistorias e acompanhe cada etapa."}
           </p>
 
-          {error ? (
+          {notice || error ? (
             <div className="form-alert" role="alert">
-              {error}
+              {error || notice}
             </div>
           ) : null}
 
@@ -116,7 +130,14 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <span>Perfil</span>
                 <select
                   value={perfil}
-                  onChange={(event) => setPerfil(event.target.value as UserRole)}
+                  onChange={(event) => {
+                    const nextRole = event.target.value as UserRole;
+                    setPerfil(nextRole);
+                    if (nextRole === "ROLE_CLIENTE") {
+                      setCrea("");
+                      setCodigoConvite("");
+                    }
+                  }}
                 >
                   <option value="ROLE_CLIENTE">Cliente / responsável pelo imóvel</option>
                   <option value="ROLE_ENGENHEIRO">Engenheiro civil</option>
@@ -125,16 +146,29 @@ export function AuthForm({ mode }: AuthFormProps) {
             ) : null}
 
             {isRegister && perfil === "ROLE_ENGENHEIRO" ? (
-              <label>
-                <span>CREA</span>
-                <input
-                  autoComplete="off"
-                  required
-                  value={crea}
-                  onChange={(event) => setCrea(event.target.value)}
-                  placeholder="Número de registro profissional"
-                />
-              </label>
+              <>
+                <label>
+                  <span>CREA</span>
+                  <input
+                    autoComplete="off"
+                    required
+                    value={crea}
+                    onChange={(event) => setCrea(event.target.value)}
+                    placeholder="Número de registro profissional"
+                  />
+                </label>
+                <label>
+                  <span>Código de convite</span>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    value={codigoConvite}
+                    onChange={(event) => setCodigoConvite(event.target.value)}
+                    placeholder="Fornecido pela equipe Vistor.IA"
+                  />
+                </label>
+              </>
             ) : null}
 
             <label>

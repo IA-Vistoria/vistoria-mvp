@@ -1,6 +1,7 @@
 package br.com.vistoriapredial.usuario.web;
 
 import br.com.vistoriapredial.config.security.CustomAuthenticationEntryPoint;
+import br.com.vistoriapredial.config.security.CustomAccessDeniedHandler;
 import br.com.vistoriapredial.config.security.JwtAuthFilter;
 import br.com.vistoriapredial.config.security.JwtService;
 import br.com.vistoriapredial.config.security.SecurityConfig;
@@ -9,6 +10,8 @@ import br.com.vistoriapredial.usuario.application.dto.AuthResponseDto;
 import br.com.vistoriapredial.usuario.application.dto.LoginRequestDto;
 import br.com.vistoriapredial.usuario.application.dto.RegisterRequestDto;
 import br.com.vistoriapredial.usuario.domain.PerfilEnum;
+import br.com.vistoriapredial.usuario.application.exception.UsuarioConflictException;
+import br.com.vistoriapredial.usuario.application.exception.EngineerRegistrationDeniedException;
 import br.com.vistoriapredial.shared.web.error.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -25,10 +28,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = {AuthController.class, GlobalExceptionHandler.class})
-@Import({SecurityConfig.class, JwtAuthFilter.class, CustomAuthenticationEntryPoint.class})
+@Import({SecurityConfig.class, JwtAuthFilter.class, CustomAuthenticationEntryPoint.class,
+        CustomAccessDeniedHandler.class})
 class AuthControllerTest {
 
     @Autowired
@@ -46,7 +51,8 @@ class AuthControllerTest {
     @Test
     @DisplayName("Deve retornar 201 ao registrar usuário válido")
     void registerValid() throws Exception {
-        RegisterRequestDto req = new RegisterRequestDto("Nome", "email@ex.com", "senha123", PerfilEnum.ROLE_CLIENTE, null);
+        RegisterRequestDto req = new RegisterRequestDto(
+                "Nome", "email@ex.com", "senha123", PerfilEnum.ROLE_CLIENTE, null, null);
         AuthResponseDto res = new AuthResponseDto("token", 1L, "Nome", "ROLE_CLIENTE");
 
         when(usuarioService.register(any())).thenReturn(res);
@@ -61,7 +67,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("Deve retornar 422 se os inputs forem inválidos")
     void registerInvalid() throws Exception {
-        RegisterRequestDto req = new RegisterRequestDto("", "invalido", "12", null, null);
+        RegisterRequestDto req = new RegisterRequestDto("", "invalido", "12", null, null, null);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,5 +86,38 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Deve retornar 409 ProblemDetail para email duplicado")
+    void registerDuplicatedEmail() throws Exception {
+        RegisterRequestDto req = new RegisterRequestDto(
+                "Nome", "email@ex.com", "senha123", PerfilEnum.ROLE_CLIENTE, null, null);
+        when(usuarioService.register(any()))
+                .thenThrow(new UsuarioConflictException("Email já cadastrado"));
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type")
+                        .value("urn:vistoria:problem:email-already-exists"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar 403 ProblemDetail para convite profissional inválido")
+    void registerEngineerWithInvalidInvite() throws Exception {
+        RegisterRequestDto req = new RegisterRequestDto(
+                "Engenheira", "engenheira@ex.com", "senha123",
+                PerfilEnum.ROLE_ENGENHEIRO, "CREA123", "invalido");
+        when(usuarioService.register(any())).thenThrow(new EngineerRegistrationDeniedException());
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:forbidden"));
     }
 }

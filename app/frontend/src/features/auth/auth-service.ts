@@ -10,6 +10,7 @@ export interface RegisterRequest extends LoginRequest {
   nome: string;
   perfil: UserRole;
   crea?: string;
+  codigoConvite?: string;
 }
 
 export function login(request: LoginRequest): Promise<AuthSession> {

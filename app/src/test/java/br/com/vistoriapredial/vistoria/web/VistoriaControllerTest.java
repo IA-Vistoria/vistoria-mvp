@@ -93,6 +93,33 @@ class VistoriaControllerTest {
 
     @Test
     @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldRejectAddressLargerThanPersistenceLimit() throws Exception {
+        mockMvc.perform(post("/api/vistorias")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"endereco\":\"" + "a".repeat(256) + "\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+    }
+
+    @Test
+    void shouldReturnProblemDetailWhenAuthenticationIsMissing() throws Exception {
+        mockMvc.perform(get("/api/vistorias/minhas"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:unauthorized"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnProblemDetailWhenRoleHasNoPermission() throws Exception {
+        mockMvc.perform(get("/api/vistorias/pendentes"))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:forbidden"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
     void shouldUploadImagem() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "img".getBytes());
         Vistoria updated = new Vistoria();
@@ -217,12 +244,17 @@ class VistoriaControllerTest {
     @Test
     @WithMockUser(username = "eng@test.com", roles = "ENGENHEIRO")
     void shouldReturnConflictWhenEngineerCaseIsStale() throws Exception {
-        when(vistoriaService.buscarEvidencia(10L, 20L, engenheiro))
+        when(vistoriaService.aprovarVistoria(eq(10L), any(), eq("Parecer")))
                 .thenThrow(new StaleInspectionException());
 
-        mockMvc.perform(get("/api/vistorias/10/imagens/20/conteudo"))
+        mockMvc.perform(post("/api/vistorias/10/analisar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"parecer\":\"Parecer\",\"aprovado\":true}"))
                 .andExpect(status().isConflict())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:stale-inspection"));
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:stale-inspection"))
+                .andExpect(jsonPath("$.detail")
+                        .value("A vistoria já foi processada ou alterada por outra sessão."));
     }
+
 }

@@ -24,6 +24,9 @@ public record RegisterRequestDto(
         PerfilEnum perfil,
 
         @Size(max = 20, message = "O CREA deve ter no máximo 20 caracteres")
-        String crea
+        String crea,
+
+        @Size(max = 128, message = "O código de convite deve ter no máximo 128 caracteres")
+        String codigoConvite
 ) {
 }

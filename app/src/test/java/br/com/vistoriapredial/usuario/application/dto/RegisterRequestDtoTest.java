@@ -33,6 +33,7 @@ class RegisterRequestDtoTest {
                 "joao@example.com",
                 "123456",
                 PerfilEnum.ROLE_CLIENTE,
+                null,
                 null
         );
 
@@ -48,6 +49,7 @@ class RegisterRequestDtoTest {
                 "joao", // email inválido
                 "123", // senha muito curta
                 PerfilEnum.ROLE_CLIENTE,
+                null,
                 null
         );
 

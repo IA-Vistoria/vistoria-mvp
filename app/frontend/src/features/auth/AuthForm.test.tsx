@@ -36,6 +36,7 @@ const clientSession = {
 
 describe("AuthForm", () => {
   beforeEach(() => {
+    window.history.replaceState(null, "", "/login");
     replace.mockReset();
     vi.mocked(login).mockReset();
     vi.mocked(register).mockReset();
@@ -74,8 +75,64 @@ describe("AuthForm", () => {
     await user.selectOptions(screen.getByLabelText("Perfil"), "ROLE_ENGENHEIRO");
 
     expect((screen.getByLabelText("CREA") as HTMLInputElement).required).toBe(true);
+    expect((screen.getByLabelText("Código de convite") as HTMLInputElement).required).toBe(true);
     await user.selectOptions(screen.getByLabelText("Perfil"), "ROLE_CLIENTE");
     expect(screen.queryByLabelText("CREA")).toBeNull();
+    expect(screen.queryByLabelText("Código de convite")).toBeNull();
+  });
+
+  it("envia o código de convite somente no cadastro de engenheiro", async () => {
+    vi.mocked(register).mockResolvedValue(engineerSession);
+    const user = userEvent.setup();
+    render(<AuthForm mode="register" />);
+
+    await user.type(screen.getByLabelText("Nome completo"), "Ana Engenheira");
+    await user.selectOptions(screen.getByLabelText("Perfil"), "ROLE_ENGENHEIRO");
+    await user.type(screen.getByLabelText("CREA"), "CREA-SP 123");
+    await user.type(screen.getByLabelText("Código de convite"), "convite-seguro");
+    await user.type(screen.getByLabelText("E-mail"), "ana@exemplo.com");
+    await user.type(screen.getByLabelText("Senha"), "segredo123");
+    await user.click(screen.getByRole("button", { name: "Criar conta" }));
+
+    await waitFor(() => expect(register).toHaveBeenCalledWith(expect.objectContaining({
+      perfil: "ROLE_ENGENHEIRO",
+      crea: "CREA-SP 123",
+      codigoConvite: "convite-seguro",
+    })));
+  });
+
+  it("mascara e limpa o convite profissional após erro", async () => {
+    vi.mocked(register).mockRejectedValue(new ApiError({
+      type: "urn:vistoria:problem:forbidden",
+      title: "Cadastro profissional não autorizado",
+      status: 403,
+      detail: "O código de convite profissional é inválido.",
+    }));
+    const user = userEvent.setup();
+    render(<AuthForm mode="register" />);
+
+    await user.type(screen.getByLabelText("Nome completo"), "Ana Engenheira");
+    await user.selectOptions(screen.getByLabelText("Perfil"), "ROLE_ENGENHEIRO");
+    await user.type(screen.getByLabelText("CREA"), "CREA-SP 123");
+    const convite = screen.getByLabelText("Código de convite") as HTMLInputElement;
+    expect(convite.type).toBe("password");
+    await user.type(convite, "convite-incorreto");
+    await user.type(screen.getByLabelText("E-mail"), "ana@exemplo.com");
+    await user.type(screen.getByLabelText("Senha"), "segredo123");
+    await user.click(screen.getByRole("button", { name: "Criar conta" }));
+
+    expect(await screen.findByRole("alert")).toBeDefined();
+    expect(convite.value).toBe("");
+  });
+
+  it("exibe o aviso de sessão expirada na tela de login", async () => {
+    window.history.replaceState(null, "", "/login?motivo=sessao-expirada");
+
+    render(<AuthForm mode="login" />);
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Sua sessão expirou. Entre novamente para continuar.",
+    );
   });
 
   it("envia cadastro de cliente sem o campo CREA", async () => {

@@ -93,6 +93,6 @@ describe("ProtectedArea", () => {
 
     expect(await screen.findByText("Sua sessão expirou. Entre novamente para continuar.")).toBeDefined();
     expect(screen.queryByText("conteúdo protegido")).toBeNull();
-    expect(replace).toHaveBeenCalledWith("/login");
+    expect(replace).toHaveBeenCalledWith("/login?motivo=sessao-expirada");
   });
 });
