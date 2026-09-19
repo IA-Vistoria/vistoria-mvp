@@ -66,7 +66,7 @@ graph TD
 - **Purpose**: Orquestra a máquina de estados, autorização por recurso e chamadas a `StorageService`/`IaIntegrationService`.
 - **Location**: `src/main/java/br/com/vistoriapredial/vistoria/application/`
 - **Detalhe relevante**: `submeterVistoria` não é `@Transactional` como um todo — usa `TransactionTemplate` para abrir e fechar duas transações curtas, deixando a chamada de IA fora de qualquer transação (ver ADR em `docs/architecture.md`, seção 6).
-- **Paginação**: `listarVistoriasCliente`/`listarPendentesEngenharia` buscam a página sem `@EntityGraph` (evita paginação em memória) e recarregam `imagens` da página em lote via `findByIdIn`.
+- **Paginação**: o controller preserva `page` e `size`, mas fixa `dataCriacao DESC, id DESC` e ignora `sort` externo. `listarVistoriasCliente`/`listarPendentesEngenharia` buscam a página sem `@EntityGraph` (evita paginação em memória) e recarregam `imagens` da página em lote via `findByIdIn`.
 
 ### `IaIntegrationService`
 - **Purpose**: Porta que abstrai a geração do pré-laudo. `MockIaIntegrationService` é o único adaptador ativo nesta versão; a integração real com OCI Generative AI está fora do escopo desta feature — ver `.specs/features/integracao-oci/`.

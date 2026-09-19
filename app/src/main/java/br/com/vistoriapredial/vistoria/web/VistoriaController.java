@@ -7,6 +7,7 @@ import br.com.vistoriapredial.vistoria.application.EvidenceContent;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -22,6 +23,10 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/vistorias")
 public class VistoriaController {
+
+    private static final Sort ORDENACAO_VISTORIAS = Sort.by(
+            Sort.Order.desc("dataCriacao"),
+            Sort.Order.desc("id"));
 
     private final VistoriaService vistoriaService;
     private final UsuarioRepository usuarioRepository;
@@ -52,9 +57,10 @@ public class VistoriaController {
     @PreAuthorize("hasRole('CLIENTE')")
     public ResponseEntity<PaginaResponseDto<VistoriaResponseDto>> listarMinhas(
             Authentication auth,
-            @PageableDefault(size = 10, sort = {"dataCriacao", "id"}, direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 10) Pageable pageable) {
         Usuario cliente = getUsuario(auth);
-        Page<Vistoria> minhas = vistoriaService.listarVistoriasCliente(cliente, pageable);
+        Page<Vistoria> minhas = vistoriaService.listarVistoriasCliente(
+                cliente, paginacaoDeterministica(pageable));
         return ResponseEntity.ok(PaginaResponseDto.from(minhas, VistoriaResponseDto::from));
     }
 
@@ -111,9 +117,10 @@ public class VistoriaController {
     @PreAuthorize("hasRole('ENGENHEIRO')")
     public ResponseEntity<PaginaResponseDto<VistoriaResponseDto>> listarPendentes(
             Authentication auth,
-            @PageableDefault(size = 10, sort = {"dataCriacao", "id"}, direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 10) Pageable pageable) {
         Usuario engenheiro = getUsuario(auth);
-        Page<Vistoria> pendentes = vistoriaService.listarPendentesEngenharia(engenheiro, pageable);
+        Page<Vistoria> pendentes = vistoriaService.listarPendentesEngenharia(
+                engenheiro, paginacaoDeterministica(pageable));
         return ResponseEntity.ok(PaginaResponseDto.from(pendentes, VistoriaResponseDto::from));
     }
 
@@ -133,5 +140,9 @@ public class VistoriaController {
         }
         
         return ResponseEntity.ok(VistoriaResponseDto.from(v));
+    }
+
+    private Pageable paginacaoDeterministica(Pageable pageable) {
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), ORDENACAO_VISTORIAS);
     }
 }

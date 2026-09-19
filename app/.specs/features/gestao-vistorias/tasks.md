@@ -18,6 +18,7 @@ Implement these tasks with the `tlc-spec-driven` skill.
 - [x] **T5**: Fluxo do engenheiro em `VistoriaService` (aprovação/devolução), com `VistoriaServiceTest`.
 - [x] **T6**: Endpoints do cliente em `VistoriaController`, com `VistoriaControllerTest`.
 - [x] **T7**: Endpoints do engenheiro em `VistoriaController`, com `VistoriaControllerTest`.
+- [x] **T8**: Ordenação determinística e segura nas listagens paginadas.
 
 Pendências identificadas em revisões anteriores e já resolvidas: índices de banco para `cliente_id`/`status` (`V5__add_vistoria_indexes.sql`), separação da chamada de IA em transações curtas (`VistoriaService.submeterVistoria`) e paginação de `/minhas` e `/pendentes` (`PaginaResponseDto`, com `GET /api/vistorias/{id}` adicionado para o cliente buscar um recurso específico sem depender da lista).
 
@@ -177,6 +178,22 @@ T6 → T7
 **Done when**:
 - [x] `VistoriaControllerTest` valida HTTP 200 com MockMvc.
 - [x] Segurança permite apenas perfil `ROLE_ENGENHEIRO` acessar essas rotas.
+
+**Tests**: integration
+**Gate**: Full
+
+---
+
+### T8: [Fixar Ordenação das Listagens Paginadas]
+**What**: Preservar `page` e `size`, ignorar ordenação externa e aplicar `dataCriacao DESC, id DESC` em ambas as listagens.
+**Where**: `VistoriaController` e `VistoriaControllerTest`
+**Depends on**: T7
+**Requirement**: VISTORIA-01, VISTORIA-03
+
+**Done when**:
+- [x] `/minhas` envia ao serviço a página e o tamanho solicitados com ordenação fixa por `dataCriacao DESC, id DESC`.
+- [x] `/pendentes` envia ao serviço a página e o tamanho solicitados com ordenação fixa por `dataCriacao DESC, id DESC`.
+- [x] Um parâmetro `sort` externo inválido não altera a ordenação nem causa erro HTTP.
 
 **Tests**: integration
 **Gate**: Full

@@ -17,12 +17,15 @@ import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mock.web.MockMultipartFile;
@@ -34,9 +37,11 @@ import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -186,6 +191,25 @@ class VistoriaControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "eng@test.com", roles = "ENGENHEIRO")
+    void shouldFixarOrdenacaoDaFilaMesmoComSortExternoInvalido() throws Exception {
+        when(vistoriaService.listarPendentesEngenharia(any(), any()))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(2, 7), 0));
+
+        mockMvc.perform(get("/api/vistorias/pendentes?page=2&size=7&sort=campoInexistente,asc"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(vistoriaService).listarPendentesEngenharia(eq(engenheiro), pageableCaptor.capture());
+        Pageable pageable = pageableCaptor.getValue();
+        assertThat(pageable.getPageNumber()).isEqualTo(2);
+        assertThat(pageable.getPageSize()).isEqualTo(7);
+        assertThat(pageable.getSort()).containsExactly(
+                Sort.Order.desc("dataCriacao"),
+                Sort.Order.desc("id"));
+    }
+
+    @Test
     @WithMockUser(username = "client@test.com", roles = "CLIENTE")
     void shouldListMinhasComPaginacao() throws Exception {
         Vistoria v = new Vistoria();
@@ -203,6 +227,25 @@ class VistoriaControllerTest {
                 .andExpect(jsonPath("$.tamanho").value(5))
                 .andExpect(jsonPath("$.totalElementos").value(6))
                 .andExpect(jsonPath("$.totalPaginas").value(2));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldFixarOrdenacaoDasMinhasMesmoComSortExternoInvalido() throws Exception {
+        when(vistoriaService.listarVistoriasCliente(any(), any()))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(3, 4), 0));
+
+        mockMvc.perform(get("/api/vistorias/minhas?page=3&size=4&sort=campoInexistente,asc"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(vistoriaService).listarVistoriasCliente(eq(cliente), pageableCaptor.capture());
+        Pageable pageable = pageableCaptor.getValue();
+        assertThat(pageable.getPageNumber()).isEqualTo(3);
+        assertThat(pageable.getPageSize()).isEqualTo(4);
+        assertThat(pageable.getSort()).containsExactly(
+                Sort.Order.desc("dataCriacao"),
+                Sort.Order.desc("id"));
     }
 
     @Test

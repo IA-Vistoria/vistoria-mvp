@@ -95,6 +95,7 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 - IF o cliente tenta alterar uma vistoria que não está `EM_RASCUNHO` THEN o sistema SHALL bloquear com HTTP 403/409.
 - IF o cliente solicita revisão sem ter feito upload de nenhuma imagem THEN o sistema SHALL rejeitar a finalização.
 - IF a IA identificar conteúdos impróprios nas imagens THEN o sistema SHALL abortar a geração e notificar a violação.
+- WHEN o cliente ou o engenheiro consulta uma lista paginada THEN o sistema SHALL ordenar por `dataCriacao DESC` e `id DESC`, ignorando ordenação externa para preservar o contrato e o desempate determinístico.
 
 ---
 
