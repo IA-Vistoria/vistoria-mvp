@@ -1,7 +1,10 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  SESSION_KEY,
   SESSION_EXPIRED_EVENT,
   setSession,
   type AuthSession,
@@ -36,6 +39,33 @@ describe("ProtectedArea", () => {
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
     expect(screen.queryByText("conteúdo protegido")).toBeNull();
+  });
+
+  it("preserva uma sessão persistida durante a hidratação da página", async () => {
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify(clientSession));
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(
+      <ProtectedArea allowedRole="ROLE_CLIENTE">
+        <span>conteúdo protegido</span>
+      </ProtectedArea>,
+    );
+    document.body.appendChild(container);
+
+    let root!: ReturnType<typeof hydrateRoot>;
+    await act(async () => {
+      root = hydrateRoot(
+        container,
+        <ProtectedArea allowedRole="ROLE_CLIENTE">
+          <span>conteúdo protegido</span>
+        </ProtectedArea>,
+      );
+    });
+
+    expect(await screen.findByText("conteúdo protegido")).toBeDefined();
+    expect(replace).not.toHaveBeenCalled();
+
+    await act(async () => root.unmount());
+    container.remove();
   });
 
   it("envia papel incorreto para sua própria home sem montar o conteúdo", async () => {

@@ -18,12 +18,18 @@ interface ProtectedAreaProps {
   children: React.ReactNode;
 }
 
+const subscribeHydration = () => () => undefined;
+
 export function ProtectedArea({ allowedRole, children }: ProtectedAreaProps) {
   const { replace } = useRouter();
   const session = useSyncExternalStore(subscribeSession, getSession, getServerSession);
+  const hydrated = useSyncExternalStore(subscribeHydration, () => true, () => false);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
     if (!session) {
       replace("/login");
       return;
@@ -31,7 +37,7 @@ export function ProtectedArea({ allowedRole, children }: ProtectedAreaProps) {
     if (session.perfil !== allowedRole) {
       replace(roleHome(session.perfil));
     }
-  }, [allowedRole, replace, session]);
+  }, [allowedRole, hydrated, replace, session]);
 
   useEffect(() => {
     function handleExpiredSession() {
@@ -49,7 +55,7 @@ export function ProtectedArea({ allowedRole, children }: ProtectedAreaProps) {
       <p className={notice ? "session-notice" : "sr-only"} aria-live="assertive">
         {notice}
       </p>
-      {session?.perfil === allowedRole ? children : null}
+      {hydrated && session?.perfil === allowedRole ? children : null}
     </>
   );
 }
