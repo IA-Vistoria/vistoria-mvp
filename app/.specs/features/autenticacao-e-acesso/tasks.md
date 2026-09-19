@@ -5,6 +5,8 @@
 - [x] **T1**: Implementar `Usuario` entity, `PerfilEnum` e `UsuarioRepository`.
 - [x] **T2**: Implementar `RegisterRequestDto`, `LoginRequestDto`, `AuthResponseDto`, e `UsuarioConflictException`.
 - [x] **T3**: Implementar `JwtService`, `JwtAuthFilter`, `CustomAuthenticationEntryPoint` e `SecurityConfig`.
+- [x] **T4**: Implementar `UsuarioService` orquestrando repositório, BCrypt e validação de CREA.
+- [ ] **T5**: Implementar `AuthController` com endpoints de `/register` e `/login`.
 
 ## Task Breakdown
 
