@@ -951,6 +951,7 @@ a {
 
   .tracking-panel,
   .workflow-submit { align-items: stretch; flex-direction: column; }
+  .workflow-submit { position: static; }
   .tracking-panel .button { margin-left: 0; }
   .workflow-progress { grid-template-columns: 1fr; }
   .protocol-item { grid-template-columns: 1fr; }
