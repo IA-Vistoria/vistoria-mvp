@@ -3,6 +3,12 @@
 *.pem
 *.ppk
 
+# Wallet do Autonomous Database (mTLS) — nunca versionar, distribuir só por
+# canal seguro (gerenciador de senhas), ver docs/onboarding-backend-dev.md
+*wallet*.zip
+wallet/
+Wallet_*/
+
 # Variáveis de ambiente locais
 .env
 *.env.local
@@ -15,6 +21,9 @@
 !*.tfvars.example
 crash.log
 crash.*.log
+tfplan*
+plan_retry.log
+apply_retry.log
 
 # Ansible
 *.retry

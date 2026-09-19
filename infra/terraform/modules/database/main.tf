@@ -14,6 +14,11 @@ resource "oci_database_autonomous_database" "this" {
 
   lifecycle {
     prevent_destroy = true
-    ignore_changes  = [admin_password]
+    # admin_password: nunca reaplicar o valor do tfvars por cima de uma
+    # eventual rotação manual. cpu_core_count: a API do Autonomous AI
+    # Database (26ai) Always Free reporta 0 de volta e rejeita qualquer
+    # tentativa de "corrigir" para 1 ("feature not supported in an Always
+    # Free Autonomous AI Database") — deixa a OCI gerenciar esse campo.
+    ignore_changes = [admin_password, cpu_core_count]
   }
 }

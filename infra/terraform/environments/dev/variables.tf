@@ -84,9 +84,9 @@ variable "db_display_name" {
 }
 
 variable "db_version" {
-  description = "Versão do Oracle Database. Confirmar suporte a 23ai/AI Vector Search na região escolhida antes do apply (ver docs/spec-terraform.md)."
+  description = "Versão do Oracle Database. Confirmado para sa-saopaulo-1 (Always Free): 26ai ou 19c (ver docs/spec-terraform.md)."
   type        = string
-  default     = "23ai"
+  default     = "26ai"
 }
 
 variable "db_admin_password" {

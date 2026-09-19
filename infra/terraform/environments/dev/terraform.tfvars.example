@@ -19,7 +19,7 @@ bucket_name = "vistoria-fotos"
 
 db_name            = "VISTORIADB"
 db_display_name    = "vistoria-mvp-db"
-db_version         = "23ai"
+db_version         = "26ai" # ou "19c" — confirmado no console para sa-saopaulo-1 (Always Free)
 db_admin_password  = "CHANGE_ME" # 12-30 caracteres, ver requisitos da Autonomous DB
 
 ssh_public_key         = "ssh-ed25519 AAAA... CHANGE_ME"

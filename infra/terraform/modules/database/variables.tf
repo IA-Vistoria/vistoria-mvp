@@ -32,7 +32,7 @@ variable "admin_password" {
 }
 
 variable "db_version" {
-  description = "Versão do Oracle Database. Confirmar no console se a região escolhida já suporta 23ai (AI Vector Search) antes de fixar — ver docs/spec-terraform.md. Não usado nesta fase (sem RAG), mas registrado para não travar decisão futura."
+  description = "Versão do Oracle Database. Confirmado no console (Always Free, sa-saopaulo-1): as opções disponíveis são 26ai e 19c — a OCI avançou a versão além do 23ai previsto na spec original (ver docs/spec-terraform.md). AI Vector Search não é usado nesta fase (sem RAG), mas 26ai já traz esse suporte para não travar decisão futura."
   type        = string
-  default     = "23ai"
+  default     = "26ai"
 }
