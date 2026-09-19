@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.security.authentication.BadCredentialsException;
 
 import java.net.URI;
 import java.util.List;
@@ -212,5 +213,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private String escapeJsonPointerToken(String token) {
         return token.replace("~", "~0").replace("/", "~1");
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ProblemDetail> handleBadCredentials(
+            BadCredentialsException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.UNAUTHORIZED,
+                ProblemTypes.UNAUTHORIZED,
+                "Unauthorized",
+                exception.getMessage(),
+                URI.create(request.getRequestURI())
+        );
     }
 }
