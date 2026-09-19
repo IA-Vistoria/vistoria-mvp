@@ -490,6 +490,8 @@ git commit -m "feat(vistoria): disponibiliza evidências autenticadas"
 
 ### T5: Criar fundação testável de sessão e HTTP
 
+**Status**: Complete
+
 **What**: Instalar o runner aprovado, definir contratos TypeScript, persistência segura da sessão, cliente HTTP único e CORS Spring configurável para JSON, multipart, blob, ProblemDetail e 401.
 **Where**: `frontend/src/lib/` e configuração CORS Spring
 **Depends on**: T4
@@ -501,7 +503,7 @@ git commit -m "feat(vistoria): disponibiliza evidências autenticadas"
 - MCP: terminal e editor local
 - Skills: `tlc-spec-driven`, `superpowers:test-driven-development`
 
-- [ ] **Step 1: Obter confirmação e instalar somente dependências de teste**
+- [x] **Step 1: Obter confirmação e instalar somente dependências de teste**
 
 ```powershell
 npm install --save-dev vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/dom @testing-library/user-event vite-tsconfig-paths
@@ -509,7 +511,7 @@ npm install --save-dev vitest @vitejs/plugin-react jsdom @testing-library/react 
 
 Configurar `vitest.config.mts`, `src/test/setup.ts`, `test: vitest run` e `test:watch: vitest`.
 
-- [ ] **Step 2: Escrever ao menos 8 testes RED**
+- [x] **Step 2: Escrever ao menos 8 testes RED**
 
 ```typescript
 it("does not set JSON content type for FormData", async () => {
@@ -532,7 +534,7 @@ Completar o arquivo com sete testes de mesmo nível: preservar todos os campos R
 
 Adicionar um teste MockMvc de preflight que envia `Origin: http://localhost:3000` e `Access-Control-Request-Method: POST`, esperando `Access-Control-Allow-Origin: http://localhost:3000`; uma origem não listada não recebe o header.
 
-- [ ] **Step 3: Executar RED**
+- [x] **Step 3: Executar RED**
 
 ```powershell
 npm run test -- src/lib
@@ -540,7 +542,7 @@ npm run test -- src/lib
 
 Expected: FAIL por configuração, `ApiError`, `AuthSession` e helpers inexistentes.
 
-- [ ] **Step 4: Implementar contratos estáveis**
+- [x] **Step 4: Implementar contratos estáveis**
 
 ```typescript
 export type UserRole = "ROLE_CLIENTE" | "ROLE_ENGENHEIRO"
@@ -562,7 +564,7 @@ export class ApiError extends Error {
 
 Configurar `app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:3000}` e construir `CorsConfigurationSource` com a lista configurada, métodos `GET`, `POST`, `OPTIONS` e headers `Authorization`, `Content-Type`.
 
-- [ ] **Step 5: Executar frontend full e commitar**
+- [x] **Step 5: Executar frontend full e commitar**
 
 Expected: no mínimo 8 testes frontend, lint e build verdes.
 
@@ -574,11 +576,11 @@ git commit -m "feat(integracao): conecta frontend à API com sessão tipada"
 
 **Done when**:
 
-- [ ] Sessão corrompida/papel inválido é removida.
-- [ ] Multipart mantém boundary do navegador; blobs levam Bearer.
-- [ ] ProblemDetail e respostas sem JSON geram feedback tipado e seguro.
-- [ ] Preflight da origem configurada passa e origem não listada permanece bloqueada.
-- [ ] No mínimo 8 testes, lint e build passam.
+- [x] Sessão corrompida/papel inválido é removida.
+- [x] Multipart mantém boundary do navegador; blobs levam Bearer.
+- [x] ProblemDetail e respostas sem JSON geram feedback tipado e seguro.
+- [x] Preflight da origem configurada passa e origem não listada permanece bloqueada.
+- [x] No mínimo 8 testes, lint e build passam.
 
 **Tests**: unit TypeScript + integração MockMvc CORS
 **Gate**: Frontend focused + Frontend full + Backend full
