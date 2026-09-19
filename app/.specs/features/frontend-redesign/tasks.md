@@ -866,7 +866,7 @@ git commit -m "feat(cliente): implementa protocolo guiado de evidências"
 - MCP: editor local
 - Skills: `tlc-spec-driven`, `superpowers:test-driven-development`, `product-design:image-to-code`
 
-- [ ] **Step 1: Escrever ao menos 8 testes RED**
+- [x] **Step 1: Escrever ao menos 8 testes RED**
 
 ```tsx
 it("keeps both decisions disabled for a blank technical opinion", async () => {
@@ -884,7 +884,7 @@ it("keeps both decisions disabled for a blank technical opinion", async () => {
 
 Completar a suíte com: ordenação por data/id; somente linhas/evidências da API; ausência de severidade/confiança; duas mensagens Human-in-the-Loop; aprovação única com `true`; devolução única com `false` e remoção; 409 bloqueando/refazendo fila; foto indisponível isolada; `URL.revokeObjectURL` na troca e desmontagem.
 
-- [ ] **Step 2: Executar RED e implementar parsing sem inferência**
+- [x] **Step 2: Executar RED e implementar parsing sem inferência**
 
 ```typescript
 export function splitPreReport(value: string | null): string[] {
@@ -895,7 +895,7 @@ export function splitPreReport(value: string | null): string[] {
 }
 ```
 
-- [ ] **Step 3: Implementar imagem autenticada com cleanup**
+- [x] **Step 3: Implementar imagem autenticada com cleanup**
 
 ```tsx
 useEffect(() => {
@@ -915,11 +915,11 @@ useEffect(() => {
 }, [evidence.conteudoUrl])
 ```
 
-- [ ] **Step 4: Implementar fila, workspace e decisão**
+- [x] **Step 4: Implementar fila, workspace e decisão**
 
 O desktop usa evidência à esquerda, pré-laudo ao centro e decisão à direita; tablet/móvel empilham as regiões sem overflow. Parecer `trim()` vazio desabilita ambas as ações. Resposta 409 fecha edição, refaz a fila e informa processamento concorrente.
 
-- [ ] **Step 5: Executar frontend full e commitar**
+- [x] **Step 5: Executar frontend full e commitar**
 
 Expected: pelo menos 38 testes frontend totais, lint e build verdes.
 
@@ -931,11 +931,11 @@ git commit -m "feat(engenheiro): implementa revisão técnica de vistorias"
 
 **Done when**:
 
-- [ ] Fila e detalhe usam somente DTO real e ordem determinística.
-- [ ] Pré-laudo não cria severidade/confiança e contém os dois avisos profissionais.
-- [ ] Parecer é obrigatório; aprovação/devolução são únicas e reconciliadas com servidor.
-- [ ] Falha de uma foto não bloqueia o caso e object URLs são revogadas.
-- [ ] Pelo menos 38 testes frontend, lint e build passam.
+- [x] Fila e detalhe usam somente DTO real e ordem determinística.
+- [x] Pré-laudo não cria severidade/confiança e contém os dois avisos profissionais.
+- [x] Parecer é obrigatório; aprovação/devolução são únicas e reconciliadas com servidor.
+- [x] Falha de uma foto não bloqueia o caso e object URLs são revogadas.
+- [x] Pelo menos 38 testes frontend, lint e build passam.
 
 **Tests**: component + unit
 **Gate**: Frontend focused + Frontend full

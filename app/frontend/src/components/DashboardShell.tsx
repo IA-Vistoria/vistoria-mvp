@@ -3,8 +3,6 @@
 import {
   Building2,
   ClipboardList,
-  FileCheck2,
-  Home,
   LogOut,
   UserRound,
 } from "lucide-react";
@@ -52,18 +50,10 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
         <aside className="engineer-nav" aria-label="Navegação da engenharia">
           <p className="engineer-nav__title">Engenharia</p>
           <nav>
-            <Link href="/engineer">
-              <Home aria-hidden="true" size={19} />
-              Visão geral
-            </Link>
             <Link className="is-active" href="/engineer">
               <ClipboardList aria-hidden="true" size={19} />
               Fila de revisão
             </Link>
-            <span aria-disabled="true">
-              <FileCheck2 aria-hidden="true" size={19} />
-              Laudos
-            </span>
           </nav>
           <button className="nav-logout" type="button" onClick={logout}>
             <LogOut aria-hidden="true" size={19} />

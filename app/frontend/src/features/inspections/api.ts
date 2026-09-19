@@ -33,3 +33,24 @@ export const submitInspection = (inspectionId: number) =>
   apiFetch<Inspection>(`/vistorias/${inspectionId}/submeter`, { method: "POST" });
 
 export const loadEvidence = (url: string) => fetchEvidenceBlob(url);
+
+export const listPendingInspections = () => apiFetch<Inspection[]>("/vistorias/pendentes");
+
+export async function getPendingInspection(id: number): Promise<Inspection> {
+  const inspection = (await listPendingInspections()).find((item) => item.id === id);
+  if (!inspection) {
+    throw new ApiError({
+      type: "urn:vistoria:problem:not-found",
+      title: "Vistoria não encontrada",
+      status: 404,
+      detail: "Esta vistoria não está disponível na fila de revisão.",
+    });
+  }
+  return inspection;
+}
+
+export const reviewInspection = (id: number, aprovado: boolean, parecer: string) =>
+  apiFetch<Inspection>(`/vistorias/${id}/analisar`, {
+    method: "POST",
+    body: JSON.stringify({ aprovado, parecer: parecer.trim() }),
+  });
