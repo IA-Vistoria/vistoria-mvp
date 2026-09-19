@@ -44,11 +44,11 @@
 
 ## Handoff
 
-- **Feature**: .specs/features/autenticacao-e-acesso
-- **Phase / Task**: Phase 4 - Validate & Close
-- **Completed**: Implementação completa de Usuario (T1), DTOs (T2), Segurança (T3), Service (T4) e API (T5). Testes unitários e de integração concluídos. Commits atômicos feitos.
-- **In-progress**: n/a
-- **Next step**: Iniciar planejamento da próxima feature (ex: Geração de Laudos ou Gestão de Vistorias)
+- **Feature**: .specs/features/gestao-vistorias
+- **Phase / Task**: Phase 1 - Specify
+- **Completed**: spec.md gerado e validado
+- **In-progress**: Aguardando aprovação do spec.md pelo usuário
+- **Next step**: Discutir open questions ou mover para Design/Tasks
 - **Blockers**: none
-- **Uncommitted files**: none
+- **Uncommitted files**: yes (spec.md)
 - **Branch**: main
