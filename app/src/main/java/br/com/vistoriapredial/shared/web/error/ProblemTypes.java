@@ -29,6 +29,8 @@ public final class ProblemTypes {
             URI.create("urn:vistoria:problem:invalid-evidence");
     public static final URI EVIDENCE_NOT_FOUND =
             URI.create("urn:vistoria:problem:evidence-not-found");
+    public static final URI VISTORIA_NOT_FOUND =
+            URI.create("urn:vistoria:problem:vistoria-not-found");
     public static final URI FORBIDDEN =
             URI.create("urn:vistoria:problem:forbidden");
     public static final URI STALE_INSPECTION =

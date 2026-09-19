@@ -10,6 +10,8 @@ import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDenie
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
+import br.com.vistoriapredial.vistoria.application.exception.VistoriaAccessDeniedException;
+import br.com.vistoriapredial.vistoria.application.exception.VistoriaNotFoundException;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
@@ -239,6 +241,30 @@ class VistoriaControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.type").value("urn:vistoria:problem:evidence-not-found"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnNotFoundWhenSubmittingUnknownInspection() throws Exception {
+        when(vistoriaService.submeterVistoria(eq(999L), any()))
+                .thenThrow(new VistoriaNotFoundException());
+
+        mockMvc.perform(post("/api/vistorias/999/submeter"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:vistoria-not-found"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnForbiddenWhenInspectionBelongsToAnotherClient() throws Exception {
+        when(vistoriaService.submeterVistoria(eq(10L), any()))
+                .thenThrow(new VistoriaAccessDeniedException());
+
+        mockMvc.perform(post("/api/vistorias/10/submeter"))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:forbidden"));
     }
 
     @Test

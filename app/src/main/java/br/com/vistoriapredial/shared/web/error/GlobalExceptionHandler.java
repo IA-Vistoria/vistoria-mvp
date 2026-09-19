@@ -6,6 +6,8 @@ import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceExce
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
+import br.com.vistoriapredial.vistoria.application.exception.VistoriaAccessDeniedException;
+import br.com.vistoriapredial.vistoria.application.exception.VistoriaNotFoundException;
 import br.com.vistoriapredial.usuario.application.exception.EngineerRegistrationDeniedException;
 import br.com.vistoriapredial.usuario.application.exception.UsuarioConflictException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -120,6 +122,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(EvidenceAccessDeniedException.class)
     public ResponseEntity<ProblemDetail> handleEvidenceAccessDenied(
             EvidenceAccessDeniedException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.FORBIDDEN,
+                ProblemTypes.FORBIDDEN,
+                "Acesso negado",
+                exception.getMessage(),
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(VistoriaNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleVistoriaNotFound(
+            VistoriaNotFoundException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.NOT_FOUND,
+                ProblemTypes.VISTORIA_NOT_FOUND,
+                "Vistoria não encontrada",
+                exception.getMessage(),
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(VistoriaAccessDeniedException.class)
+    public ResponseEntity<ProblemDetail> handleVistoriaAccessDenied(
+            VistoriaAccessDeniedException exception,
             HttpServletRequest request) {
         return createResponse(
                 HttpStatus.FORBIDDEN,

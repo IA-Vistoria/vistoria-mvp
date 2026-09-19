@@ -12,9 +12,14 @@ import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceExce
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
+import br.com.vistoriapredial.vistoria.application.exception.VistoriaAccessDeniedException;
+import br.com.vistoriapredial.vistoria.application.exception.VistoriaNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -24,20 +29,25 @@ import java.util.UUID;
 @Service
 public class VistoriaService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(VistoriaService.class);
+
     private final VistoriaRepository vistoriaRepository;
     private final StorageService storageService;
     private final IaIntegrationService iaIntegrationService;
     private final EvidenceFileValidator evidenceFileValidator;
+    private final TransactionTemplate transactionTemplate;
 
     public VistoriaService(
             VistoriaRepository vistoriaRepository,
             StorageService storageService,
             IaIntegrationService iaIntegrationService,
-            EvidenceFileValidator evidenceFileValidator) {
+            EvidenceFileValidator evidenceFileValidator,
+            TransactionTemplate transactionTemplate) {
         this.vistoriaRepository = vistoriaRepository;
         this.storageService = storageService;
         this.iaIntegrationService = iaIntegrationService;
         this.evidenceFileValidator = evidenceFileValidator;
+        this.transactionTemplate = transactionTemplate;
     }
 
     // Fluxo Cliente
@@ -100,34 +110,54 @@ public class VistoriaService {
         }
     }
 
-    @Transactional
+    /**
+     * Não é {@code @Transactional}: a chamada à IA é uma operação de rede que pode
+     * demorar, e segurar uma conexão de banco durante ela esgota o pool sob carga.
+     * Por isso a persistência é feita em duas transações curtas, uma antes e outra
+     * depois do I/O externo, que não fica dentro de nenhuma transação.
+     */
     public Vistoria submeterVistoria(Long vistoriaId, Usuario cliente) {
-        Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
-        
-        if (vistoria.getStatus() != VistoriaStatus.EM_RASCUNHO && vistoria.getStatus() != VistoriaStatus.DEVOLVIDA_CLIENTE && vistoria.getStatus() != VistoriaStatus.FALHA_IA) {
-            throw new StaleInspectionException();
-        }
-        
-        if (vistoria.getImagens().isEmpty()) {
-            throw new InvalidEvidenceException(
-                    "Adicione ao menos uma evidência antes de enviar a vistoria.");
+        Vistoria preparada = transactionTemplate.execute(status -> {
+            Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
+
+            if (vistoria.getStatus() != VistoriaStatus.EM_RASCUNHO
+                    && vistoria.getStatus() != VistoriaStatus.DEVOLVIDA_CLIENTE
+                    && vistoria.getStatus() != VistoriaStatus.FALHA_IA) {
+                throw new StaleInspectionException();
+            }
+
+            if (vistoria.getImagens().isEmpty()) {
+                throw new InvalidEvidenceException(
+                        "Adicione ao menos uma evidência antes de enviar a vistoria.");
+            }
+
+            vistoria.setStatus(VistoriaStatus.AGUARDANDO_IA);
+            return salvarComControleConcorrencia(vistoria);
+        });
+
+        List<String> urls = preparada.getImagens().stream()
+                .map(ImagemVistoria::getUrl)
+                .toList();
+
+        String preLaudo = null;
+        VistoriaStatus statusFinal;
+        try {
+            preLaudo = iaIntegrationService.analisarImagens(urls);
+            statusFinal = VistoriaStatus.AGUARDANDO_ENGENHEIRO;
+        } catch (RuntimeException falhaIa) {
+            LOGGER.warn("Falha ao gerar pré-laudo da vistoria {}", vistoriaId, falhaIa);
+            statusFinal = VistoriaStatus.FALHA_IA;
         }
 
-        vistoria.setStatus(VistoriaStatus.AGUARDANDO_IA);
-        vistoria = salvarComControleConcorrencia(vistoria);
-        
-        try {
-            List<String> urls = vistoria.getImagens().stream()
-                    .map(ImagemVistoria::getUrl)
-                    .toList();
-            String preLaudo = iaIntegrationService.analisarImagens(urls);
-            vistoria.setPreLaudoIa(preLaudo);
-            vistoria.setStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
-        } catch (Exception e) {
-            vistoria.setStatus(VistoriaStatus.FALHA_IA);
-        }
-        
-        return salvarComControleConcorrencia(vistoria);
+        String preLaudoFinal = preLaudo;
+        VistoriaStatus statusConclusao = statusFinal;
+        return transactionTemplate.execute(status -> {
+            Vistoria vistoria = vistoriaRepository.findById(vistoriaId)
+                    .orElseThrow(VistoriaNotFoundException::new);
+            vistoria.setPreLaudoIa(preLaudoFinal);
+            vistoria.setStatus(statusConclusao);
+            return salvarComControleConcorrencia(vistoria);
+        });
     }
 
     @Transactional(readOnly = true)
@@ -165,10 +195,10 @@ public class VistoriaService {
 
     private Vistoria buscarPorIdEValidarCliente(Long vistoriaId, Usuario cliente) {
         Vistoria vistoria = vistoriaRepository.findById(vistoriaId)
-                .orElseThrow(() -> new IllegalArgumentException("Vistoria não encontrada"));
-        
+                .orElseThrow(VistoriaNotFoundException::new);
+
         if (!vistoria.getCliente().getId().equals(cliente.getId())) {
-            throw new IllegalArgumentException("Vistoria não pertence a este cliente");
+            throw new VistoriaAccessDeniedException();
         }
         return vistoria;
     }
@@ -190,12 +220,12 @@ public class VistoriaService {
         }
         
         Vistoria vistoria = vistoriaRepository.findById(vistoriaId)
-                .orElseThrow(() -> new IllegalArgumentException("Vistoria não encontrada"));
-        
+                .orElseThrow(VistoriaNotFoundException::new);
+
         if (vistoria.getStatus() != VistoriaStatus.AGUARDANDO_ENGENHEIRO) {
             throw new StaleInspectionException();
         }
-        
+
         vistoria.setEngenheiro(engenheiro);
         vistoria.setParecerEngenheiro(parecer);
         vistoria.setStatus(VistoriaStatus.CONCLUIDA);
@@ -211,12 +241,12 @@ public class VistoriaService {
         }
 
         Vistoria vistoria = vistoriaRepository.findById(vistoriaId)
-                .orElseThrow(() -> new IllegalArgumentException("Vistoria não encontrada"));
-        
+                .orElseThrow(VistoriaNotFoundException::new);
+
         if (vistoria.getStatus() != VistoriaStatus.AGUARDANDO_ENGENHEIRO) {
             throw new StaleInspectionException();
         }
-        
+
         vistoria.setEngenheiro(engenheiro);
         vistoria.setParecerEngenheiro("Devolvido: " + motivo);
         vistoria.setStatus(VistoriaStatus.DEVOLVIDA_CLIENTE);

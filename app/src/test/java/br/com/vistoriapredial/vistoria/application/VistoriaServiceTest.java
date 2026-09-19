@@ -27,6 +27,8 @@ import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceExce
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
+import br.com.vistoriapredial.vistoria.application.exception.VistoriaAccessDeniedException;
+import br.com.vistoriapredial.vistoria.application.exception.VistoriaNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,6 +38,9 @@ import static org.mockito.Mockito.*;
 
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 class VistoriaServiceTest {
 
@@ -50,6 +55,9 @@ class VistoriaServiceTest {
 
     @Mock
     private EvidenceFileValidator evidenceFileValidator;
+
+    @Mock
+    private TransactionTemplate transactionTemplate;
 
     @InjectMocks
     private VistoriaService vistoriaService;
@@ -66,6 +74,13 @@ class VistoriaServiceTest {
 
         engenheiro = new Usuario("Eng", "eng@test.com", "pass", PerfilEnum.ROLE_ENGENHEIRO, "1234");
         ReflectionTestUtils.setField(engenheiro, "id", 2L);
+
+        // A submissão passou a rodar em duas transações curtas via TransactionTemplate;
+        // aqui simulamos a execução imediata do callback, como o Spring faria em runtime.
+        when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
+            TransactionCallback<?> callback = invocation.getArgument(0);
+            return callback.doInTransaction(new SimpleTransactionStatus());
+        });
     }
 
     @Test
@@ -161,6 +176,33 @@ class VistoriaServiceTest {
         assertThat(vistoria.getImagens()).containsExactly(existing);
         verifyNoInteractions(storageService);
         verify(vistoriaRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowVistoriaNotFoundWhenInspectionDoesNotExist() {
+        when(vistoriaRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(999L, cliente, "SALA_PISO", null))
+                .isInstanceOf(VistoriaNotFoundException.class);
+    }
+
+    @Test
+    void shouldThrowVistoriaAccessDeniedWhenInspectionBelongsToAnotherClient() {
+        Vistoria vistoria = editableInspection();
+        Usuario outroCliente = new Usuario("Outro", "outro2@test.com", "pass", PerfilEnum.ROLE_CLIENTE, null);
+        ReflectionTestUtils.setField(outroCliente, "id", 55L);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, outroCliente, "SALA_PISO", null))
+                .isInstanceOf(VistoriaAccessDeniedException.class);
+    }
+
+    @Test
+    void shouldThrowVistoriaNotFoundWhenApprovingUnknownInspection() {
+        when(vistoriaRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> vistoriaService.aprovarVistoria(999L, engenheiro, "Parecer"))
+                .isInstanceOf(VistoriaNotFoundException.class);
     }
 
     @Test
