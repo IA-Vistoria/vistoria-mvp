@@ -6,11 +6,15 @@ import br.com.vistoriapredial.usuario.persistence.UsuarioRepository;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.time.LocalDateTime;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 class VistoriaRepositoryTest {
@@ -21,26 +25,51 @@ class VistoriaRepositoryTest {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
     @Test
     void shouldSaveVistoriaWithImagens() {
-        Usuario cliente = new Usuario("Test Client", "client@test.com", "password", PerfilEnum.ROLE_CLIENTE, null);
-        usuarioRepository.save(cliente);
-
+        Usuario cliente = usuarioRepository.save(new Usuario(
+                "Cliente", "cliente-cascade@test.com", "hash", PerfilEnum.ROLE_CLIENTE, null));
         Vistoria vistoria = new Vistoria();
         vistoria.setCliente(cliente);
-        
-        ImagemVistoria img = new ImagemVistoria();
-        img.setUrl("http://local/img.jpg");
-        img.setProtocoloItem("SALA");
-        img.setVistoria(vistoria);
-        
-        vistoria.getImagens().add(img);
+        ImagemVistoria imagem = new ImagemVistoria();
+        imagem.setUrl("uploads/cascade.jpg");
+        imagem.setProtocoloItem("SALA_PISO");
+        imagem.setVistoria(vistoria);
+        vistoria.getImagens().add(imagem);
 
-        Vistoria saved = vistoriaRepository.save(vistoria);
+        Vistoria saved = vistoriaRepository.saveAndFlush(vistoria);
 
-        assertNotNull(saved.getId());
-        assertEquals(VistoriaStatus.EM_RASCUNHO, saved.getStatus());
-        assertEquals(1, saved.getImagens().size());
-        assertNotNull(saved.getImagens().get(0).getId());
+        assertThat(saved.getId()).isNotNull();
+        assertThat(saved.getStatus()).isEqualTo(VistoriaStatus.EM_RASCUNHO);
+        assertThat(saved.getImagens()).singleElement().extracting(ImagemVistoria::getId).isNotNull();
+    }
+
+    @Test
+    void shouldLoadEvidenceCollectionForClientAndStatusLists() {
+        Usuario cliente = usuarioRepository.saveAndFlush(new Usuario(
+                "Cliente", "cliente-graph@test.com", "hash", PerfilEnum.ROLE_CLIENTE, null));
+        Vistoria vistoria = new Vistoria();
+        vistoria.setCliente(cliente);
+        vistoria.setStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
+        ImagemVistoria imagem = new ImagemVistoria(
+                vistoria, "uploads/a.jpg", "SALA_PISO", LocalDateTime.now());
+        vistoria.getImagens().add(imagem);
+        vistoriaRepository.saveAndFlush(vistoria);
+        entityManager.clear();
+
+        Vistoria porCliente = vistoriaRepository.findByCliente(cliente).getFirst();
+        Vistoria porStatus = vistoriaRepository
+                .findByStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO).getFirst();
+
+        assertThat(entityManagerFactory.getPersistenceUnitUtil().isLoaded(porCliente, "imagens")).isTrue();
+        assertThat(porCliente.getImagens()).hasSize(1);
+        assertThat(entityManagerFactory.getPersistenceUnitUtil().isLoaded(porStatus, "imagens")).isTrue();
+        assertThat(porStatus.getImagens()).hasSize(1);
     }
 }

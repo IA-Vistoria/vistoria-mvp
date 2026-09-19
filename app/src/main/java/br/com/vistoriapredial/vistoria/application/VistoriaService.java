@@ -1,6 +1,7 @@
 package br.com.vistoriapredial.vistoria.application;
 
 import br.com.vistoriapredial.storage.StorageService;
+import br.com.vistoriapredial.storage.StoredFile;
 import br.com.vistoriapredial.usuario.domain.PerfilEnum;
 import br.com.vistoriapredial.usuario.domain.Usuario;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
@@ -8,6 +9,9 @@ import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 import br.com.vistoriapredial.vistoria.persistence.VistoriaRepository;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
+import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
+import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
+import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -110,6 +114,39 @@ public class VistoriaService {
         }
         
         return vistoriaRepository.save(vistoria);
+    }
+
+    @Transactional(readOnly = true)
+    public EvidenceContent buscarEvidencia(Long vistoriaId, Long imagemId, Usuario usuario) {
+        Vistoria vistoria = vistoriaRepository.findById(vistoriaId)
+                .orElseThrow(EvidenceNotFoundException::new);
+
+        ImagemVistoria imagem = vistoria.getImagens().stream()
+                .filter(item -> item.getId().equals(imagemId))
+                .findFirst()
+                .orElseThrow(EvidenceNotFoundException::new);
+
+        autorizarLeitura(vistoria, usuario);
+        StoredFile storedFile = storageService.load(imagem.getUrl());
+        return new EvidenceContent(storedFile.resource(), storedFile.mediaType(), storedFile.length());
+    }
+
+    private void autorizarLeitura(Vistoria vistoria, Usuario usuario) {
+        if (usuario.getPerfil() == PerfilEnum.ROLE_CLIENTE) {
+            if (!vistoria.getCliente().getId().equals(usuario.getId())) {
+                throw new EvidenceAccessDeniedException();
+            }
+            return;
+        }
+
+        if (usuario.getPerfil() == PerfilEnum.ROLE_ENGENHEIRO) {
+            if (vistoria.getStatus() != VistoriaStatus.AGUARDANDO_ENGENHEIRO) {
+                throw new StaleInspectionException();
+            }
+            return;
+        }
+
+        throw new EvidenceAccessDeniedException();
     }
 
     private Vistoria buscarPorIdEValidarCliente(Long vistoriaId, Usuario cliente) {

@@ -1,7 +1,11 @@
 package br.com.vistoriapredial.shared.web.error;
 
 import br.com.vistoriapredial.storage.StorageException;
+import br.com.vistoriapredial.storage.StorageFileNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
+import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
+import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
+import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +70,45 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 HttpStatus.BAD_REQUEST,
                 ProblemTypes.STORAGE_ERROR,
                 "Erro de armazenamento",
+                exception.getMessage(),
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler({EvidenceNotFoundException.class, StorageFileNotFoundException.class})
+    public ResponseEntity<ProblemDetail> handleEvidenceNotFound(
+            RuntimeException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.NOT_FOUND,
+                ProblemTypes.EVIDENCE_NOT_FOUND,
+                "Evidência não encontrada",
+                "A evidência solicitada não foi encontrada.",
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(EvidenceAccessDeniedException.class)
+    public ResponseEntity<ProblemDetail> handleEvidenceAccessDenied(
+            EvidenceAccessDeniedException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.FORBIDDEN,
+                ProblemTypes.FORBIDDEN,
+                "Acesso negado",
+                exception.getMessage(),
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(StaleInspectionException.class)
+    public ResponseEntity<ProblemDetail> handleStaleInspection(
+            StaleInspectionException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.CONFLICT,
+                ProblemTypes.STALE_INSPECTION,
+                "Vistoria desatualizada",
                 exception.getMessage(),
                 URI.create(request.getRequestURI())
         );

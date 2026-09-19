@@ -30,7 +30,7 @@ public record VistoriaResponseDto(
                 v.getDataCriacao(),
                 v.getDataConclusao(),
                 v.getImagens().stream()
-                        .map(ImagemVistoriaResponseDto::from)
+                        .map(imagem -> ImagemVistoriaResponseDto.from(v.getId(), imagem))
                         .toList()
         );
     }

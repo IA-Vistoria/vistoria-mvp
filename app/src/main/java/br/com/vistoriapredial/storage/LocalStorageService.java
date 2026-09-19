@@ -1,6 +1,8 @@
 package br.com.vistoriapredial.storage;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,6 +58,25 @@ public class LocalStorageService implements StorageService {
         }
     }
 
+    @Override
+    public StoredFile load(String relativePath) {
+        Path source = resolveStoredPath(relativePath);
+        if (!Files.isRegularFile(source)) {
+            throw new StorageFileNotFoundException();
+        }
+
+        try {
+            byte[] content = Files.readAllBytes(source);
+            return new StoredFile(
+                    new ByteArrayResource(content),
+                    mediaTypeFor(source.getFileName().toString()),
+                    content.length
+            );
+        } catch (IOException exception) {
+            throw new StorageException("Não foi possível ler o arquivo de evidência.", exception);
+        }
+    }
+
     private void validateFile(MultipartFile file, String fileName) {
         if (file == null || file.isEmpty()) {
             throw new StorageException("Arquivo de foto não pode estar vazio");
@@ -75,5 +96,53 @@ public class LocalStorageService implements StorageService {
             throw new StorageException(
                     "Não foi possível criar o diretório de upload: " + uploadDir, exception);
         }
+    }
+
+    private Path resolveStoredPath(String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            throw new StorageException("Caminho de evidência inválido.");
+        }
+
+        Path requested;
+        try {
+            requested = Paths.get(relativePath);
+        } catch (RuntimeException exception) {
+            throw new StorageException("Caminho de evidência inválido.", exception);
+        }
+
+        if (requested.isAbsolute() || requested.normalize().startsWith("..")) {
+            throw new StorageException("Caminho de evidência inválido.");
+        }
+
+        for (Path segment : requested) {
+            if ("..".equals(segment.toString())) {
+                throw new StorageException("Caminho de evidência inválido.");
+            }
+        }
+
+        Path fileName = requested.getFileName();
+        if (fileName == null) {
+            throw new StorageException("Caminho de evidência inválido.");
+        }
+
+        Path source = uploadDir.resolve(fileName).normalize();
+        if (!source.startsWith(uploadDir)) {
+            throw new StorageException("Caminho de evidência inválido.");
+        }
+        return source;
+    }
+
+    private MediaType mediaTypeFor(String fileName) {
+        String normalized = fileName.toLowerCase(java.util.Locale.ROOT);
+        if (normalized.endsWith(".jpg")) {
+            return MediaType.IMAGE_JPEG;
+        }
+        if (normalized.endsWith(".png")) {
+            return MediaType.IMAGE_PNG;
+        }
+        if (normalized.endsWith(".webp")) {
+            return MediaType.parseMediaType("image/webp");
+        }
+        throw new StorageException("O tipo do arquivo de evidência não é permitido.");
     }
 }

@@ -392,6 +392,8 @@ git commit -m "feat(vistoria): consolida jornada de evidências do cliente"
 
 ### T4: Expor evidências autenticadas sem caminho físico
 
+**Status**: Complete
+
 **What**: Incluir metadados de imagem no DTO, carregar coleções dentro da transação e criar a rota de conteúdo com autorização por ownership/papel/estado.
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/web/`
 **Depends on**: T3
@@ -403,7 +405,7 @@ git commit -m "feat(vistoria): consolida jornada de evidências do cliente"
 - MCP: terminal e editor local
 - Skills: `tlc-spec-driven`, `superpowers:test-driven-development`
 
-- [ ] **Step 1: Escrever RED de storage, serviço e HTTP**
+- [x] **Step 1: Escrever RED de storage, serviço e HTTP**
 
 ```java
 @Test
@@ -423,11 +425,11 @@ void shouldReturnAuthenticatedEvidenceContent() throws Exception {
 
 No mesmo ciclo, criar casos completos para: leitura `@TempDir` com tipo/tamanho controlados; owner permitido; engenheiro permitido somente em `AGUARDANDO_ENGENHEIRO`; outro cliente 403; par vistoria/imagem adulterado 404; arquivo ausente 404; JSON contendo apenas `id`, `protocoloItem`, `dataUpload`, `conteudoUrl`.
 
-- [ ] **Step 2: Executar RED focado**
+- [x] **Step 2: Executar RED focado**
 
 Expected: FAIL por `StorageService.load`, DTO e endpoint inexistentes.
 
-- [ ] **Step 3: Implementar a porta e o conteúdo autorizado**
+- [x] **Step 3: Implementar a porta e o conteúdo autorizado**
 
 ```java
 public record StoredFile(Resource resource, MediaType mediaType, long length) {}
@@ -442,7 +444,7 @@ public interface StorageService {
 
 `LocalStorageService.load` deve normalizar, garantir `startsWith(uploadDir)`, responder ausência sem caminho interno e inferir o tipo somente das extensões geradas `.jpg`, `.png`, `.webp`.
 
-- [ ] **Step 4: Implementar DTO, fetch graph e endpoint**
+- [x] **Step 4: Implementar DTO, fetch graph e endpoint**
 
 ```java
 public record ImagemVistoriaResponseDto(
@@ -457,11 +459,11 @@ public record ImagemVistoriaResponseDto(
 
 O controller deve responder `ResponseEntity<Resource>` com `Content-Type`, `Content-Length` e `Cache-Control: private, no-store`.
 
-- [ ] **Step 5: Mapear exceções tipadas**
+- [x] **Step 5: Mapear exceções tipadas**
 
 Mapear recurso ausente para 404, acesso de outro cliente para 403, transição obsoleta para 409 e evidência inválida para 422, todos em `application/problem+json`.
 
-- [ ] **Step 6: Executar gates e commitar**
+- [x] **Step 6: Executar gates e commitar**
 
 Expected: pelo menos 8 casos novos e no mínimo 58 testes backend totais.
 
@@ -473,10 +475,10 @@ git commit -m "feat(vistoria): disponibiliza evidências autenticadas"
 
 **Done when**:
 
-- [ ] Response nunca contém `ImagemVistoria.url` ou caminho físico.
-- [ ] Owner e engenheiro pendente acessam; outro cliente recebe 403; par adulterado/arquivo ausente recebe 404.
-- [ ] Listas não geram `LazyInitializationException` com `open-in-view=false`.
-- [ ] Backend quick e full passam com contagem não regressiva.
+- [x] Response nunca contém `ImagemVistoria.url` ou caminho físico.
+- [x] Owner e engenheiro pendente acessam; outro cliente recebe 403; par adulterado/arquivo ausente recebe 404.
+- [x] Listas não geram `LazyInitializationException` com `open-in-view=false`.
+- [x] Backend quick e full passam com contagem não regressiva.
 
 **Tests**: unit + repository integration + MockMvc integration
 **Gate**: Backend quick + Backend full

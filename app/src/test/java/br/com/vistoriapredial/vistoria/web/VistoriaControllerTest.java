@@ -5,6 +5,10 @@ import br.com.vistoriapredial.usuario.domain.PerfilEnum;
 import br.com.vistoriapredial.usuario.domain.Usuario;
 import br.com.vistoriapredial.usuario.persistence.UsuarioRepository;
 import br.com.vistoriapredial.vistoria.application.VistoriaService;
+import br.com.vistoriapredial.vistoria.application.EvidenceContent;
+import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
+import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
+import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
@@ -16,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -107,7 +112,11 @@ class VistoriaControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.imagens[0].id").value(20))
-                .andExpect(jsonPath("$.imagens[0].protocoloItem").value("SALA_PISO"));
+                .andExpect(jsonPath("$.imagens[0].protocoloItem").value("SALA_PISO"))
+                .andExpect(jsonPath("$.imagens[0].dataUpload").exists())
+                .andExpect(jsonPath("$.imagens[0].conteudoUrl")
+                        .value("/api/vistorias/10/imagens/20/conteudo"))
+                .andExpect(jsonPath("$.imagens[0].url").doesNotExist());
     }
 
     @Test
@@ -164,5 +173,56 @@ class VistoriaControllerTest {
                         .content(payload))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CONCLUIDA"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnAuthenticatedEvidenceContent() throws Exception {
+        ByteArrayResource resource = new ByteArrayResource(new byte[] {1, 2, 3});
+        when(vistoriaService.buscarEvidencia(10L, 20L, cliente))
+                .thenReturn(new EvidenceContent(resource, MediaType.IMAGE_JPEG, 3));
+
+        mockMvc.perform(get("/api/vistorias/10/imagens/20/conteudo"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
+                .andExpect(header().longValue("Content-Length", 3))
+                .andExpect(content().contentType(MediaType.IMAGE_JPEG))
+                .andExpect(content().bytes(new byte[] {1, 2, 3}));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnForbiddenProblemForAnotherClient() throws Exception {
+        when(vistoriaService.buscarEvidencia(10L, 20L, cliente))
+                .thenThrow(new EvidenceAccessDeniedException());
+
+        mockMvc.perform(get("/api/vistorias/10/imagens/20/conteudo"))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:forbidden"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnNotFoundForMismatchedEvidencePair() throws Exception {
+        when(vistoriaService.buscarEvidencia(10L, 999L, cliente))
+                .thenThrow(new EvidenceNotFoundException());
+
+        mockMvc.perform(get("/api/vistorias/10/imagens/999/conteudo"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:evidence-not-found"));
+    }
+
+    @Test
+    @WithMockUser(username = "eng@test.com", roles = "ENGENHEIRO")
+    void shouldReturnConflictWhenEngineerCaseIsStale() throws Exception {
+        when(vistoriaService.buscarEvidencia(10L, 20L, engenheiro))
+                .thenThrow(new StaleInspectionException());
+
+        mockMvc.perform(get("/api/vistorias/10/imagens/20/conteudo"))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:stale-inspection"));
     }
 }

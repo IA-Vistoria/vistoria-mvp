@@ -3,9 +3,12 @@ package br.com.vistoriapredial.vistoria.web;
 import br.com.vistoriapredial.usuario.domain.Usuario;
 import br.com.vistoriapredial.usuario.persistence.UsuarioRepository;
 import br.com.vistoriapredial.vistoria.application.VistoriaService;
+import br.com.vistoriapredial.vistoria.application.EvidenceContent;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.CacheControl;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -74,6 +77,21 @@ public class VistoriaController {
         Usuario cliente = getUsuario(auth);
         Vistoria v = vistoriaService.submeterVistoria(id, cliente);
         return ResponseEntity.ok(VistoriaResponseDto.from(v));
+    }
+
+    @GetMapping("/{vistoriaId}/imagens/{imagemId}/conteudo")
+    @PreAuthorize("hasAnyRole('CLIENTE', 'ENGENHEIRO')")
+    public ResponseEntity<Resource> buscarEvidencia(
+            @PathVariable Long vistoriaId,
+            @PathVariable Long imagemId,
+            Authentication auth) {
+        Usuario usuario = getUsuario(auth);
+        EvidenceContent content = vistoriaService.buscarEvidencia(vistoriaId, imagemId, usuario);
+        return ResponseEntity.ok()
+                .contentType(content.mediaType())
+                .contentLength(content.length())
+                .cacheControl(CacheControl.noStore().cachePrivate())
+                .body(content.resource());
     }
 
     // --- Fluxo do Engenheiro ---

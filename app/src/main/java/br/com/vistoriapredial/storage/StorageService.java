@@ -22,6 +22,14 @@ public interface StorageService {
     String store(MultipartFile file, String fileName);
 
     /**
+     * Carrega um arquivo previamente persistido sem expor seu caminho físico.
+     *
+     * @param relativePath caminho opaco retornado por {@link #store}
+     * @return conteúdo, tipo controlado e tamanho do arquivo
+     */
+    StoredFile load(String relativePath);
+
+    /**
      * Exclui um arquivo previamente armazenado.
      *
      * @param relativePath caminho relativo retornado por {@link #store}

@@ -1,6 +1,7 @@
 package br.com.vistoriapredial.vistoria.application;
 
 import br.com.vistoriapredial.storage.StorageService;
+import br.com.vistoriapredial.storage.StoredFile;
 import br.com.vistoriapredial.usuario.domain.PerfilEnum;
 import br.com.vistoriapredial.usuario.domain.Usuario;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
@@ -17,11 +18,15 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.core.io.ByteArrayResource;
 
 import java.util.List;
 import java.util.Optional;
 
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
+import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
+import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
+import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -203,6 +208,64 @@ class VistoriaServiceTest {
         assertEquals(engenheiro, aprovada.getEngenheiro());
     }
 
+    @Test
+    void shouldAllowOwnerToReadEvidence() {
+        Vistoria vistoria = inspectionWithEvidence(VistoriaStatus.CONCLUIDA);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(storageService.load("uploads/a.jpg")).thenReturn(storedJpeg());
+
+        EvidenceContent content = vistoriaService.buscarEvidencia(10L, 20L, cliente);
+
+        assertThat(content.mediaType()).isEqualTo(MediaType.IMAGE_JPEG);
+        assertThat(content.length()).isEqualTo(3);
+    }
+
+    @Test
+    void shouldAllowEngineerToReadPendingEvidence() {
+        Vistoria vistoria = inspectionWithEvidence(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(storageService.load("uploads/a.jpg")).thenReturn(storedJpeg());
+
+        EvidenceContent content = vistoriaService.buscarEvidencia(10L, 20L, engenheiro);
+
+        assertThat(content.resource()).isNotNull();
+    }
+
+    @Test
+    void shouldDenyAnotherClientWithoutLoadingFile() {
+        Usuario outroCliente = new Usuario("Outro", "outro@test.com", "pass", PerfilEnum.ROLE_CLIENTE, null);
+        ReflectionTestUtils.setField(outroCliente, "id", 99L);
+        when(vistoriaRepository.findById(10L))
+                .thenReturn(Optional.of(inspectionWithEvidence(VistoriaStatus.EM_RASCUNHO)));
+
+        assertThatThrownBy(() -> vistoriaService.buscarEvidencia(10L, 20L, outroCliente))
+                .isInstanceOf(EvidenceAccessDeniedException.class);
+
+        verifyNoInteractions(storageService);
+    }
+
+    @Test
+    void shouldHideEvidenceBelongingToAnotherInspection() {
+        when(vistoriaRepository.findById(10L))
+                .thenReturn(Optional.of(inspectionWithEvidence(VistoriaStatus.EM_RASCUNHO)));
+
+        assertThatThrownBy(() -> vistoriaService.buscarEvidencia(10L, 999L, cliente))
+                .isInstanceOf(EvidenceNotFoundException.class);
+
+        verifyNoInteractions(storageService);
+    }
+
+    @Test
+    void shouldRejectEngineerWhenInspectionIsNoLongerPending() {
+        when(vistoriaRepository.findById(10L))
+                .thenReturn(Optional.of(inspectionWithEvidence(VistoriaStatus.CONCLUIDA)));
+
+        assertThatThrownBy(() -> vistoriaService.buscarEvidencia(10L, 20L, engenheiro))
+                .isInstanceOf(StaleInspectionException.class);
+
+        verifyNoInteractions(storageService);
+    }
+
     private Vistoria editableInspection() {
         Vistoria vistoria = new Vistoria();
         vistoria.setId(10L);
@@ -215,5 +278,18 @@ class VistoriaServiceTest {
         ImagemVistoria image = new ImagemVistoria();
         image.setUrl(url);
         return image;
+    }
+
+    private Vistoria inspectionWithEvidence(VistoriaStatus status) {
+        Vistoria vistoria = editableInspection();
+        vistoria.setStatus(status);
+        ImagemVistoria image = evidence("uploads/a.jpg");
+        ReflectionTestUtils.setField(image, "id", 20L);
+        vistoria.getImagens().add(image);
+        return vistoria;
+    }
+
+    private StoredFile storedJpeg() {
+        return new StoredFile(new ByteArrayResource(new byte[] {1, 2, 3}), MediaType.IMAGE_JPEG, 3);
     }
 }

@@ -27,6 +27,12 @@ public final class ProblemTypes {
             URI.create("urn:vistoria:problem:storage-error");
     public static final URI INVALID_EVIDENCE =
             URI.create("urn:vistoria:problem:invalid-evidence");
+    public static final URI EVIDENCE_NOT_FOUND =
+            URI.create("urn:vistoria:problem:evidence-not-found");
+    public static final URI FORBIDDEN =
+            URI.create("urn:vistoria:problem:forbidden");
+    public static final URI STALE_INSPECTION =
+            URI.create("urn:vistoria:problem:stale-inspection");
     public static final URI INTERNAL_ERROR =
             URI.create("urn:vistoria:problem:internal-error");
 

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -108,5 +109,41 @@ class LocalStorageServiceTest {
         String pathInexistente = tempDir.resolve("inexistente.jpg").toString();
         assertThatCode(() -> storageService.delete(pathInexistente))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void load_shouldReturnContentTypeAndLengthFromControlledExtension() throws IOException {
+        byte[] content = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x01};
+        Files.write(tempDir.resolve("vistoria.jpg"), content);
+
+        StoredFile storedFile = storageService.load(tempDir.getFileName() + "/vistoria.jpg");
+
+        assertThat(storedFile.resource().getContentAsByteArray()).isEqualTo(content);
+        assertThat(storedFile.mediaType()).isEqualTo(MediaType.IMAGE_JPEG);
+        assertThat(storedFile.length()).isEqualTo(content.length);
+    }
+
+    @Test
+    void load_shouldRejectPathTraversal() {
+        assertThatThrownBy(() -> storageService.load("../segredo.jpg"))
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("inválido");
+    }
+
+    @Test
+    void load_shouldReturnTypedNotFoundWithoutPhysicalPath() {
+        assertThatThrownBy(() -> storageService.load("uploads/inexistente.jpg"))
+                .isInstanceOf(StorageFileNotFoundException.class)
+                .hasMessage("Arquivo de evidência não encontrado.")
+                .hasMessageNotContaining(tempDir.toString());
+    }
+
+    @Test
+    void load_shouldRejectUnknownExtension() throws IOException {
+        Files.writeString(tempDir.resolve("vistoria.gif"), "gif");
+
+        assertThatThrownBy(() -> storageService.load("vistoria.gif"))
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("tipo");
     }
 }
