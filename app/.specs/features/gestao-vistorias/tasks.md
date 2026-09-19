@@ -19,7 +19,7 @@ Implement these tasks with the `tlc-spec-driven` skill.
 - [x] **T6**: Endpoints do cliente em `VistoriaController`, com `VistoriaControllerTest`.
 - [x] **T7**: Endpoints do engenheiro em `VistoriaController`, com `VistoriaControllerTest`.
 
-Pendências reais identificadas nesta revisão (fora do escopo original das tarefas acima): paginação das listagens, índices de banco para `cliente_id`/`status` (adicionados em `V5__add_vistoria_indexes.sql`) e separação da chamada de IA em transações curtas (já corrigida em `VistoriaService.submeterVistoria`).
+Pendências identificadas em revisões anteriores e já resolvidas: índices de banco para `cliente_id`/`status` (`V5__add_vistoria_indexes.sql`), separação da chamada de IA em transações curtas (`VistoriaService.submeterVistoria`) e paginação de `/minhas` e `/pendentes` (`PaginaResponseDto`, com `GET /api/vistorias/{id}` adicionado para o cliente buscar um recurso específico sem depender da lista).
 
 ---
 

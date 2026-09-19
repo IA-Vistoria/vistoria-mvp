@@ -135,12 +135,25 @@ Todas as rotas da aplicação usam o prefixo `/api`.
 | `POST` | `/api/auth/register` | Público | Cadastra cliente; engenheiro exige convite válido |
 | `POST` | `/api/auth/login` | Público | Autentica e retorna JWT |
 | `POST` | `/api/vistorias` | Cliente | Cria rascunho com endereço |
-| `GET` | `/api/vistorias/minhas` | Cliente | Lista as vistorias do usuário |
+| `GET` | `/api/vistorias/minhas` | Cliente | Lista as vistorias do usuário, paginada (`?page=&size=`) |
+| `GET` | `/api/vistorias/{id}` | Cliente/Engenheiro | Busca uma vistoria específica, com autorização por recurso |
 | `POST` | `/api/vistorias/{id}/imagens` | Cliente | Envia evidência multipart |
 | `POST` | `/api/vistorias/{id}/submeter` | Cliente | Envia ou reenvia para análise |
 | `GET` | `/api/vistorias/{id}/imagens/{imagemId}/conteudo` | Cliente/Engenheiro | Entrega evidência com autorização por recurso |
-| `GET` | `/api/vistorias/pendentes` | Engenheiro | Lista a fila técnica |
+| `GET` | `/api/vistorias/pendentes` | Engenheiro | Lista a fila técnica, paginada (`?page=&size=`) |
 | `POST` | `/api/vistorias/{id}/analisar` | Engenheiro | Aprova ou devolve com parecer |
+
+As listagens (`/minhas` e `/pendentes`) retornam um envelope de paginação:
+
+```json
+{
+  "content": [ /* vistorias da página */ ],
+  "pagina": 0,
+  "tamanho": 10,
+  "totalElementos": 23,
+  "totalPaginas": 3
+}
+```
 
 ### Exemplo: cadastro de cliente
 

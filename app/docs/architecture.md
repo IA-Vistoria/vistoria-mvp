@@ -77,6 +77,8 @@ Falhas de pré-análise permanecem explícitas em `FALHA_IA`; o sistema não fab
 - `@Version` na vistoria para detectar decisões concorrentes.
 - `Cache-Control: private, no-store` no conteúdo autenticado das evidências.
 - Falha ao persistir a evidência aciona a remoção compensatória do arquivo já armazenado.
+- `/vistorias/minhas` e `/vistorias/pendentes` são paginadas (`PaginaResponseDto`); a página é buscada sem `@EntityGraph` e as imagens da página são recarregadas em uma segunda consulta por lote de ids, evitando tanto paginação em memória (fetch join de coleção + `Pageable`) quanto N+1.
+- `GET /vistorias/{id}` permite buscar uma vistoria específica sem depender da lista paginada, com a mesma autorização por recurso das demais rotas de leitura.
 
 ## 7. Persistência
 
