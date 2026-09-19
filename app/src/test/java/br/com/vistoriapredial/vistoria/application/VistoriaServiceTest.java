@@ -91,7 +91,7 @@ class VistoriaServiceTest {
         when(evidenceFileValidator.validate(file))
                 .thenReturn(new ValidatedEvidence(".jpg", MediaType.IMAGE_JPEG));
         when(storageService.store(eq(file), anyString())).thenReturn("uploads/a.jpg");
-        when(vistoriaRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+        when(vistoriaRepository.saveAndFlush(any())).thenAnswer(i -> i.getArguments()[0]);
 
         Vistoria result = vistoriaService.uploadImagem(10L, cliente, "SALA_PISO", file);
 
@@ -105,6 +105,26 @@ class VistoriaServiceTest {
         assertThat(fileName.getValue())
                 .matches("10_[0-9a-f-]{36}\\.jpg")
                 .doesNotContain("nome-do-cliente");
+    }
+
+    @Test
+    void shouldDeleteStoredFileWhenEvidencePersistenceFails() {
+        Vistoria vistoria = editableInspection();
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "evidencia.png", MediaType.IMAGE_PNG_VALUE, new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47});
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(evidenceFileValidator.validate(file))
+                .thenReturn(new ValidatedEvidence(".png", MediaType.IMAGE_PNG));
+        when(storageService.store(eq(file), anyString())).thenReturn("uploads/evidencia.png");
+        when(vistoriaRepository.saveAndFlush(any()))
+                .thenThrow(new IllegalStateException("Falha ao persistir evidência"));
+
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, cliente, "SALA_PISO", file))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Falha ao persistir evidência");
+
+        verify(storageService).delete("uploads/evidencia.png");
+        assertThat(vistoria.getImagens()).isEmpty();
     }
 
     @ParameterizedTest

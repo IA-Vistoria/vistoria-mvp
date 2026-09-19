@@ -75,15 +75,25 @@ public class VistoriaService {
 
         ValidatedEvidence validated = evidenceFileValidator.validate(file);
         String fileName = vistoriaId + "_" + UUID.randomUUID() + validated.extension();
-        String url = storageService.store(file, fileName);
+        String storedPath = storageService.store(file, fileName);
         
         ImagemVistoria img = new ImagemVistoria();
-        img.setUrl(url);
+        img.setUrl(storedPath);
         img.setProtocoloItem(protocoloItem);
         img.setVistoria(vistoria);
         
         vistoria.getImagens().add(img);
-        return vistoriaRepository.save(vistoria);
+        try {
+            return vistoriaRepository.saveAndFlush(vistoria);
+        } catch (RuntimeException persistenceFailure) {
+            vistoria.getImagens().remove(img);
+            try {
+                storageService.delete(storedPath);
+            } catch (RuntimeException cleanupFailure) {
+                persistenceFailure.addSuppressed(cleanupFailure);
+            }
+            throw persistenceFailure;
+        }
     }
 
     @Transactional
