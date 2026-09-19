@@ -57,7 +57,7 @@ O cliente HTTP aceita JSON, `FormData` e blobs, traduz erros RFC 9457 e expira a
 
 ## 5. Fluxo Human-in-the-Loop
 
-1. Cliente ou engenheiro se cadastra e recebe um JWT.
+1. O cliente se cadastra livremente; o engenheiro precisa do convite configurado no ambiente. Após o cadastro, ambos recebem um JWT.
 2. O cliente cria uma vistoria em `EM_RASCUNHO` e envia evidências associadas aos 12 itens do protocolo.
 3. Ao submeter, o serviço exige ao menos uma evidência e executa a porta de IA.
 4. O mock gera um pré-laudo e a vistoria passa para `AGUARDANDO_ENGENHEIRO`.
@@ -69,6 +69,8 @@ Falhas de pré-análise permanecem explícitas em `FALHA_IA`; o sistema não fab
 ## 6. Consistência e segurança
 
 - JWT stateless e perfis negados por padrão na cadeia de segurança.
+- Segredo JWT obrigatório com no mínimo 32 bytes e sem fallback versionado.
+- Elevação para o perfil de engenheiro protegida por convite comparado em tempo constante.
 - `ProblemDetail` para validação, autenticação, autorização, ausência e conflito.
 - Validação de tamanho, MIME e assinatura antes de persistir imagens.
 - Nome físico gerado pelo servidor e caminho mantido fora do contrato HTTP.
@@ -83,5 +85,6 @@ As migrations atuais são:
 - `V1__create_initial_schema.sql`: usuários;
 - `V2__create_vistoria_schema.sql`: vistorias e imagens;
 - `V3__add_endereco_to_vistoria.sql`: endereço do imóvel.
+- `V4__add_version_to_vistoria.sql`: versão otimista para decisões concorrentes.
 
 Os testes de integração executam as migrations em PostgreSQL real com Testcontainers. O schema não depende de geração automática do Hibernate (`ddl-auto=validate`).

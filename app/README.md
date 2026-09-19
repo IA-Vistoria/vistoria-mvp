@@ -14,9 +14,9 @@ O sistema preserva o modelo *Human-in-the-Loop*: a análise automatizada é prel
 
 ## Funcionalidades
 
-- ✅ Cadastro e login de clientes e engenheiros com JWT
+- ✅ Cadastro e login com JWT; perfis de engenharia exigem convite configurado
 - ✅ Proteção de rotas por perfil (`ROLE_CLIENTE` e `ROLE_ENGENHEIRO`)
-- ✅ Criação idempotente de rascunho de vistoria no frontend
+- ✅ Proteção contra criação concorrente de rascunhos na mesma tela
 - ✅ Protocolo guiado com 5 grupos e 12 itens de evidência
 - ✅ Upload validado de imagens JPEG, PNG e WebP de até 10 MB
 - ✅ Persistência das evidências atrás da abstração `StorageService`
@@ -98,6 +98,8 @@ O perfil padrão usa H2 em memória e armazenamento local em `uploads/`.
 
 ```powershell
 # terminal 1 — backend em http://localhost:8080
+$env:JWT_SECRET = "defina-um-segredo-local-com-pelo-menos-32-bytes"
+$env:ENGINEER_REGISTRATION_CODE = "defina-um-convite-para-engenheiros"
 .\mvnw.cmd spring-boot:run
 
 # terminal 2 — frontend em http://localhost:3000
@@ -118,11 +120,11 @@ npm run build
 O repositório contém uma imagem *standalone* para o frontend. O backend deve estar acessível pela URL definida no momento do build.
 
 ```powershell
-docker build -t vistoria-predial-frontend .\frontend
+docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:8080/api -t vistoria-predial-frontend .\frontend
 docker run --rm -p 3000:3000 vistoria-predial-frontend
 ```
 
-Não há `docker-compose` do ambiente completo nesta versão. Para usar PostgreSQL no backend, configure `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DRIVER` e `JPA_PLATFORM` antes de iniciar a aplicação. Em qualquer ambiente não local, também configure um `JWT_SECRET` próprio.
+Não há `docker-compose` do ambiente completo nesta versão. Para usar PostgreSQL no backend, configure `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DRIVER` e `JPA_PLATFORM` antes de iniciar a aplicação. O backend exige `JWT_SECRET` com pelo menos 32 bytes em todos os ambientes; não reutilize o valor local em produção. Configure `ENGINEER_REGISTRATION_CODE` para habilitar o cadastro de engenheiros.
 
 ## Endpoints principais
 
@@ -130,7 +132,7 @@ Todas as rotas da aplicação usam o prefixo `/api`.
 
 | Método | Endpoint | Perfil | Descrição |
 | --- | --- | --- | --- |
-| `POST` | `/api/auth/register` | Público | Cadastra cliente ou engenheiro |
+| `POST` | `/api/auth/register` | Público | Cadastra cliente; engenheiro exige convite válido |
 | `POST` | `/api/auth/login` | Público | Autentica e retorna JWT |
 | `POST` | `/api/vistorias` | Cliente | Cria rascunho com endereço |
 | `GET` | `/api/vistorias/minhas` | Cliente | Lista as vistorias do usuário |
@@ -164,6 +166,8 @@ Resposta resumida:
   "perfil": "ROLE_CLIENTE"
 }
 ```
+
+No cadastro de engenheiro, envie também `"crea"` e `"codigoConvite"`; o segundo valor deve corresponder a `ENGINEER_REGISTRATION_CODE`.
 
 ### Exemplo: criar uma vistoria
 
@@ -210,9 +214,11 @@ A suíte de backend usa Testcontainers; o teste PostgreSQL requer Docker dispon�
 - **Sessão durante hidratação:** a área protegida diferencia o snapshot do servidor e o do navegador para não expulsar uma sessão válida após recarga.
 - **Portabilidade do schema:** as migrations são verificadas também em PostgreSQL real; H2 isoladamente não é usado como prova de compatibilidade.
 - **Erros previsíveis:** a API padroniza falhas com `ProblemDetail` e mantém o mesmo contrato na cadeia de segurança.
+- **Credenciais sem fallback público:** o backend falha ao iniciar sem um segredo JWT forte; o cadastro de engenheiros só é liberado por convite configurado.
 
 ## Limites atuais
 
 - A integração OCI está representada apenas por propriedades e por uma porta de aplicação; o adaptador ativo de pré-laudo é mockado.
 - O armazenamento ativo é local. A abstração permite trocar o adaptador, mas não existe integração com S3/OCI Object Storage nesta versão.
+- O convite de engenharia é um controle administrativo do MVP, não uma validação automática do CREA; antes de abertura pública, o onboarding profissional deve ganhar verificação e gestão próprias.
 - O repositório não declara uma licença de uso.
