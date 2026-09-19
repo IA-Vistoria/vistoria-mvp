@@ -19,6 +19,8 @@ public final class ProblemTypes {
             URI.create("urn:vistoria:problem:invalid-domain-state");
     public static final URI INVALID_REQUEST =
             URI.create("urn:vistoria:problem:invalid-request");
+    public static final URI UNAUTHORIZED =
+            URI.create("urn:vistoria:problem:unauthorized");
     public static final URI VALIDATION_ERROR =
             URI.create("urn:vistoria:problem:validation-error");
     public static final URI STORAGE_ERROR =
