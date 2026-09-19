@@ -3,6 +3,7 @@
 ## Status Tracker
 
 - [x] **T1**: Implementar `Usuario` entity, `PerfilEnum` e `UsuarioRepository`.
+- [x] **T2**: Implementar `RegisterRequestDto`, `LoginRequestDto`, `AuthResponseDto`, e `UsuarioConflictException`.
 
 ## Task Breakdown
 
