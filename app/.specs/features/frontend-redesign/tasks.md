@@ -42,7 +42,7 @@ If any required skill cannot be activated, stop before changing production code 
 ---
 
 **Design**: `.specs/features/frontend-redesign/design.md`
-**Status**: Approved
+**Status**: In Progress
 
 ---
 
@@ -128,6 +128,8 @@ T10
 
 ### T1: Restabelecer o Maven Wrapper canônico
 
+**Status**: Complete
+
 **What**: Corrigir a detecção do diretório `.m2` no script PowerShell embutido para que `mvnw.cmd` inicie o Maven 3.9.16 em diretórios normais e em links simbólicos.
 **Where**: `mvnw.cmd`
 **Depends on**: None
@@ -139,7 +141,7 @@ T10
 - MCP: terminal local
 - Skills: `tlc-spec-driven`, `superpowers:systematic-debugging`
 
-- [ ] **Step 1: Reproduzir o RED do wrapper**
+- [x] **Step 1: Reproduzir o RED do wrapper**
 
 ```powershell
 .\mvnw.cmd -version
@@ -147,7 +149,7 @@ T10
 
 Expected: FAIL atual com `Não é possível indexar em uma matriz nula` na expressão `(Get-Item $MAVEN_M2_PATH).Target[0]`.
 
-- [ ] **Step 2: Aplicar a correção mínima**
+- [x] **Step 2: Aplicar a correção mínima**
 
 Substituir a indexação direta por uma decisão nula-segura:
 
@@ -161,7 +163,7 @@ if (-not $MAVEN_M2_TARGET) {
 }
 ```
 
-- [ ] **Step 3: Provar o GREEN do comando canônico**
+- [x] **Step 3: Provar o GREEN do comando canônico**
 
 ```powershell
 .\mvnw.cmd -version
@@ -170,7 +172,7 @@ if (-not $MAVEN_M2_TARGET) {
 
 Expected: Maven 3.9.16, Java 21 e os 39 testes da linha de base passando; o total não pode diminuir.
 
-- [ ] **Step 4: Atualizar rastreabilidade e commitar somente o wrapper**
+- [x] **Step 4: Atualizar rastreabilidade e commitar somente o wrapper**
 
 ```powershell
 python C:\Users\vine\.codex\skills\tlc-spec-driven\scripts\check_commit.py --message "fix(build): corrige inicialização do Maven Wrapper"
@@ -180,9 +182,9 @@ git commit -m "fix(build): corrige inicialização do Maven Wrapper"
 
 **Done when**:
 
-- [ ] `mvnw.cmd -version` e `mvnw.cmd test` passam pelo wrapper.
-- [ ] A suíte mantém no mínimo 39 testes backend.
-- [ ] T1 está marcado antes do commit e nenhum arquivo alheio está staged.
+- [x] `mvnw.cmd -version` e `mvnw.cmd test` passam pelo wrapper.
+- [x] A suíte mantém no mínimo 39 testes backend.
+- [x] T1 está marcado antes do commit e nenhum arquivo alheio está staged.
 
 **Tests**: smoke + suíte backend
 **Gate**: Backend full
