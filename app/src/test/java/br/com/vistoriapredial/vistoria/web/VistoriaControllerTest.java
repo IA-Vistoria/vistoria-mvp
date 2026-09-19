@@ -5,6 +5,8 @@ import br.com.vistoriapredial.usuario.domain.PerfilEnum;
 import br.com.vistoriapredial.usuario.domain.Usuario;
 import br.com.vistoriapredial.usuario.persistence.UsuarioRepository;
 import br.com.vistoriapredial.vistoria.application.VistoriaService;
+import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
+import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,9 +23,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -67,9 +71,17 @@ class VistoriaControllerTest {
         v.setStatus(VistoriaStatus.EM_RASCUNHO);
         ReflectionTestUtils.setField(v, "id", 10L);
 
-        when(vistoriaService.criarVistoria(any())).thenReturn(v);
+        when(vistoriaService.criarVistoria(any(), any())).thenReturn(v);
 
-        mockMvc.perform(post("/api/vistorias"))
+        String payload = """
+                {
+                    "endereco": "Rua 1"
+                }
+                """;
+
+        mockMvc.perform(post("/api/vistorias")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(10));
     }
@@ -78,11 +90,41 @@ class VistoriaControllerTest {
     @WithMockUser(username = "client@test.com", roles = "CLIENTE")
     void shouldUploadImagem() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "img".getBytes());
+        Vistoria updated = new Vistoria();
+        updated.setCliente(cliente);
+        updated.setStatus(VistoriaStatus.EM_RASCUNHO);
+        ReflectionTestUtils.setField(updated, "id", 10L);
+        ImagemVistoria image = new ImagemVistoria();
+        image.setProtocoloItem("SALA_PISO");
+        image.setDataUpload(LocalDateTime.of(2026, 9, 19, 4, 0));
+        ReflectionTestUtils.setField(image, "id", 20L);
+        updated.getImagens().add(image);
+        when(vistoriaService.uploadImagem(eq(10L), any(), eq("SALA_PISO"), any())).thenReturn(updated);
 
         mockMvc.perform(multipart("/api/vistorias/10/imagens")
                         .file(file)
-                        .param("protocoloItem", "SALA"))
-                .andExpect(status().isOk());
+                        .param("protocoloItem", "SALA_PISO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.imagens[0].id").value(20))
+                .andExpect(jsonPath("$.imagens[0].protocoloItem").value("SALA_PISO"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnProblemDetailForInvalidEvidence() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "fraude.png", "image/png", "texto".getBytes());
+        doThrow(new InvalidEvidenceException("O conteúdo não corresponde ao tipo informado."))
+                .when(vistoriaService).uploadImagem(eq(10L), any(), eq("SALA_PISO"), any());
+
+        mockMvc.perform(multipart("/api/vistorias/10/imagens")
+                        .file(file)
+                        .param("protocoloItem", "SALA_PISO"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Evidência inválida"))
+                .andExpect(jsonPath("$.detail").value("O conteúdo não corresponde ao tipo informado."))
+                .andExpect(jsonPath("$.instance").value("/api/vistorias/10/imagens"));
     }
 
     @Test

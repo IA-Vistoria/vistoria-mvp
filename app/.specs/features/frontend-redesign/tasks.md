@@ -285,6 +285,8 @@ git commit -m "fix(migration): compatibiliza schema de vistoria com PostgreSQL"
 
 ### T3: Endurecer upload e submissão de evidências
 
+**Status**: Complete
+
 **What**: Consolidar o contrato backend já iniciado para endereço/lista do cliente e completar validação de protocolo, tamanho, MIME e assinatura, nome seguro, resposta do upload, evidência obrigatória e URLs reais para a IA.
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/application/`
 **Depends on**: T2
@@ -296,7 +298,7 @@ git commit -m "fix(migration): compatibiliza schema de vistoria com PostgreSQL"
 - MCP: terminal e editor local
 - Skills: `tlc-spec-driven`, `superpowers:test-driven-development`
 
-- [ ] **Step 1: Escrever os testes RED do validador e serviço**
+- [x] **Step 1: Escrever os testes RED do validador e serviço**
 
 O teste central de submissão deve ter este conteúdo:
 
@@ -321,7 +323,7 @@ No mesmo ciclo, criar casos parametrizados que: rejeitam `SALA`, `TELHADO` e str
 
 Atualizar o teste MockMvc de upload para esperar `200` com `$.imagens[0].protocoloItem` em vez de corpo vazio.
 
-- [ ] **Step 2: Executar RED focado**
+- [x] **Step 2: Executar RED focado**
 
 ```powershell
 .\mvnw.cmd "-Dtest=VistoriaServiceTest,EvidenceFileValidatorTest,VistoriaControllerTest" test
@@ -329,7 +331,7 @@ Atualizar o teste MockMvc de upload para esperar `200` com `$.imagens[0].protoco
 
 Expected: FAIL por classes/regras ainda inexistentes e contrato `Void` do upload.
 
-- [ ] **Step 3: Implementar protocolo e validação binária**
+- [x] **Step 3: Implementar protocolo e validação binária**
 
 ```java
 public final class ProtocoloVistoria {
@@ -346,7 +348,7 @@ public record ValidatedEvidence(String extension, MediaType mediaType) {}
 
 `EvidenceFileValidator.validate` deve ler cabeçalhos JPEG (`FF D8 FF`), PNG (`89 50 4E 47 0D 0A 1A 0A`) e WebP (`RIFF....WEBP`), rejeitar arquivo vazio/maior que 10 MiB e devolver extensão controlada.
 
-- [ ] **Step 4: Corrigir serviço e contrato do upload**
+- [x] **Step 4: Corrigir serviço e contrato do upload**
 
 ```java
 String fileName = vistoriaId + "_" + UUID.randomUUID() + validated.extension();
@@ -362,11 +364,11 @@ List<String> urls = vistoria.getImagens().stream()
 String preLaudo = iaIntegrationService.analisarImagens(urls);
 ```
 
-- [ ] **Step 5: Executar gate focado e completo**
+- [x] **Step 5: Executar gate focado e completo**
 
 Expected: pelo menos 10 casos novos e no mínimo 50 testes backend totais, todos verdes.
 
-- [ ] **Step 6: Atualizar rastreabilidade e commitar**
+- [x] **Step 6: Atualizar rastreabilidade e commitar**
 
 ```powershell
 python C:\Users\vine\.codex\skills\tlc-spec-driven\scripts\check_commit.py --message "feat(vistoria): consolida jornada de evidências do cliente"
@@ -376,11 +378,11 @@ git commit -m "feat(vistoria): consolida jornada de evidências do cliente"
 
 **Done when**:
 
-- [ ] Os 12 códigos são a única allowlist aceita.
-- [ ] Nome original nunca compõe o destino.
-- [ ] Arquivos inválidos recebem ProblemDetail seguro e imagens válidas anteriores permanecem.
-- [ ] Submissão sem evidência falha; IA recebe URLs persistidas.
-- [ ] Gate focado e backend full passam com contagem não regressiva.
+- [x] Os 12 códigos são a única allowlist aceita.
+- [x] Nome original nunca compõe o destino.
+- [x] Arquivos inválidos recebem ProblemDetail seguro e imagens válidas anteriores permanecem.
+- [x] Submissão sem evidência falha; IA recebe URLs persistidas.
+- [x] Gate focado e backend full passam com contagem não regressiva.
 
 **Tests**: unit + integração MockMvc
 **Gate**: Backend quick + Backend full

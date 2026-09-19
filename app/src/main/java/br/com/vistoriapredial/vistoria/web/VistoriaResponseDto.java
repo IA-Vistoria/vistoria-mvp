@@ -4,6 +4,7 @@ import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record VistoriaResponseDto(
         Long id,
@@ -12,8 +13,10 @@ public record VistoriaResponseDto(
         VistoriaStatus status,
         String preLaudoIa,
         String parecerEngenheiro,
+        String endereco,
         LocalDateTime dataCriacao,
-        LocalDateTime dataConclusao
+        LocalDateTime dataConclusao,
+        List<ImagemVistoriaResponseDto> imagens
 ) {
     public static VistoriaResponseDto from(Vistoria v) {
         return new VistoriaResponseDto(
@@ -23,8 +26,12 @@ public record VistoriaResponseDto(
                 v.getStatus(),
                 v.getPreLaudoIa(),
                 v.getParecerEngenheiro(),
+                v.getEndereco(),
                 v.getDataCriacao(),
-                v.getDataConclusao()
+                v.getDataConclusao(),
+                v.getImagens().stream()
+                        .map(ImagemVistoriaResponseDto::from)
+                        .toList()
         );
     }
 }

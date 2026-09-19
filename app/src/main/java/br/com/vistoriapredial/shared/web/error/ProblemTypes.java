@@ -25,6 +25,8 @@ public final class ProblemTypes {
             URI.create("urn:vistoria:problem:validation-error");
     public static final URI STORAGE_ERROR =
             URI.create("urn:vistoria:problem:storage-error");
+    public static final URI INVALID_EVIDENCE =
+            URI.create("urn:vistoria:problem:invalid-evidence");
     public static final URI INTERNAL_ERROR =
             URI.create("urn:vistoria:problem:internal-error");
 

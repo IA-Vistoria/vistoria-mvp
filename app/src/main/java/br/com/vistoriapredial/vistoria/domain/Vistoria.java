@@ -33,6 +33,9 @@ public class Vistoria {
     @Column(columnDefinition = "TEXT")
     private String parecerEngenheiro;
 
+    @Column(length = 255)
+    private String endereco;
+
     @OneToMany(mappedBy = "vistoria", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ImagemVistoria> imagens = new ArrayList<>();
 
@@ -109,6 +112,14 @@ public class Vistoria {
 
     public void setImagens(List<ImagemVistoria> imagens) {
         this.imagens = imagens;
+    }
+
+    public String getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(String endereco) {
+        this.endereco = endereco;
     }
 
     public LocalDateTime getDataCriacao() {

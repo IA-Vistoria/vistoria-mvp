@@ -9,15 +9,22 @@ import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 import br.com.vistoriapredial.vistoria.persistence.VistoriaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.ArgumentCaptor;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
 
+import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -34,6 +41,9 @@ class VistoriaServiceTest {
 
     @Mock
     private IaIntegrationService iaIntegrationService;
+
+    @Mock
+    private EvidenceFileValidator evidenceFileValidator;
 
     @InjectMocks
     private VistoriaService vistoriaService;
@@ -56,11 +66,12 @@ class VistoriaServiceTest {
     void shouldCreateVistoriaIfCliente() {
         when(vistoriaRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
-        Vistoria v = vistoriaService.criarVistoria(cliente);
+        Vistoria result = vistoriaService.criarVistoria(cliente, "Endereço Teste");
         
-        assertNotNull(v);
-        assertEquals(cliente, v.getCliente());
-        assertEquals(VistoriaStatus.EM_RASCUNHO, v.getStatus());
+        assertNotNull(result);
+        assertEquals(cliente, result.getCliente());
+        assertEquals(VistoriaStatus.EM_RASCUNHO, result.getStatus());
+        assertEquals("Endereço Teste", result.getEndereco());
     }
 
     @Test
@@ -71,15 +82,71 @@ class VistoriaServiceTest {
         v.setStatus(VistoriaStatus.EM_RASCUNHO);
 
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(v));
-        when(storageService.store(any(), anyString())).thenReturn("http://local/img.jpg");
+        MockMultipartFile file = new MockMultipartFile("file", "nome-do-cliente.jpg", "image/jpeg", "test data".getBytes());
+        when(evidenceFileValidator.validate(file))
+                .thenReturn(new ValidatedEvidence(".jpg", MediaType.IMAGE_JPEG));
+        when(storageService.store(eq(file), anyString())).thenReturn("uploads/a.jpg");
         when(vistoriaRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
-        MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "test data".getBytes());
-        ImagemVistoria img = vistoriaService.uploadImagem(10L, cliente, "SALA", file);
+        Vistoria result = vistoriaService.uploadImagem(10L, cliente, "SALA_PISO", file);
 
-        assertNotNull(img);
-        assertEquals("http://local/img.jpg", img.getUrl());
+        assertThat(result).isSameAs(v);
         assertEquals(1, v.getImagens().size());
+        assertThat(v.getImagens().getFirst().getUrl()).isEqualTo("uploads/a.jpg");
+        assertThat(v.getImagens().getFirst().getProtocoloItem()).isEqualTo("SALA_PISO");
+
+        ArgumentCaptor<String> fileName = ArgumentCaptor.forClass(String.class);
+        verify(storageService).store(eq(file), fileName.capture());
+        assertThat(fileName.getValue())
+                .matches("10_[0-9a-f-]{36}\\.jpg")
+                .doesNotContain("nome-do-cliente");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SALA", "TELHADO", ""})
+    void shouldRejectUnknownProtocolItem(String protocoloItem) {
+        Vistoria vistoria = editableInspection();
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "foto.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, cliente, protocoloItem, file))
+                .isInstanceOf(InvalidEvidenceException.class)
+                .hasMessageContaining("protocolo");
+
+        verifyNoInteractions(evidenceFileValidator, storageService);
+        assertThat(vistoria.getImagens()).isEmpty();
+    }
+
+    @Test
+    void shouldPreserveExistingEvidenceWhenNewFileIsInvalid() {
+        Vistoria vistoria = editableInspection();
+        ImagemVistoria existing = evidence("uploads/anterior.jpg");
+        vistoria.getImagens().add(existing);
+        MockMultipartFile invalid = new MockMultipartFile(
+                "file", "fraude.png", MediaType.IMAGE_PNG_VALUE, "texto".getBytes());
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(evidenceFileValidator.validate(invalid))
+                .thenThrow(new InvalidEvidenceException("O conteúdo não corresponde ao tipo informado."));
+
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, cliente, "SALA_PISO", invalid))
+                .isInstanceOf(InvalidEvidenceException.class);
+
+        assertThat(vistoria.getImagens()).containsExactly(existing);
+        verifyNoInteractions(storageService);
+        verify(vistoriaRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRejectSubmissionWithoutPersistedEvidence() {
+        Vistoria vistoria = editableInspection();
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThatThrownBy(() -> vistoriaService.submeterVistoria(10L, cliente))
+                .isInstanceOf(InvalidEvidenceException.class)
+                .hasMessageContaining("ao menos uma evidência");
+
+        verify(iaIntegrationService, never()).analisarImagens(anyList());
     }
 
     @Test
@@ -89,9 +156,8 @@ class VistoriaServiceTest {
         v.setCliente(cliente);
         v.setStatus(VistoriaStatus.EM_RASCUNHO);
         
-        ImagemVistoria img = new ImagemVistoria();
-        img.setUrl("img.jpg");
-        v.getImagens().add(img);
+        v.getImagens().add(evidence("uploads/a.jpg"));
+        v.getImagens().add(evidence("uploads/b.webp"));
 
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(v));
         when(vistoriaRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
@@ -101,6 +167,7 @@ class VistoriaServiceTest {
 
         assertEquals(VistoriaStatus.AGUARDANDO_ENGENHEIRO, submetida.getStatus());
         assertEquals("Laudo Mock", submetida.getPreLaudoIa());
+        verify(iaIntegrationService).analisarImagens(List.of("uploads/a.jpg", "uploads/b.webp"));
     }
 
     @Test
@@ -109,7 +176,7 @@ class VistoriaServiceTest {
         v.setId(10L);
         v.setCliente(cliente);
         v.setStatus(VistoriaStatus.EM_RASCUNHO);
-        v.getImagens().add(new ImagemVistoria());
+        v.getImagens().add(evidence("uploads/a.jpg"));
 
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(v));
         when(vistoriaRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
@@ -134,5 +201,19 @@ class VistoriaServiceTest {
         assertEquals(VistoriaStatus.CONCLUIDA, aprovada.getStatus());
         assertEquals("Tudo certo", aprovada.getParecerEngenheiro());
         assertEquals(engenheiro, aprovada.getEngenheiro());
+    }
+
+    private Vistoria editableInspection() {
+        Vistoria vistoria = new Vistoria();
+        vistoria.setId(10L);
+        vistoria.setCliente(cliente);
+        vistoria.setStatus(VistoriaStatus.EM_RASCUNHO);
+        return vistoria;
+    }
+
+    private ImagemVistoria evidence(String url) {
+        ImagemVistoria image = new ImagemVistoria();
+        image.setUrl(url);
+        return image;
     }
 }

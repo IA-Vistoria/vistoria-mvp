@@ -1,6 +1,7 @@
 package br.com.vistoriapredial.shared.web.error;
 
 import br.com.vistoriapredial.storage.StorageException;
+import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -67,6 +69,36 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 exception.getMessage(),
                 URI.create(request.getRequestURI())
         );
+    }
+
+    @ExceptionHandler(InvalidEvidenceException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidEvidence(
+            InvalidEvidenceException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ProblemTypes.INVALID_EVIDENCE,
+                "Evidência inválida",
+                exception.getMessage(),
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException exception,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+        ProblemDetail problem = createProblem(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ProblemTypes.INVALID_EVIDENCE,
+                "Evidência inválida",
+                "O arquivo de evidência deve ter no máximo 10 MB.",
+                requestUri(request)
+        );
+
+        return createObjectResponse(problem, headers, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     /**

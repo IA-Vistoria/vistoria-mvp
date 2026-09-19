@@ -7,13 +7,14 @@ import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 import br.com.vistoriapredial.vistoria.persistence.VistoriaRepository;
+import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 public class VistoriaService {
@@ -21,35 +22,55 @@ public class VistoriaService {
     private final VistoriaRepository vistoriaRepository;
     private final StorageService storageService;
     private final IaIntegrationService iaIntegrationService;
+    private final EvidenceFileValidator evidenceFileValidator;
 
-    public VistoriaService(VistoriaRepository vistoriaRepository, StorageService storageService, IaIntegrationService iaIntegrationService) {
+    public VistoriaService(
+            VistoriaRepository vistoriaRepository,
+            StorageService storageService,
+            IaIntegrationService iaIntegrationService,
+            EvidenceFileValidator evidenceFileValidator) {
         this.vistoriaRepository = vistoriaRepository;
         this.storageService = storageService;
         this.iaIntegrationService = iaIntegrationService;
+        this.evidenceFileValidator = evidenceFileValidator;
     }
 
     // Fluxo Cliente
 
     @Transactional
-    public Vistoria criarVistoria(Usuario cliente) {
+    public Vistoria criarVistoria(Usuario cliente, String endereco) {
         if (cliente.getPerfil() != PerfilEnum.ROLE_CLIENTE) {
             throw new IllegalArgumentException("Somente clientes podem criar vistorias");
         }
         Vistoria vistoria = new Vistoria();
         vistoria.setCliente(cliente);
+        vistoria.setEndereco(endereco);
         vistoria.setStatus(VistoriaStatus.EM_RASCUNHO);
         return vistoriaRepository.save(vistoria);
     }
 
+    @Transactional(readOnly = true)
+    public List<Vistoria> listarVistoriasCliente(Usuario cliente) {
+        if (cliente.getPerfil() != PerfilEnum.ROLE_CLIENTE) {
+            throw new IllegalArgumentException("Somente clientes podem listar suas vistorias");
+        }
+        return vistoriaRepository.findByCliente(cliente);
+    }
+
     @Transactional
-    public ImagemVistoria uploadImagem(Long vistoriaId, Usuario cliente, String protocoloItem, MultipartFile file) {
+    public Vistoria uploadImagem(Long vistoriaId, Usuario cliente, String protocoloItem, MultipartFile file) {
         Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
         
         if (vistoria.getStatus() != VistoriaStatus.EM_RASCUNHO && vistoria.getStatus() != VistoriaStatus.DEVOLVIDA_CLIENTE) {
             throw new IllegalStateException("Vistoria não está em status que permita edição.");
         }
 
-        String fileName = vistoriaId + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        if (protocoloItem == null || !ProtocoloVistoria.ITEMS.contains(protocoloItem)) {
+            throw new InvalidEvidenceException("O item de protocolo informado é inválido.");
+        }
+
+        ValidatedEvidence validated = evidenceFileValidator.validate(file);
+        String fileName = vistoriaId + "_" + UUID.randomUUID() + validated.extension();
         String url = storageService.store(file, fileName);
         
         ImagemVistoria img = new ImagemVistoria();
@@ -58,8 +79,7 @@ public class VistoriaService {
         img.setVistoria(vistoria);
         
         vistoria.getImagens().add(img);
-        vistoriaRepository.save(vistoria);
-        return img;
+        return vistoriaRepository.save(vistoria);
     }
 
     @Transactional
@@ -71,14 +91,17 @@ public class VistoriaService {
         }
         
         if (vistoria.getImagens().isEmpty()) {
-            throw new IllegalStateException("Vistoria precisa de pelo menos uma imagem para ser submetida.");
+            throw new InvalidEvidenceException(
+                    "Adicione ao menos uma evidência antes de enviar a vistoria.");
         }
 
         vistoria.setStatus(VistoriaStatus.AGUARDANDO_IA);
         vistoria = vistoriaRepository.save(vistoria);
         
         try {
-            List<String> urls = vistoria.getImagens().stream().map(ImagemVistoria::getUrl).collect(Collectors.toList());
+            List<String> urls = vistoria.getImagens().stream()
+                    .map(ImagemVistoria::getUrl)
+                    .toList();
             String preLaudo = iaIntegrationService.analisarImagens(urls);
             vistoria.setPreLaudoIa(preLaudo);
             vistoria.setStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO);

@@ -36,22 +36,34 @@ public class VistoriaController {
 
     @PostMapping
     @PreAuthorize("hasRole('CLIENTE')")
-    public ResponseEntity<VistoriaResponseDto> criarVistoria(Authentication auth) {
+    public ResponseEntity<VistoriaResponseDto> criarVistoria(
+            @RequestBody @Valid CriarVistoriaRequestDto request,
+            Authentication auth) {
         Usuario cliente = getUsuario(auth);
-        Vistoria v = vistoriaService.criarVistoria(cliente);
+        Vistoria v = vistoriaService.criarVistoria(cliente, request.endereco());
         return ResponseEntity.status(HttpStatus.CREATED).body(VistoriaResponseDto.from(v));
+    }
+
+    @GetMapping("/minhas")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<List<VistoriaResponseDto>> listarMinhas(Authentication auth) {
+        Usuario cliente = getUsuario(auth);
+        List<Vistoria> minhas = vistoriaService.listarVistoriasCliente(cliente);
+        return ResponseEntity.ok(minhas.stream()
+                .map(VistoriaResponseDto::from)
+                .collect(Collectors.toList()));
     }
 
     @PostMapping("/{id}/imagens")
     @PreAuthorize("hasRole('CLIENTE')")
-    public ResponseEntity<Void> uploadImagem(
+    public ResponseEntity<VistoriaResponseDto> uploadImagem(
             @PathVariable Long id,
             @RequestParam("protocoloItem") String protocoloItem,
             @RequestParam("file") MultipartFile file,
-            Authentication auth) {
+        Authentication auth) {
         Usuario cliente = getUsuario(auth);
-        vistoriaService.uploadImagem(id, cliente, protocoloItem, file);
-        return ResponseEntity.ok().build();
+        Vistoria vistoria = vistoriaService.uploadImagem(id, cliente, protocoloItem, file);
+        return ResponseEntity.ok(VistoriaResponseDto.from(vistoria));
     }
 
     @PostMapping("/{id}/submeter")
