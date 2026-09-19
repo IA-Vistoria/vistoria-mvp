@@ -73,7 +73,35 @@ describe("EngineerReview", () => {
     vi.mocked(reviewInspection).mockReset();
     vi.mocked(loadEvidence).mockReset();
     vi.mocked(getPendingInspection).mockResolvedValue(pending);
+    vi.mocked(listPendingInspections).mockResolvedValue([pending]);
     vi.mocked(loadEvidence).mockResolvedValue(new Blob(["foto"], { type: "image/jpeg" }));
+  });
+
+  it("integra fila, galeria, pré-laudo e decisão no mesmo workspace", async () => {
+    const secondEvidence = {
+      id: 4,
+      protocoloItem: "SALA_PISO" as const,
+      dataUpload: "2026-09-19T09:12:00",
+      conteudoUrl: "/api/foto/4",
+    };
+    vi.mocked(getPendingInspection).mockResolvedValue({ ...pending, imagens: [...pending.imagens, secondEvidence] });
+    vi.mocked(listPendingInspections).mockResolvedValue([
+      pending,
+      { ...pending, id: 19, endereco: "Rua do Projeto, 50" },
+    ]);
+    const user = userEvent.setup();
+
+    render(<EngineerReview inspectionId={20} />);
+
+    const queue = await screen.findByRole("region", { name: "Fila de revisão" });
+    expect(within(queue).getAllByRole("link")).toHaveLength(2);
+    expect(within(queue).getByRole("link", { name: /vistoria #20/i }).getAttribute("aria-current")).toBe("page");
+    expect(await screen.findByAltText("Evidência em destaque: Sala — Paredes e revestimentos")).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Pré-laudo da IA" })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Decisão técnica" })).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: "Visualizar Sala — Piso, evidência 2" }));
+    expect(await screen.findByAltText("Evidência em destaque: Sala — Piso")).toBeDefined();
   });
 
   it("exibe evidências e linhas reais sem inventar severidade ou confiança", async () => {
@@ -137,7 +165,7 @@ describe("EngineerReview", () => {
     await user.click(screen.getByRole("button", { name: "Aprovar vistoria" }));
 
     expect(await screen.findByText("Este caso já foi processado.")).toBeDefined();
-    expect(listPendingInspections).toHaveBeenCalledTimes(1);
+    expect(listPendingInspections).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("button", { name: "Aprovar vistoria" })).toBeNull();
   });
 });

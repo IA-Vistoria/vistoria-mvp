@@ -1037,6 +1037,64 @@ Push só ocorre se o status não contiver mudanças da feature fora de commit e 
 **Gate**: Integrated + TLC completion
 **Commit**: `test(frontend): valida experiência Vistor.IA integrada`
 
+## Task 11
+
+### T11: Consolidar fidelidade visual e estrutura responsiva
+
+**Status**: Complete
+
+**What**: Aproximar as jornadas de cliente e engenheiro das referências aprovadas, preservando dados reais, fluxos existentes e um único sistema visual responsivo.
+**Where**: `frontend/src/features/inspections/`, `frontend/src/app/globals.css`, evidências e relatório de QA.
+**Depends on**: T10
+**Reuses**: tokens Vistor.IA, `DashboardShell`, protocolo de 12 itens, cliente HTTP e componentes autenticados de evidência.
+**Requirement**: FUX-02, FUX-03 e FUX-05.
+
+**Tools**:
+
+- MCP: terminal local e navegador controlado
+- Skills: `tlc-spec-driven`, `superpowers:test-driven-development`, `product-design:image-to-code`, `superpowers:verification-before-completion`
+
+- [x] **Step 1: Criar RED para a nova hierarquia**
+
+Cobrir navegação lateral e item focado no cliente; fila, galeria, pré-laudo e decisão no workspace do engenheiro.
+
+- [x] **Step 2: Implementar as duas interfaces com dados reais**
+
+Preservar uploads, submissão, fila, decisão e estados de falha; não inventar severidade, confiança, CREA ou diagnóstico.
+
+- [x] **Step 3: Auditar desktop, tablet e celular**
+
+Comparar referência e implementação lado a lado, validar 1488, 768 e 375 px e registrar achados em `design-qa.md`.
+
+- [x] **Step 4: Corrigir responsividade e acessibilidade**
+
+Remover rolagem horizontal do stepper móvel, antecipar o conteúdo em foco e distinguir os nomes acessíveis de evidências repetidas.
+
+- [x] **Step 5: Executar os gates completos**
+
+```powershell
+.\mvnw.cmd test
+cd frontend
+npm test -- --run
+npm run lint
+npm run build
+```
+
+- [x] **Step 6: Validar o estado, revisar o diff e preparar a publicação**
+
+Executar TLC, revisar a composição do commit lógico e preparar o push autorizado sem reescrever o histórico remoto.
+
+**Done when**:
+
+- [x] Cliente e engenheiro seguem o mesmo sistema visual e as referências aprovadas.
+- [x] Não há overflow horizontal em 375, 768 ou 1488 px.
+- [x] Testes, lint, build e backend completos passam em execução atual.
+- [x] Evidências e relatório refletem somente esta correção lógica.
+
+**Tests**: componentes React + UAT visual + integração completa
+**Gate**: Frontend full + Backend full + TLC completion
+**Commit**: `feat(frontend): consolida interfaces do cliente e engenheiro`
+
 ---
 
 ## Phase Execution Map
@@ -1046,6 +1104,7 @@ Phase 1: T1 -> T2 -> T3 -> T4
 Phase 2: T5 -> T6
 Phase 3: T7 -> T8 -> T9
 Phase 4: T10
+Phase 5: T11
 ```
 
 Cross-phase dependencies are explicit in each task body; phases themselves execute in order.
@@ -1064,6 +1123,7 @@ Cross-phase dependencies are explicit in each task body; phases themselves execu
 | T8 | Um workflow guiado de evidências | ✅ Granular |
 | T9 | Um workspace de revisão do engenheiro | ✅ Granular |
 | T10 | Um aceite integrado com relatório verificável | ✅ Granular |
+| T11 | Uma consolidação visual das duas jornadas aprovadas | ✅ Granular |
 
 ## Diagram-Definition Cross-Check
 
@@ -1079,6 +1139,7 @@ Cross-phase dependencies are explicit in each task body; phases themselves execu
 | T8 | T7 | T7 -> T8 | ✅ Match |
 | T9 | T8 | T8 -> T9 | ✅ Match |
 | T10 | T9 (cross-phase) | Phase 3 -> Phase 4 | ✅ Match |
+| T11 | T10 | Phase 4 -> Phase 5 | ✅ Match |
 
 ## Test Co-location Validation
 
@@ -1094,3 +1155,4 @@ Cross-phase dependencies are explicit in each task body; phases themselves execu
 | T8 | React workflow/helpers | component + unit | component + unit | ✅ OK |
 | T9 | React engineer workspace | component + unit | component + unit | ✅ OK |
 | T10 | Integrated system | UAT + full gates | integração + UAT + sensor | ✅ OK |
+| T11 | React/CSS/evidência visual | component + UAT + full gates | component + UAT + full gates | ✅ OK |

@@ -27,7 +27,7 @@ O fechamento também comprovou segredo JWT obrigatório, convite administrativo 
 | --- | --- | --- |
 | Backend completo | `.\mvnw.cmd test` — 87 testes, 0 falhas, 0 erros | PASS |
 | PostgreSQL real | Testcontainers PostgreSQL 16.15; 4 migrations até V4; coluna `version BIGINT NOT NULL DEFAULT 0` | PASS |
-| Frontend completo | `npm test -- --run` — 7 arquivos, 52 testes | PASS |
+| Frontend completo | `npm test -- --run` — 7 arquivos, 55 testes | PASS |
 | Qualidade estática | `npm run lint` — zero erro | PASS |
 | Build Next.js | `npm run build` — 9 rotas geradas | PASS |
 | Imagem frontend | `docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:8080/api ...` | PASS |
@@ -64,6 +64,21 @@ A revisão por subagente encontrou e motivou os últimos endurecimentos: JWT sem
 - O armazenamento ativo é local atrás de `StorageService`.
 - O convite é controle administrativo do MVP e não substitui verificação formal do CREA.
 - O token permanece em `localStorage` conforme escopo aprovado; cookie HttpOnly/refresh token ficam para evolução posterior.
+
+## Validação complementar — T11
+
+O cliente foi consolidado em uma jornada guiada com stepper, protocolo lateral, item em foco e orientação de envio. A engenharia passou a reunir fila, galeria, pré-laudo e decisão em um único workspace coerente com a mesma identidade visual.
+
+- Comparação lado a lado registrada em `evidence/qa-cliente-lado-a-lado.png` e `evidence/qa-engenheiro-lado-a-lado.png`.
+- Viewports de 1488 × 1056, 768 × 1024 e 375 × 812 inspecionadas sem overflow horizontal.
+- Stepper móvel reorganizado em duas colunas e conteúdo em foco antecipado na ordem de leitura.
+- Revisão independente identificou o stepper estático após o envio; a correção passou a derivar etapas concluídas/ativas do status real e recebeu teste de regressão.
+- Seletor de evidências repetidas recebeu nomes acessíveis únicos e teste de regressão.
+- `design-qa.md` registra os achados corrigidos e as diferenças deliberadas por ausência de dados no contrato.
+- `npm test -- --run`: 7 arquivos, 55 testes, 0 falhas.
+- `npm run lint`: 0 erros.
+- `npm run build`: 9 rotas geradas.
+- `.\mvnw.cmd test`: 87 testes, 0 falhas, incluindo PostgreSQL 16 real por Testcontainers.
 
 ## Conclusão
 

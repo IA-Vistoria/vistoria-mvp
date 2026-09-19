@@ -18,10 +18,9 @@ export function PreReport({ value }: { value: string | null }) {
         <p className="pre-report__empty">Pré-laudo ainda não disponível</p>
       )}
       <aside className="human-loop-note">
-        <strong>A IA sugere. O engenheiro decide.</strong>
+        <strong>Análise automatizada preliminar</strong>
         <span>Este conteúdo não substitui a avaliação técnica profissional.</span>
       </aside>
     </section>
   );
 }
-

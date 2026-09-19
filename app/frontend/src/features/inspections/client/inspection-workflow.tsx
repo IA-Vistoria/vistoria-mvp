@@ -1,8 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, Camera, Check, FileCheck2, RefreshCw, Send } from "lucide-react";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Camera,
+  Check,
+  CheckCircle2,
+  FileCheck2,
+  Info,
+  RefreshCw,
+  Send,
+} from "lucide-react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { AsyncState } from "@/components/ui/async-state";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -10,7 +21,7 @@ import { ApiError } from "@/lib/api";
 import { getMyInspection, submitInspection, uploadEvidence } from "../api";
 import { EvidenceImage } from "../shared/evidence-image";
 import { PROTOCOL_GROUPS, calculateProgress, validateEvidenceFile } from "../shared/protocol";
-import type { Inspection, ProtocolItemCode } from "../types";
+import type { Inspection, InspectionStatus, ProtocolItemCode } from "../types";
 
 const trackingTitles = {
   AGUARDANDO_IA: "Pré-análise em andamento",
@@ -18,8 +29,35 @@ const trackingTitles = {
   CONCLUIDA: "Vistoria concluída",
 } as const;
 
+const protocolItems = PROTOCOL_GROUPS.flatMap((group) =>
+  group.items.map((item) => ({ group, item })),
+);
+
+const journeySteps = [
+  ["Imóvel", "Dados do imóvel"],
+  ["Evidências", "Fotos e orientações"],
+  ["Revisão", "Confira as informações"],
+  ["Envio", "Finalize a solicitação"],
+] as const;
+
+type JourneyStepState = "complete" | "active" | "pending";
+
+function getJourneyStepState(status: InspectionStatus, index: number): JourneyStepState {
+  if (status === "EM_RASCUNHO" || status === "DEVOLVIDA_CLIENTE") {
+    if (index === 0) return "complete";
+    return index === 1 ? "active" : "pending";
+  }
+
+  if (status === "FALHA_IA") {
+    return index < journeySteps.length - 1 ? "complete" : "active";
+  }
+
+  return "complete";
+}
+
 export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   const [inspection, setInspection] = useState<Inspection | null>(null);
+  const [selectedCode, setSelectedCode] = useState<ProtocolItemCode>("SALA_PISO");
   const [loadError, setLoadError] = useState(false);
   const [uploading, setUploading] = useState<ProtocolItemCode | null>(null);
   const [itemErrors, setItemErrors] = useState<Partial<Record<ProtocolItemCode, string>>>({});
@@ -44,6 +82,11 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
     };
   }, [inspectionId]);
 
+  const selectedIndex = useMemo(
+    () => Math.max(0, protocolItems.findIndex(({ item }) => item.code === selectedCode)),
+    [selectedCode],
+  );
+
   async function reload() {
     try {
       setInspection(await getMyInspection(inspectionId));
@@ -54,6 +97,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   }
 
   async function sendFile(code: ProtocolItemCode, file: File) {
+    setSelectedCode(code);
     const validationError = validateEvidenceFile(file);
     if (validationError) {
       setItemErrors((current) => ({ ...current, [code]: validationError }));
@@ -102,6 +146,11 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
     }
   }
 
+  function selectRelative(offset: number) {
+    const next = protocolItems[selectedIndex + offset];
+    if (next) setSelectedCode(next.item.code);
+  }
+
   if (loadError) {
     return <AsyncState role="alert" title="Não foi possível abrir a vistoria" description="Tente carregar novamente sem criar outro rascunho." action={<button className="button button--secondary" onClick={() => void reload()}>Tentar novamente</button>} />;
   }
@@ -115,14 +164,33 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
 
   return (
     <main className="workflow-page">
-      <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar para vistorias</Link>
-      <header className="workflow-heading">
+      <div className="workflow-titlebar">
         <div>
-          <p className="eyebrow">Vistoria #{inspection.id}</p>
-          <h1>{inspection.endereco}</h1>
+          <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar para vistorias</Link>
+          <p className="eyebrow">Jornada do cliente</p>
+          <h1>Jornada guiada de vistoria</h1>
+          <p>Siga o protocolo, registre cada ambiente e envie as evidências para análise.</p>
         </div>
         <StatusBadge status={inspection.status} />
-      </header>
+      </div>
+
+      <nav className="journey-steps" aria-label="Etapas da vistoria">
+        <ol>
+          {journeySteps.map(([title, description], index) => {
+            const state = getJourneyStepState(inspection.status, index);
+            return (
+              <li
+                className={state === "complete" ? "is-complete" : state === "active" ? "is-active" : ""}
+                aria-current={state === "active" ? "step" : undefined}
+                key={title}
+              >
+                <span>{state === "complete" ? <Check size={16} /> : index + 1}</span>
+                <div><strong>{index + 1}. {title}</strong><small>{description}</small></div>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
 
       {inspection.status === "DEVOLVIDA_CLIENTE" ? (
         <section className="engineer-note" aria-labelledby="engineer-note-title">
@@ -146,51 +214,110 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
         </section>
       ) : null}
 
-      <section className="workflow-progress" aria-label="Progresso da documentação">
-        <div><strong>{progress} de 12 itens documentados</strong><span>O progresso considera itens confirmados pela Vistor.IA.</span></div>
-        <progress value={progress} max={12}>{progress} de 12</progress>
-      </section>
-
-      <div className="protocol-groups">
-        {PROTOCOL_GROUPS.map((group, groupIndex) => (
-          <section className="protocol-group" data-testid="protocol-group" key={group.name}>
-            <header><span>{String(groupIndex + 1).padStart(2, "0")}</span><div><h2>{group.name}</h2><p>{group.description}</p></div></header>
-            <div className="protocol-items">
-              {group.items.map((item) => {
-                const evidence = inspection.imagens.filter((entry) => entry.protocoloItem === item.code);
-                const isBusy = uploading === item.code;
-                return (
-                  <article className="protocol-item" data-testid={`protocol-item-${item.code}`} key={item.code}>
-                    <div className="protocol-item__copy">
-                      <span className={`protocol-check ${evidence.length ? "is-complete" : ""}`} aria-hidden="true">{evidence.length ? <Check size={16} /> : null}</span>
-                      <div><h3>{item.label}</h3><p>{item.guidance}</p><small>{evidence.length} {evidence.length === 1 ? "foto" : "fotos"}</small></div>
-                    </div>
-                    {evidence.length ? <div className="evidence-strip">{evidence.map((photo, index) => <EvidenceImage evidence={photo} alt={`${group.name} — ${item.label}, foto ${index + 1}`} key={photo.id} />)}</div> : null}
-                    {itemErrors[item.code] ? <p className="item-error" role="alert">{itemErrors[item.code]}</p> : null}
-                    {editable ? (
-                      <div className="protocol-item__actions">
-                        <label className={`button button--secondary ${isBusy ? "is-disabled" : ""}`}>
-                          <Camera size={17} />{isBusy ? "Enviando..." : "Adicionar foto"}
-                          <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={isBusy || uploading !== null} aria-label={`Adicionar foto de ${group.name} — ${item.label}`} onChange={(event) => chooseFile(item.code, event)} />
-                        </label>
-                        {retryFiles[item.code] ? <button className="retry-link" disabled={isBusy} onClick={() => void sendFile(item.code, retryFiles[item.code]!)}><RefreshCw size={15} />Tentar novamente</button> : null}
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              })}
-            </div>
+      <div className="guided-workspace">
+        <aside className="protocol-sidebar">
+          <div className="property-summary">
+            <p className="eyebrow">Imóvel vistoriado</p>
+            <strong>{inspection.endereco}</strong>
+            <span>Vistoria #{inspection.id}</span>
+          </div>
+          <section className="workflow-progress" aria-label="Progresso da documentação">
+            <div><strong>{progress} de 12 itens documentados</strong><span>O progresso considera itens confirmados pela Vistor.IA.</span></div>
+            <progress value={progress} max={12}>{progress} de 12</progress>
           </section>
-        ))}
-      </div>
+          <nav className="protocol-navigation" aria-label="Itens do protocolo">
+            {PROTOCOL_GROUPS.map((group, groupIndex) => {
+              const completed = group.items.filter((item) => inspection.imagens.some((entry) => entry.protocoloItem === item.code)).length;
+              return (
+                <section data-testid="protocol-group" key={group.name}>
+                  <header><span>{String(groupIndex + 1).padStart(2, "0")}</span><strong>{group.name}</strong><small>{completed} de {group.items.length}</small></header>
+                  {group.items.map((item) => {
+                    const complete = inspection.imagens.some((entry) => entry.protocoloItem === item.code);
+                    return (
+                      <button className={selectedCode === item.code ? "is-active" : ""} type="button" aria-label={`${group.name} — ${item.label}`} aria-current={selectedCode === item.code ? "step" : undefined} onClick={() => setSelectedCode(item.code)} key={item.code}>
+                        <span className={`protocol-check ${complete ? "is-complete" : ""}`} aria-hidden="true">{complete ? <Check size={14} /> : null}</span>
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </section>
+              );
+            })}
+          </nav>
+        </aside>
 
-      {editable ? (
-        <footer className="workflow-submit">
-          <div><p className="eyebrow">Revisão final</p><h2>As fotos representam o estado atual do imóvel?</h2><p>Você poderá acompanhar o processamento após o envio.</p>{submitError ? <p className="item-error" role="alert">{submitError}</p> : null}</div>
-          <button className="button button--primary" disabled={submitting || uploading !== null} onClick={() => void sendInspection()}><Send size={17} />{submitting ? "Enviando..." : "Enviar para análise"}</button>
-        </footer>
-      ) : null}
+        <section className="focused-protocol" aria-live="polite">
+          <aside className="photo-guidance">
+            <Camera size={24} />
+            <div><strong>Dicas para boas fotos</strong><ul><li>Use boa iluminação e enquadre o ambiente completo.</li><li>Registre também fissuras, manchas ou sinais de umidade.</li><li>Evite fotos tremidas ou muito próximas.</li></ul></div>
+          </aside>
+          {protocolItems.map(({ group, item }, index) => {
+            const evidence = inspection.imagens.filter((entry) => entry.protocoloItem === item.code);
+            const isBusy = uploading === item.code;
+            const active = selectedCode === item.code;
+            const previous = protocolItems[index - 1]?.item;
+            const next = protocolItems[index + 1]?.item;
+            return (
+              <article className="protocol-item" data-testid={`protocol-item-${item.code}`} hidden={!active} key={item.code}>
+                <header className="focused-protocol__heading">
+                  <p className="eyebrow">{group.name}</p>
+                  <h2>{item.label}</h2>
+                  <p>{item.guidance}</p>
+                </header>
+
+                {editable ? (
+                  <div className="protocol-item__actions">
+                    <label className={`upload-zone ${isBusy ? "is-disabled" : ""}`}>
+                      <Camera size={28} />
+                      <strong>{isBusy ? "Enviando foto..." : "Clique para enviar uma foto"}</strong>
+                      <span>JPEG, PNG ou WebP · máximo 10 MB</span>
+                      <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={isBusy || uploading !== null} aria-label={`Adicionar foto de ${group.name} — ${item.label}`} onChange={(event) => chooseFile(item.code, event)} />
+                    </label>
+                    {retryFiles[item.code] ? <button className="retry-link" disabled={isBusy} onClick={() => void sendFile(item.code, retryFiles[item.code]!)}><RefreshCw size={15} />Tentar novamente</button> : null}
+                  </div>
+                ) : null}
+
+                {evidence.length ? (
+                  <div className="evidence-strip">
+                    {evidence.map((photo, evidenceIndex) => <EvidenceImage evidence={photo} alt={`${group.name} — ${item.label}, foto ${evidenceIndex + 1}`} key={photo.id} />)}
+                  </div>
+                ) : <p className="empty-evidence">Nenhuma foto registrada neste item.</p>}
+                {itemErrors[item.code] ? <p className="item-error" role="alert">{itemErrors[item.code]}</p> : null}
+
+                <footer className="protocol-pager">
+                  <button className="button button--secondary" type="button" disabled={!previous} onClick={() => selectRelative(-1)}><ArrowLeft size={17} />{previous ? `Voltar: ${previous.label}` : "Primeiro item"}</button>
+                  <span>{evidence.length} {evidence.length === 1 ? "foto registrada" : "fotos registradas"}</span>
+                  <button className="button button--primary" type="button" disabled={!next} onClick={() => selectRelative(1)}>{next ? `Próximo: ${next.label}` : "Protocolo revisado"}<ArrowRight size={17} /></button>
+                </footer>
+              </article>
+            );
+          })}
+        </section>
+
+        <aside className="submission-guide" aria-label="Orientações antes do envio">
+          <section>
+            <FileCheck2 size={24} />
+            <div><h2>Antes de enviar</h2><p>Confira se as imagens representam o estado atual do imóvel.</p></div>
+          </section>
+          <ul className="submission-checklist">
+            <li><CheckCircle2 size={18} />Fotos nítidas e bem iluminadas</li>
+            <li><CheckCircle2 size={18} />Ambientes principais registrados</li>
+            <li className={progress === 12 ? "is-complete" : ""}><span>{progress}</span>12 itens no total</li>
+          </ul>
+          <section className="next-steps">
+            <Info size={22} />
+            <div><h2>O que acontece depois?</h2><ol><li><strong>IA gera pré-laudo</strong><span>Análise preliminar das evidências.</span></li><li><strong>Engenheiro revisa</strong><span>Validação técnica profissional.</span></li><li><strong>Vistoria concluída</strong><span>Resultado disponível no painel.</span></li></ol></div>
+          </section>
+          <div className="professional-warning"><AlertTriangle size={19} /><p><strong>Importante</strong>A IA auxilia a análise. A validação final é feita por engenheiro civil.</p></div>
+          {editable ? (
+            <div className="workflow-submit">
+              <p>Revise as evidências antes de concluir esta etapa.</p>
+              {submitError ? <p className="item-error" role="alert">{submitError}</p> : null}
+              <button className="button button--primary" disabled={submitting || uploading !== null} onClick={() => void sendInspection()}><Send size={17} />{submitting ? "Enviando..." : "Enviar para análise"}</button>
+            </div>
+          ) : null}
+        </aside>
+      </div>
     </main>
   );
 }
-

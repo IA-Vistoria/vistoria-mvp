@@ -89,6 +89,26 @@ describe("InspectionWorkflow", () => {
     expect(document.querySelectorAll(".protocol-item")).toHaveLength(12);
   });
 
+  it("organiza o protocolo em etapas, navegação lateral e item focado", async () => {
+    vi.mocked(getMyInspection).mockResolvedValue(withEvidence);
+    const user = userEvent.setup();
+    render(<InspectionWorkflow inspectionId={10} />);
+
+    const steps = await screen.findByRole("navigation", { name: "Etapas da vistoria" });
+    expect(within(steps).getAllByRole("listitem")).toHaveLength(4);
+
+    const protocol = screen.getByRole("navigation", { name: "Itens do protocolo" });
+    expect(within(protocol).getAllByRole("button")).toHaveLength(12);
+    expect(screen.getByRole("heading", { name: "Piso" })).toBeDefined();
+    expect(screen.getByText("Dicas para boas fotos")).toBeDefined();
+    expect(screen.getByRole("complementary", { name: "Orientações antes do envio" })).toBeDefined();
+
+    await user.click(within(protocol).getByRole("button", { name: /Paredes e revestimentos/ }));
+
+    expect(screen.getByRole("heading", { name: "Paredes e revestimentos" })).toBeDefined();
+    expect(screen.getByRole("button", { name: /Próximo: Teto e iluminação/ })).toBeDefined();
+  });
+
   it.each([
     ["vazio", new File([], "vazio.jpg", { type: "image/jpeg" }), "não pode estar vazio"],
     ["tipo", new File(["texto"], "laudo.pdf", { type: "application/pdf" }), "JPEG, PNG ou WebP"],
@@ -165,6 +185,21 @@ describe("InspectionWorkflow", () => {
 
     await waitFor(() => expect(submitInspection).toHaveBeenCalledTimes(1));
     expect(await screen.findByText("Aguardando revisão do engenheiro")).toBeDefined();
+  });
+
+  it("conclui as etapas do cliente quando a vistoria já foi enviada", async () => {
+    vi.mocked(getMyInspection).mockResolvedValue({
+      ...withEvidence,
+      status: "AGUARDANDO_ENGENHEIRO",
+    });
+    render(<InspectionWorkflow inspectionId={10} />);
+
+    const steps = await screen.findByRole("navigation", { name: "Etapas da vistoria" });
+    const items = within(steps).getAllByRole("listitem");
+
+    expect(items).toHaveLength(4);
+    expect(items.every((item) => item.classList.contains("is-complete"))).toBe(true);
+    expect(items.some((item) => item.getAttribute("aria-current") === "step")).toBe(false);
   });
 
   it("exibe parecer e mantém upload disponível em devolução", async () => {
