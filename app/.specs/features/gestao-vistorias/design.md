@@ -1,14 +1,16 @@
 # Gestão de Vistorias Design
 
 **Spec**: `.specs/features/gestao-vistorias/spec.md`
-**Status**: Draft
+**Status**: Implementado (revalidado em 2026-09-19 contra o código e os testes executados)
 
 ---
 
 ## Architecture Overview
 
 O módulo centraliza-se na entidade `Vistoria`, que funciona como uma máquina de estados (`VistoriaStatus`).
-A comunicação com a IA será feita de forma isolada através de um serviço (`IaIntegrationService`), preparando o terreno para filas assíncronas no futuro, mas mantendo a simplicidade no MVP.
+A comunicação com a IA é feita de forma isolada através de uma porta (`IaIntegrationService`), hoje resolvida
+por `MockIaIntegrationService`. A chamada à IA roda fora de transação de banco — ver "Transação da submissão"
+abaixo — preparando o terreno para uma integração real (síncrona ou não) sem redesenhar o fluxo.
 
 ```mermaid
 graph TD
@@ -16,10 +18,10 @@ graph TD
     B --> C[VistoriaService]
     C --> D[StorageService]
     C --> E[VistoriaRepository]
-    C -->|Aciona IA| F[IaIntegrationService]
-    F -->|Salva Pré-laudo| E
-    G[Engenheiro] -->|Busca Pendentes| B
-    G -->|Aprova e Assina| B
+    C -->|Aciona IA, fora de transação| F[IaIntegrationService]
+    F -->|Salva Pré-laudo, 2ª transação curta| E
+    G[Engenheiro] -->|Busca Pendentes, paginado| B
+    G -->|Aprova ou devolve com parecer| B
 ```
 
 ---
@@ -32,47 +34,56 @@ graph TD
 | --- | --- | --- |
 | `StorageService` | `src/main/java/br/com/vistoriapredial/storage/` | Para persistir as fotos enviadas (`LocalStorageService`). |
 | `Usuario` | `src/main/java/br/com/vistoriapredial/usuario/` | Para vincular o Cliente e o Engenheiro à vistoria. |
-| `GlobalExceptionHandler` | `src/main/java/br/com/vistoriapredial/shared/` | Para tratar os erros 400, 404 e 409 usando a RFC 9457 já configurada. |
+| `GlobalExceptionHandler` | `src/main/java/br/com/vistoriapredial/shared/` | Traduz as exceções da feature (ver tabela de erros abaixo) para `ProblemDetail` RFC 9457. |
+| `TransactionTemplate` | `src/main/java/br/com/vistoriapredial/config/TransactionTemplateConfig.java` | Duas transações curtas em `submeterVistoria`, uma antes e outra depois da chamada de IA. |
 
 ---
 
 ## Components
 
 ### `Vistoria` (Entity) & `VistoriaStatus` (Enum)
-- **Purpose**: Entidade raiz que armazena dados, status, pré-laudo da IA e assinaturas.
+- **Purpose**: Entidade raiz que armazena dados, status, pré-laudo da IA e parecer do engenheiro. Usa `@Version` para controle otimista.
 - **Location**: `src/main/java/br/com/vistoriapredial/vistoria/domain/`
 
 ### `ImagemVistoria` (Entity)
-- **Purpose**: Armazena a referência (path/URL) da imagem no storage local, vinculada a um item do protocolo.
+- **Purpose**: Armazena a referência (path relativo) da imagem no storage, vinculada a um item do protocolo (`ProtocoloVistoria`).
 - **Location**: `src/main/java/br/com/vistoriapredial/vistoria/domain/`
 
 ### `VistoriaController`
-- **Purpose**: Endpoints da API REST para clientes (upload/submissão) e engenheiros (revisão/aprovação).
+- **Purpose**: Endpoints da API REST para clientes (criação/upload/submissão) e engenheiros (fila/decisão).
 - **Location**: `src/main/java/br/com/vistoriapredial/vistoria/web/`
-- **Interfaces**:
-  - `POST /api/vistorias` (Cria vistoria)
-  - `POST /api/vistorias/{id}/imagens` (Upload de fotos)
-  - `POST /api/vistorias/{id}/submeter` (Finaliza envio, chama IA)
-  - `GET /api/vistorias/pendentes` (Para engenheiros)
-  - `POST /api/vistorias/{id}/aprovar` (Assinatura do engenheiro)
+- **Interfaces** (prefixo `/api/vistorias`, conferido contra `VistoriaController.java`):
+  - `POST /` — cria vistoria (`ROLE_CLIENTE`)
+  - `GET /minhas?page=&size=` — lista as vistorias do cliente, paginada (`PaginaResponseDto`)
+  - `GET /{id}` — busca uma vistoria específica, autorização por recurso (`ROLE_CLIENTE` dono ou `ROLE_ENGENHEIRO` enquanto `AGUARDANDO_ENGENHEIRO`)
+  - `POST /{id}/imagens` — upload de evidência multipart (`ROLE_CLIENTE`)
+  - `POST /{id}/submeter` — finaliza envio, aciona a IA (`ROLE_CLIENTE`)
+  - `GET /{vistoriaId}/imagens/{imagemId}/conteudo` — conteúdo da evidência, autorização por recurso
+  - `GET /pendentes?page=&size=` — fila técnica, paginada (`ROLE_ENGENHEIRO`)
+  - `POST /{id}/analisar` — aprova ou devolve com parecer (`ROLE_ENGENHEIRO`)
 
 ### `VistoriaService`
-- **Purpose**: Orquestra a máquina de estados, regras de negócio e chama o Storage e IA.
+- **Purpose**: Orquestra a máquina de estados, autorização por recurso e chamadas a `StorageService`/`IaIntegrationService`.
 - **Location**: `src/main/java/br/com/vistoriapredial/vistoria/application/`
+- **Detalhe relevante**: `submeterVistoria` não é `@Transactional` como um todo — usa `TransactionTemplate` para abrir e fechar duas transações curtas, deixando a chamada de IA fora de qualquer transação (ver ADR em `docs/architecture.md`, seção 6).
+- **Paginação**: `listarVistoriasCliente`/`listarPendentesEngenharia` buscam a página sem `@EntityGraph` (evita paginação em memória) e recarregam `imagens` da página em lote via `findByIdIn`.
 
 ### `IaIntegrationService`
-- **Purpose**: Mock/Interface para abstrair a chamada real para a Oracle GenAI / OpenAI.
+- **Purpose**: Porta que abstrai a geração do pré-laudo. `MockIaIntegrationService` é o único adaptador ativo nesta versão; a integração real com OCI Generative AI está fora do escopo desta feature — ver `.specs/features/integracao-oci/`.
 - **Location**: `src/main/java/br/com/vistoriapredial/vistoria/application/`
 
 ---
 
 ## Error Handling Strategy
 
-| Error Scenario | Handling | User Impact |
-| --- | --- | --- |
-| Vistoria não está em rascunho | Lançar `IllegalStateException` -> 409 Conflict | Recebe aviso que a vistoria não pode ser alterada. |
-| Upload sem arquivo | Validação Multipart -> 400 Bad Request | Recebe erro de validação. |
-| IA falha/timeout | Capturar exceção, setar status `FALHA_IA` | Vistoria fica pausada, cliente vê "Falha ao analisar" no app. |
+| Error Scenario | Exceção | Status | User Impact |
+| --- | --- | --- | --- |
+| Vistoria não encontrada | `VistoriaNotFoundException` | 404 | Recurso inexistente. |
+| Vistoria de outro cliente / engenheiro fora do momento certo | `VistoriaAccessDeniedException` / `StaleInspectionException` | 403 / 409 | Acesso negado ou vistoria não está mais disponível para a operação. |
+| Evidência inexistente / de outra vistoria | `EvidenceNotFoundException` | 404 | Recurso inexistente. |
+| Evidência de outro cliente, ou engenheiro fora de `AGUARDANDO_ENGENHEIRO` | `EvidenceAccessDeniedException` / `StaleInspectionException` | 403 / 409 | Acesso negado ou vistoria não está mais disponível. |
+| Upload sem arquivo, tipo não suportado, protocolo inválido | `InvalidEvidenceException` | 422 | Erro de validação com detalhe do motivo. |
+| IA falha ou lança exceção | Capturada em `submeterVistoria`, loga com `LOGGER.warn` e seta status `FALHA_IA` | 200 (na resposta do submeter) | Vistoria fica em `FALHA_IA`; cliente pode reenviar o mesmo caso. |
 
 ---
 
@@ -80,5 +91,6 @@ graph TD
 
 | Concern | Location | Impact | Mitigation |
 | --- | --- | --- | --- |
-| Upload de grandes arquivos síncrono | `VistoriaController` | Ocupar threads e memória. | Limitar o tamanho do `MultipartFile` na configuração do Spring e usar streaming direto pro Storage. |
-| Chamada da IA trava a thread | `VistoriaService` | Gargalo na API se a IA demorar > 30s. | No MVP a chamada será na mesma thread (síncrono bloqueante) usando `RestClient`, mas com timeout configurado. Futuramente usar `@Async` ou Message Broker. |
+| Upload de grandes arquivos síncrono | `VistoriaController` | Ocupar threads e memória. | `spring.servlet.multipart.max-file-size=10MB` já configurado; `EvidenceFileValidator` valida tamanho antes de gravar. |
+| Chamada da IA trava a thread | `VistoriaService` | Gargalo se a IA demorar. | Resolvido: a chamada roda fora de transação (`TransactionTemplate`), então não segura conexão de banco. O tempo de resposta HTTP ainda depende da IA ser síncrona — se a integração real (`.specs/features/integracao-oci/`) vier assíncrona, o frontend já tem polling para refletir a conclusão sem bloquear a requisição. |
+| `@EntityGraph` de coleção junto com `Pageable` | `VistoriaRepository` | Faria o Hibernate paginar em memória, anulando os índices de `V5`. | Resolvido: buscas paginadas não usam `@EntityGraph`; `imagens` da página é recarregado em lote via `findByIdIn`. |

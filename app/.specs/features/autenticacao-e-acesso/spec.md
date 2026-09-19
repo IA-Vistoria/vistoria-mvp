@@ -37,12 +37,15 @@ O sistema precisa garantir que apenas usuários autorizados tenham acesso à pla
 - **AUTH-07**: Quando uma requisição é feita para uma rota protegida sem um token JWT válido, o sistema deve retornar `401 Unauthorized` no formato `application/problem+json` (RFC 9457).
 
 ## Requirement Traceability
-| Requirement | Tasks | Tests |
-|-------------|-------|-------|
-| AUTH-01     | TBD   | TBD   |
-| AUTH-02     | TBD   | TBD   |
-| AUTH-03     | TBD   | TBD   |
-| AUTH-04     | TBD   | TBD   |
-| AUTH-05     | TBD   | TBD   |
-| AUTH-06     | TBD   | TBD   |
-| AUTH-07     | TBD   | TBD   |
+
+> Revalidado em 2026-09-19 contra `tasks.md` (T1–T5, todas concluídas) e os testes executados.
+
+| Requirement | Tasks | Tests | Status |
+|-------------|-------|-------|--------|
+| AUTH-01 | T2, T4, T5 | `AuthControllerTest`, `UsuarioServiceTest` | Verified |
+| AUTH-02 | T4 | `UsuarioServiceTest` (email duplicado → `UsuarioConflictException`), `AuthControllerTest` | Verified |
+| AUTH-03 | T2, T4 | `RegisterRequestDtoTest`, `UsuarioServiceTest` (engenheiro sem CREA) | Verified |
+| AUTH-04 | T4 | `UsuarioServiceTest` (cliente com CREA anulado) | Verified |
+| AUTH-05 | T3, T4, T5 | `AuthControllerTest`, `JwtServiceTest` | Verified |
+| AUTH-06 | T4, T5 | `AuthControllerTest` (credenciais inválidas → 401) | Verified |
+| AUTH-07 | T3 | `SecurityCorsTest`, `VistoriaControllerTest` (rota protegida sem token → 401 RFC 9457, mesma cadeia de segurança) | Verified |
