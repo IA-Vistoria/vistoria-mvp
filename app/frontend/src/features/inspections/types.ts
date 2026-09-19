@@ -27,6 +27,14 @@ export interface Evidence {
   conteudoUrl: string;
 }
 
+export interface PageResponse<T> {
+  content: T[];
+  pagina: number;
+  tamanho: number;
+  totalElementos: number;
+  totalPaginas: number;
+}
+
 export interface Inspection {
   id: number;
   clienteId: number;

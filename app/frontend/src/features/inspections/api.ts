@@ -1,20 +1,10 @@
-import { ApiError, apiFetch, fetchEvidenceBlob } from "@/lib/api";
-import type { Inspection, ProtocolItemCode } from "./types";
+import { apiFetch, fetchEvidenceBlob } from "@/lib/api";
+import type { Inspection, PageResponse, ProtocolItemCode } from "./types";
 
-export const listMyInspections = () => apiFetch<Inspection[]>("/vistorias/minhas");
+export const listMyInspections = (page = 0, size = 10) =>
+  apiFetch<PageResponse<Inspection>>(`/vistorias/minhas?page=${page}&size=${size}`);
 
-export async function getMyInspection(id: number): Promise<Inspection> {
-  const inspection = (await listMyInspections()).find((item) => item.id === id);
-  if (!inspection) {
-    throw new ApiError({
-      type: "urn:vistoria:problem:not-found",
-      title: "Vistoria não encontrada",
-      status: 404,
-      detail: "Vistoria não encontrada.",
-    });
-  }
-  return inspection;
-}
+export const getMyInspection = (id: number) => apiFetch<Inspection>(`/vistorias/${id}`);
 
 export const createInspection = (endereco: string) =>
   apiFetch<Inspection>("/vistorias", {
@@ -34,20 +24,10 @@ export const submitInspection = (inspectionId: number) =>
 
 export const loadEvidence = (url: string) => fetchEvidenceBlob(url);
 
-export const listPendingInspections = () => apiFetch<Inspection[]>("/vistorias/pendentes");
+export const listPendingInspections = (page = 0, size = 10) =>
+  apiFetch<PageResponse<Inspection>>(`/vistorias/pendentes?page=${page}&size=${size}`);
 
-export async function getPendingInspection(id: number): Promise<Inspection> {
-  const inspection = (await listPendingInspections()).find((item) => item.id === id);
-  if (!inspection) {
-    throw new ApiError({
-      type: "urn:vistoria:problem:not-found",
-      title: "Vistoria não encontrada",
-      status: 404,
-      detail: "Esta vistoria não está disponível na fila de revisão.",
-    });
-  }
-  return inspection;
-}
+export const getPendingInspection = (id: number) => apiFetch<Inspection>(`/vistorias/${id}`);
 
 export const reviewInspection = (id: number, aprovado: boolean, parecer: string) =>
   apiFetch<Inspection>(`/vistorias/${id}/analisar`, {

@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ClipboardCheck, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowRight, ClipboardCheck, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AsyncState } from "@/components/ui/async-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { listPendingInspections } from "../api";
-import type { Inspection } from "../types";
+import type { Inspection, PageResponse } from "../types";
 
 const byNewest = (a: Inspection, b: Inspection) => {
   const difference = Date.parse(b.dataCriacao) - Date.parse(a.dataCriacao);
@@ -15,15 +15,26 @@ const byNewest = (a: Inspection, b: Inspection) => {
 };
 
 export function EngineerDashboard() {
-  const [queue, setQueue] = useState<Inspection[] | null>(null);
+  const [page, setPage] = useState(0);
+  const [data, setData] = useState<PageResponse<Inspection> | null>(null);
   const [failed, setFailed] = useState(false);
+
+  async function load(targetPage: number) {
+    try {
+      const loaded = await listPendingInspections(targetPage);
+      setData(loaded);
+      setFailed(false);
+    } catch {
+      setFailed(true);
+    }
+  }
 
   useEffect(() => {
     let active = true;
-    listPendingInspections()
-      .then((items) => {
+    listPendingInspections(page)
+      .then((loaded) => {
         if (!active) return;
-        setQueue([...items].sort(byNewest));
+        setData(loaded);
         setFailed(false);
       })
       .catch(() => {
@@ -32,26 +43,19 @@ export function EngineerDashboard() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [page]);
 
-  async function retry() {
-    try {
-      setQueue([...(await listPendingInspections())].sort(byNewest));
-      setFailed(false);
-    } catch {
-      setFailed(true);
-    }
-  }
+  if (failed) return <AsyncState role="alert" title="Não foi possível carregar a fila" description="Tente consultar novamente. Nenhuma decisão técnica foi alterada." action={<button className="button button--secondary" onClick={() => void load(page)}>Tentar novamente</button>} />;
+  if (data === null) return <AsyncState title="Carregando fila técnica" description="Buscando os casos que aguardam revisão profissional." />;
+  if (data.totalElementos === 0) return <AsyncState eyebrow="Fila atualizada" title="Nenhuma vistoria aguarda revisão" description="Novos casos aparecerão aqui depois da pré-análise." />;
 
-  if (failed) return <AsyncState role="alert" title="Não foi possível carregar a fila" description="Tente consultar novamente. Nenhuma decisão técnica foi alterada." action={<button className="button button--secondary" onClick={() => void retry()}>Tentar novamente</button>} />;
-  if (queue === null) return <AsyncState title="Carregando fila técnica" description="Buscando os casos que aguardam revisão profissional." />;
-  if (queue.length === 0) return <AsyncState eyebrow="Fila atualizada" title="Nenhuma vistoria aguarda revisão" description="Novos casos aparecerão aqui depois da pré-análise." />;
+  const queue = [...data.content].sort(byNewest);
 
   return (
     <main className="engineer-dashboard">
       <header className="engineer-heading">
         <div><p className="eyebrow">Central técnica</p><h1>Fila de revisão</h1><p>Casos prontos para decisão do engenheiro civil.</p></div>
-        <div className="queue-count"><ClipboardCheck size={21} /><span><strong>{queue.length}</strong> {queue.length === 1 ? "caso pendente" : "casos pendentes"}</span></div>
+        <div className="queue-count"><ClipboardCheck size={21} /><span><strong>{data.totalElementos}</strong> {data.totalElementos === 1 ? "caso pendente" : "casos pendentes"}</span></div>
       </header>
       <section className="review-list" aria-label="Vistorias pendentes">
         {queue.map((inspection) => (
@@ -63,6 +67,18 @@ export function EngineerDashboard() {
           </article>
         ))}
       </section>
+
+      {data.totalPaginas > 1 ? (
+        <nav className="pagination" aria-label="Paginação da fila">
+          <button className="button button--secondary" disabled={data.pagina === 0} onClick={() => setPage((current) => current - 1)}>
+            <ArrowLeft size={17} />Anterior
+          </button>
+          <span>Página {data.pagina + 1} de {data.totalPaginas}</span>
+          <button className="button button--secondary" disabled={data.pagina + 1 >= data.totalPaginas} onClick={() => setPage((current) => current + 1)}>
+            Próxima<ArrowRight size={17} />
+          </button>
+        </nav>
+      ) : null}
     </main>
   );
 }

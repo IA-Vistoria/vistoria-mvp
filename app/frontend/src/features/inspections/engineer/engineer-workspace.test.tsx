@@ -5,10 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api";
 import { getPendingInspection, listPendingInspections, loadEvidence, reviewInspection } from "../api";
 import { EvidenceImage } from "../shared/evidence-image";
-import type { Inspection } from "../types";
+import type { Inspection, PageResponse } from "../types";
 import { EngineerDashboard } from "./engineer-dashboard";
 import { EngineerReview } from "./engineer-review";
 import { splitPreReport } from "./pre-report";
+
+function page(content: Inspection[]): PageResponse<Inspection> {
+  return { content, pagina: 0, tamanho: 10, totalElementos: content.length, totalPaginas: content.length === 0 ? 0 : 1 };
+}
 
 const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
 
@@ -48,11 +52,11 @@ describe("EngineerDashboard", () => {
   });
 
   it("ordena a fila por data e id, exibindo somente dados do DTO", async () => {
-    vi.mocked(listPendingInspections).mockResolvedValue([
+    vi.mocked(listPendingInspections).mockResolvedValue(page([
       { ...pending, id: 1, endereco: "Primeiro", dataCriacao: "2026-09-18T09:00:00" },
       { ...pending, id: 2, endereco: "Segundo", dataCriacao: "2026-09-19T09:00:00" },
       { ...pending, id: 3, endereco: "Terceiro", dataCriacao: "2026-09-19T09:00:00" },
-    ]);
+    ]));
     render(<EngineerDashboard />);
 
     const cards = await screen.findAllByTestId("review-card");
@@ -73,7 +77,7 @@ describe("EngineerReview", () => {
     vi.mocked(reviewInspection).mockReset();
     vi.mocked(loadEvidence).mockReset();
     vi.mocked(getPendingInspection).mockResolvedValue(pending);
-    vi.mocked(listPendingInspections).mockResolvedValue([pending]);
+    vi.mocked(listPendingInspections).mockResolvedValue(page([pending]));
     vi.mocked(loadEvidence).mockResolvedValue(new Blob(["foto"], { type: "image/jpeg" }));
   });
 
@@ -85,10 +89,10 @@ describe("EngineerReview", () => {
       conteudoUrl: "/api/foto/4",
     };
     vi.mocked(getPendingInspection).mockResolvedValue({ ...pending, imagens: [...pending.imagens, secondEvidence] });
-    vi.mocked(listPendingInspections).mockResolvedValue([
+    vi.mocked(listPendingInspections).mockResolvedValue(page([
       pending,
       { ...pending, id: 19, endereco: "Rua do Projeto, 50" },
-    ]);
+    ]));
     const user = userEvent.setup();
 
     render(<EngineerReview inspectionId={20} />);
@@ -158,7 +162,7 @@ describe("EngineerReview", () => {
 
   it("trata 409 como processamento concorrente e refaz a fila", async () => {
     vi.mocked(reviewInspection).mockRejectedValue(new ApiError({ type: "urn:vistoria:problem:stale", title: "Conflito", status: 409, detail: "O caso foi alterado." }));
-    vi.mocked(listPendingInspections).mockResolvedValue([]);
+    vi.mocked(listPendingInspections).mockResolvedValue(page([]));
     const user = userEvent.setup();
     render(<EngineerReview inspectionId={20} />);
     await user.type(await screen.findByLabelText("Parecer técnico"), "Parecer já revisado.");

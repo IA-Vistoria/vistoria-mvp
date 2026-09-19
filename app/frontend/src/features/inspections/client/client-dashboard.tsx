@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Building2, ClipboardCheck, Plus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AsyncState } from "@/components/ui/async-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { listMyInspections } from "../api";
 import { inspectionStatus } from "../status";
-import type { Inspection } from "../types";
+import type { Inspection, PageResponse } from "../types";
 
 const byNewest = (a: Inspection, b: Inspection) => {
   const dateDifference = Date.parse(b.dataCriacao) - Date.parse(a.dataCriacao);
@@ -16,37 +16,38 @@ const byNewest = (a: Inspection, b: Inspection) => {
 };
 
 export function ClientDashboard() {
-  const [inspections, setInspections] = useState<Inspection[] | null>(null);
+  const [page, setPage] = useState(0);
+  const [data, setData] = useState<PageResponse<Inspection> | null>(null);
   const [error, setError] = useState(false);
 
-  async function load() {
+  async function load(targetPage: number) {
     try {
-      const loaded = await listMyInspections();
-      setInspections([...loaded].sort(byNewest));
+      const loaded = await listMyInspections(targetPage);
+      setData(loaded);
       setError(false);
     } catch {
-      setInspections(null);
+      setData(null);
       setError(true);
     }
   }
 
   useEffect(() => {
     let active = true;
-    listMyInspections()
+    listMyInspections(page)
       .then((loaded) => {
         if (!active) return;
-        setInspections([...loaded].sort(byNewest));
+        setData(loaded);
         setError(false);
       })
       .catch(() => {
         if (!active) return;
-        setInspections(null);
+        setData(null);
         setError(true);
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [page]);
 
   if (error) {
     return (
@@ -55,16 +56,16 @@ export function ClientDashboard() {
         eyebrow="Conexão interrompida"
         title="Não foi possível carregar suas vistorias"
         description="Seus dados continuam seguros. Tente consultar novamente."
-        action={<button className="button button--secondary" onClick={() => void load()}>Tentar novamente</button>}
+        action={<button className="button button--secondary" onClick={() => void load(page)}>Tentar novamente</button>}
       />
     );
   }
 
-  if (inspections === null) {
+  if (data === null) {
     return <AsyncState title="Carregando vistorias" description="Estamos organizando seus imóveis e seus próximos passos." />;
   }
 
-  if (inspections.length === 0) {
+  if (data.totalElementos === 0) {
     return (
       <AsyncState
         eyebrow="Sua primeira vistoria"
@@ -74,6 +75,8 @@ export function ClientDashboard() {
       />
     );
   }
+
+  const inspections = [...data.content].sort(byNewest);
 
   return (
     <main className="dashboard-page">
@@ -87,8 +90,7 @@ export function ClientDashboard() {
       </header>
 
       <section className="inspection-summary" aria-label="Resumo das vistorias">
-        <div><Building2 size={22} /><span><strong>{inspections.length}</strong> {inspections.length === 1 ? "imóvel cadastrado" : "imóveis cadastrados"}</span></div>
-        <div><ClipboardCheck size={22} /><span><strong>{inspections.filter((item) => item.status === "CONCLUIDA").length}</strong> concluídas</span></div>
+        <div><Building2 size={22} /><span><strong>{data.totalElementos}</strong> {data.totalElementos === 1 ? "imóvel cadastrado" : "imóveis cadastrados"}</span></div>
       </section>
 
       <section className="inspection-grid" aria-label="Minhas vistorias">
@@ -107,6 +109,18 @@ export function ClientDashboard() {
           );
         })}
       </section>
+
+      {data.totalPaginas > 1 ? (
+        <nav className="pagination" aria-label="Paginação de vistorias">
+          <button className="button button--secondary" disabled={data.pagina === 0} onClick={() => setPage((current) => current - 1)}>
+            <ArrowLeft size={17} />Anterior
+          </button>
+          <span>Página {data.pagina + 1} de {data.totalPaginas}</span>
+          <button className="button button--secondary" disabled={data.pagina + 1 >= data.totalPaginas} onClick={() => setPage((current) => current + 1)}>
+            Próxima<ArrowRight size={17} />
+          </button>
+        </nav>
+      ) : null}
     </main>
   );
 }

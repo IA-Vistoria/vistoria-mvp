@@ -3,10 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/lib/api";
-import type { Inspection } from "../types";
+import type { Inspection, PageResponse } from "../types";
 import { createInspection, listMyInspections, submitInspection } from "../api";
 import { ClientDashboard } from "./client-dashboard";
 import { NewInspectionForm } from "./new-inspection-form";
+
+function page(content: Inspection[]): PageResponse<Inspection> {
+  return { content, pagina: 0, tamanho: 10, totalElementos: content.length, totalPaginas: content.length === 0 ? 0 : 1 };
+}
 
 const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
 
@@ -42,11 +46,11 @@ describe("ClientDashboard", () => {
   });
 
   it("ordena vistorias pela data de criação mais recente e desempata pelo id", async () => {
-    vi.mocked(listMyInspections).mockResolvedValue([
+    vi.mocked(listMyInspections).mockResolvedValue(page([
       { ...draftInspection, id: 1, endereco: "Antiga", dataCriacao: "2026-09-10T10:00:00" },
       { ...draftInspection, id: 2, endereco: "Recente 2", dataCriacao: "2026-09-19T10:00:00" },
       { ...draftInspection, id: 3, endereco: "Recente 3", dataCriacao: "2026-09-19T10:00:00" },
-    ]);
+    ]));
 
     render(<ClientDashboard />);
 
@@ -59,7 +63,7 @@ describe("ClientDashboard", () => {
   });
 
   it("mostra endereço, status real e próxima ação", async () => {
-    vi.mocked(listMyInspections).mockResolvedValue([draftInspection]);
+    vi.mocked(listMyInspections).mockResolvedValue(page([draftInspection]));
 
     render(<ClientDashboard />);
 
@@ -72,7 +76,7 @@ describe("ClientDashboard", () => {
   });
 
   it("oferece uma única ação quando a lista está vazia", async () => {
-    vi.mocked(listMyInspections).mockResolvedValue([]);
+    vi.mocked(listMyInspections).mockResolvedValue(page([]));
 
     render(<ClientDashboard />);
 
@@ -83,7 +87,7 @@ describe("ClientDashboard", () => {
   it("recupera um erro inicial após retry", async () => {
     vi.mocked(listMyInspections)
       .mockRejectedValueOnce(new Error("offline"))
-      .mockResolvedValueOnce([draftInspection]);
+      .mockResolvedValueOnce(page([draftInspection]));
     const user = userEvent.setup();
     render(<ClientDashboard />);
 

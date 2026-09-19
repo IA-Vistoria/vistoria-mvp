@@ -39,6 +39,7 @@ export function EngineerReview({ inspectionId }: { inspectionId: number }) {
   const router = useRouter();
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [queue, setQueue] = useState<Inspection[]>([]);
+  const [queueTotal, setQueueTotal] = useState(0);
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<number | null>(null);
   const [opinion, setOpinion] = useState("");
   const [loadFailed, setLoadFailed] = useState(false);
@@ -59,8 +60,10 @@ export function EngineerReview({ inspectionId }: { inspectionId: number }) {
         if (active) setLoadFailed(true);
       });
     listPendingInspections()
-      .then((items) => {
-        if (active) setQueue([...items].sort(byNewest));
+      .then((page) => {
+        if (!active) return;
+        setQueue([...page.content].sort(byNewest));
+        setQueueTotal(page.totalElementos);
       })
       .catch(() => {
         if (active) setQueue([]);
@@ -92,7 +95,7 @@ export function EngineerReview({ inspectionId }: { inspectionId: number }) {
       if (!approved) router.replace("/engineer");
     } catch (cause) {
       if (cause instanceof ApiError && cause.problem.status === 409) {
-        await listPendingInspections().catch(() => []);
+        await listPendingInspections().catch(() => undefined);
         setProcessed(true);
         setDecisionError("Este caso já foi processado.");
       } else {
@@ -123,7 +126,7 @@ export function EngineerReview({ inspectionId }: { inspectionId: number }) {
 
       <div className="technical-workspace">
         <section className="review-queue" role="region" aria-label="Fila de revisão">
-          <header><div><span>Fila de revisão</span><strong>{queue.length}</strong></div><small>Mais recentes</small></header>
+          <header><div><span>Fila de revisão</span><strong>{queueTotal}</strong></div><small>Mais recentes</small></header>
           <div>
             {queue.map((item) => (
               <Link className={item.id === inspection.id ? "is-active" : ""} href={`/engineer/vistorias/${item.id}`} aria-current={item.id === inspection.id ? "page" : undefined} aria-label={`Vistoria #${item.id} — ${item.endereco}`} key={item.id}>
