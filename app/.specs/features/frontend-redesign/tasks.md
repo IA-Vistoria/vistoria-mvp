@@ -704,7 +704,7 @@ git commit -m "feat(frontend): implementa identidade e acesso Vistor.IA"
 - MCP: editor local
 - Skills: `tlc-spec-driven`, `superpowers:test-driven-development`, `product-design:image-to-code`
 
-- [ ] **Step 1: Escrever ao menos 6 testes RED**
+- [x] **Step 1: Escrever ao menos 6 testes RED**
 
 ```tsx
 it("creates a draft without submitting it", async () => {
@@ -723,7 +723,7 @@ it("creates a draft without submitting it", async () => {
 
 Completar a suíte com: ordenação decrescente por `dataCriacao`; endereço/status/próxima ação; vazio acionável; erro inicial com retry bem-sucedido; endereço preservado após ProblemDetail; botão ocupado durante a única criação.
 
-- [ ] **Step 2: Executar RED e implementar API de inspeções**
+- [x] **Step 2: Executar RED e implementar API de inspeções**
 
 ```typescript
 export const listMyInspections = () => apiFetch<Inspection[]>("/vistorias/minhas")
@@ -739,11 +739,11 @@ export const createInspection = (endereco: string) =>
   })
 ```
 
-- [ ] **Step 3: Implementar painel e rota de nova vistoria**
+- [x] **Step 3: Implementar painel e rota de nova vistoria**
 
 O formulário fica em `/client/vistorias/nova`, exige endereço não vazio, mantém o valor em erro e, em sucesso, usa `router.replace(`/client/vistorias/${created.id}`)` sem chamar `/submeter`.
 
-- [ ] **Step 4: Executar frontend full e commitar**
+- [x] **Step 4: Executar frontend full e commitar**
 
 Expected: pelo menos 22 testes frontend totais, lint e build verdes.
 
@@ -755,10 +755,10 @@ git commit -m "feat(cliente): cria painel e rascunho de vistoria"
 
 **Done when**:
 
-- [ ] Lista usa `dataCriacao`, `endereco`, `status` e próxima ação reais.
-- [ ] Erro inicial tem retry e vazio tem uma única ação válida.
-- [ ] Duplo clique cria uma requisição e rascunho não é auto-submetido.
-- [ ] Pelo menos 22 testes frontend, lint e build passam.
+- [x] Lista usa `dataCriacao`, `endereco`, `status` e próxima ação reais.
+- [x] Erro inicial tem retry e vazio tem uma única ação válida.
+- [x] Duplo clique cria uma requisição e rascunho não é auto-submetido.
+- [x] Pelo menos 22 testes frontend, lint e build passam.
 
 **Tests**: component
 **Gate**: Frontend focused + Frontend full
