@@ -7,6 +7,30 @@ terraform {
       version = "~> 9.0"
     }
   }
+
+  # State remoto: Object Storage da OCI via API compatível com S3 (não há
+  # backend nativo "oci" no Terraform). Credenciais (Customer Secret Key,
+  # diferentes da API key usada no provider oci) vêm de AWS_ACCESS_KEY_ID /
+  # AWS_SECRET_ACCESS_KEY no ambiente de quem roda apply, nunca no código.
+  # Sem lock (DynamoDB não existe na OCI e o S3-compat da OCI não suporta
+  # use_lockfile) — aceitável pro tamanho do time, mas evitar apply
+  # simultâneo por duas pessoas.
+  backend "s3" {
+    bucket = "vistoria-mvp-terraform-state"
+    key    = "dev/terraform.tfstate"
+    region = "sa-saopaulo-1"
+
+    endpoints = {
+      s3 = "https://grlknq280kp9.compat.objectstorage.sa-saopaulo-1.oraclecloud.com"
+    }
+
+    skip_credentials_validation = true
+    skip_region_validation      = true
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
+    skip_s3_checksum            = true
+    use_path_style              = true
+  }
 }
 
 # Credenciais do provider NÃO ficam no código: em ~/.oci/config local de quem

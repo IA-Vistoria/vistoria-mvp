@@ -46,3 +46,4 @@ Thumbs.db
 .agents/
 .claude/
 skills-lock.json
+.state-backend-creds
