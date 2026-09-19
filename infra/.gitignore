@@ -1,0 +1,35 @@
+# Credenciais OCI (nunca versionar) — ver docs/spec-ambiente-dev.md
+.oci/
+*.pem
+*.ppk
+
+# Variáveis de ambiente locais
+.env
+*.env.local
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+.terraform.lock.hcl
+
+# Ansible
+*.retry
+inventory/*.ini
+!inventory/*.example.ini
+
+# Java / Maven (backend)
+target/
+*.class
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
