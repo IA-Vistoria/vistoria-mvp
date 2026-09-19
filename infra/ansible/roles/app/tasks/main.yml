@@ -1,0 +1,50 @@
+---
+- name: Instala git (necessário para o deploy via git_pull)
+  ansible.builtin.apt:
+    name: git
+    state: present
+  when: app_deploy_method == "git_pull"
+
+- name: Garante que o diretório de deploy existe
+  ansible.builtin.file:
+    path: "{{ app_deploy_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Clona/atualiza o repositório da aplicação
+  ansible.builtin.git:
+    repo: "{{ app_git_repo_url }}"
+    dest: "{{ app_deploy_dir }}/src"
+    version: "{{ app_git_branch }}"
+    force: true
+  when: app_deploy_method == "git_pull"
+
+- name: Gera o docker-compose.yml a partir do template
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ app_deploy_dir }}/docker-compose.yml"
+    mode: "0644"
+
+# Nenhuma chave de API da OCI é escrita aqui — a VM autentica via instance
+# principal (ver docs/spec-backend.md, seção de autenticação).
+- name: Gera o .env a partir do template
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ app_deploy_dir }}/.env"
+    mode: "0600"
+
+- name: Sobe os containers com docker compose
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: "{{ app_deploy_dir }}"
+  changed_when: true
+
+- name: Registra o serviço systemd vistoria-app.service (volta sozinho no boot)
+  ansible.builtin.template:
+    src: vistoria-app.service.j2
+    dest: /etc/systemd/system/vistoria-app.service
+    mode: "0644"
+  notify: Recarrega systemd e habilita vistoria-app
+
+- name: Aplica o handler de systemd antes de terminar o role
+  ansible.builtin.meta: flush_handlers

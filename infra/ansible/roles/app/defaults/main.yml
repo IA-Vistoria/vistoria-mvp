@@ -1,0 +1,19 @@
+---
+app_deploy_dir: /opt/vistoria-app
+
+# git_pull | registry_image — ainda "a decidir com o time" (ver docs/spec-ansible.md).
+app_deploy_method: git_pull
+
+# Obrigatório quando app_deploy_method = git_pull.
+app_git_repo_url: ""
+app_git_branch: main
+
+# Obrigatório quando app_deploy_method = registry_image (ex: registry/vistoria-backend:tag).
+app_image: ""
+
+# Não sensíveis — vêm do output do Terraform (ver docs/spec-terraform.md).
+# Nenhuma chave de API aqui: a VM autentica via instance principal.
+app_oci_region: ""
+app_compartment_ocid: ""
+app_bucket_name: vistoria-fotos
+app_db_url: ""

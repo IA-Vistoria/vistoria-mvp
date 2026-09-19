@@ -1,0 +1,7 @@
+---
+- name: Recarrega systemd e habilita vistoria-app
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: vistoria-app.service
+    enabled: true
+    state: started

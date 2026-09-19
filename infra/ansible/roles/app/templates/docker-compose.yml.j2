@@ -1,0 +1,36 @@
+services:
+  # Só o nginx publica porta no host (80/443) — ver docs/spec-terraform.md.
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "{{ app_deploy_dir }}/src/nginx:/etc/nginx/conf.d:ro"
+    depends_on:
+      - frontend
+      - backend
+
+  frontend:
+    build:
+      context: "{{ app_deploy_dir }}/src/frontend"
+    restart: unless-stopped
+    expose:
+      - "3000"
+
+  backend:
+{% if app_deploy_method == "registry_image" %}
+    image: "{{ app_image }}"
+{% else %}
+    build:
+      context: "{{ app_deploy_dir }}/src"
+      dockerfile: Dockerfile
+{% endif %}
+    restart: unless-stopped
+    env_file:
+      - .env
+    expose:
+      - "8080"
+    depends_on:
+      - frontend

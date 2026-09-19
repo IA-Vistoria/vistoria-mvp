@@ -1,0 +1,8 @@
+---
+- name: Provisiona a VM do VistoApto (Docker + aplicação)
+  hosts: app_servers
+  become: true
+
+  roles:
+    - docker
+    - app

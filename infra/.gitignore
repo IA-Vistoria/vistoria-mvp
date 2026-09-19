@@ -19,7 +19,7 @@ crash.*.log
 # Ansible
 *.retry
 inventory/*.ini
-!inventory/*.example.ini
+!inventory/*.ini.example
 
 # Java / Maven (backend)
 target/

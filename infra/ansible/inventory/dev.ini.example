@@ -1,0 +1,10 @@
+# Copie para dev.ini (já está no .gitignore) preenchendo o IP à mão, OU rode
+# ./generate-dev-ini.sh depois de um `terraform apply` pra preencher sozinho
+# a partir do output do Terraform (ver docs/spec-ansible.md).
+
+[app_servers]
+vistoria-mvp-vm ansible_host=CHANGE_ME
+
+[app_servers:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=~/.ssh/id_ed25519
