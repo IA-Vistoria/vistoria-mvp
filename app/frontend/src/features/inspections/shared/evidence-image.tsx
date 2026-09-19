@@ -32,6 +32,6 @@ export function EvidenceImage({ evidence, alt }: { evidence: Evidence; alt: stri
   if (failed) {
     return <span className="evidence-thumb evidence-thumb--failed"><ImageOff size={18} />Foto indisponível</span>;
   }
-  if (!source) return <span className="evidence-thumb evidence-thumb--loading">Foto confirmada</span>;
+  if (!source) return <span className="evidence-thumb evidence-thumb--loading" role="status">Carregando foto…</span>;
   return <Image className="evidence-thumb" src={source} alt={alt} width={100} height={68} unoptimized />;
 }

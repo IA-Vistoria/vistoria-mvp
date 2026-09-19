@@ -229,6 +229,46 @@ a {
   color: #92999e;
 }
 
+.auth-form .field-group {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 2.75rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.55rem;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem;
+  border: none;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: var(--blueprint);
+}
+
+.auth-form small {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 450;
+}
+
 .button {
   min-height: 3rem;
   display: inline-flex;
@@ -796,6 +836,7 @@ a {
   border-top: 1px solid var(--line);
 }
 .workflow-submit > p { margin: 0; color: var(--muted); font-size: 0.72rem; line-height: 1.4; }
+.workflow-submit > small { color: var(--muted); font-size: 0.7rem; line-height: 1.4; }
 .workflow-submit .button { width: 100%; }
 
 .engineer-dashboard,

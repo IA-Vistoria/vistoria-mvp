@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, HardHat, ShieldCheck } from "lucide-react";
+import { ArrowRight, Building2, Eye, EyeOff, HardHat, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
@@ -26,6 +26,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [codigoConvite, setCodigoConvite] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showSenha, setShowSenha] = useState(false);
 
   const isRegister = mode === "register";
   const expiredSession = useSyncExternalStore(
@@ -183,17 +184,30 @@ export function AuthForm({ mode }: AuthFormProps) {
               />
             </label>
 
-            <label>
-              <span>Senha</span>
-              <input
-                type="password"
-                autoComplete={isRegister ? "new-password" : "current-password"}
-                minLength={6}
-                required
-                value={senha}
-                onChange={(event) => setSenha(event.target.value)}
-              />
-            </label>
+            <div className="field-group">
+              <label htmlFor="auth-senha">Senha</label>
+              <div className="password-field">
+                <input
+                  id="auth-senha"
+                  type={showSenha ? "text" : "password"}
+                  autoComplete={isRegister ? "new-password" : "current-password"}
+                  minLength={8}
+                  required
+                  value={senha}
+                  onChange={(event) => setSenha(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+                  aria-pressed={showSenha}
+                  onClick={() => setShowSenha((current) => !current)}
+                >
+                  {showSenha ? <EyeOff aria-hidden="true" size={18} /> : <Eye aria-hidden="true" size={18} />}
+                </button>
+              </div>
+              {isRegister ? <small>Use ao menos 8 caracteres.</small> : null}
+            </div>
 
             <button className="button button--primary auth-submit" type="submit" disabled={busy}>
               {busy ? "Aguarde..." : isRegister ? "Criar conta" : "Entrar"}
