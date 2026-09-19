@@ -13,6 +13,7 @@ import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDenie
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -66,7 +67,7 @@ public class VistoriaService {
         Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
         
         if (vistoria.getStatus() != VistoriaStatus.EM_RASCUNHO && vistoria.getStatus() != VistoriaStatus.DEVOLVIDA_CLIENTE) {
-            throw new IllegalStateException("Vistoria não está em status que permita edição.");
+            throw new StaleInspectionException();
         }
 
         if (protocoloItem == null || !ProtocoloVistoria.ITEMS.contains(protocoloItem)) {
@@ -92,6 +93,9 @@ public class VistoriaService {
             } catch (RuntimeException cleanupFailure) {
                 persistenceFailure.addSuppressed(cleanupFailure);
             }
+            if (persistenceFailure instanceof OptimisticLockingFailureException) {
+                throw new StaleInspectionException();
+            }
             throw persistenceFailure;
         }
     }
@@ -101,7 +105,7 @@ public class VistoriaService {
         Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
         
         if (vistoria.getStatus() != VistoriaStatus.EM_RASCUNHO && vistoria.getStatus() != VistoriaStatus.DEVOLVIDA_CLIENTE && vistoria.getStatus() != VistoriaStatus.FALHA_IA) {
-            throw new IllegalStateException("Vistoria não pode ser submetida no status atual.");
+            throw new StaleInspectionException();
         }
         
         if (vistoria.getImagens().isEmpty()) {
@@ -110,7 +114,7 @@ public class VistoriaService {
         }
 
         vistoria.setStatus(VistoriaStatus.AGUARDANDO_IA);
-        vistoria = vistoriaRepository.save(vistoria);
+        vistoria = salvarComControleConcorrencia(vistoria);
         
         try {
             List<String> urls = vistoria.getImagens().stream()
@@ -123,7 +127,7 @@ public class VistoriaService {
             vistoria.setStatus(VistoriaStatus.FALHA_IA);
         }
         
-        return vistoriaRepository.save(vistoria);
+        return salvarComControleConcorrencia(vistoria);
     }
 
     @Transactional(readOnly = true)
@@ -189,7 +193,7 @@ public class VistoriaService {
                 .orElseThrow(() -> new IllegalArgumentException("Vistoria não encontrada"));
         
         if (vistoria.getStatus() != VistoriaStatus.AGUARDANDO_ENGENHEIRO) {
-            throw new IllegalStateException("Vistoria não está aguardando engenheiro.");
+            throw new StaleInspectionException();
         }
         
         vistoria.setEngenheiro(engenheiro);
@@ -197,7 +201,7 @@ public class VistoriaService {
         vistoria.setStatus(VistoriaStatus.CONCLUIDA);
         vistoria.setDataConclusao(LocalDateTime.now());
         
-        return vistoriaRepository.save(vistoria);
+        return salvarComControleConcorrencia(vistoria);
     }
 
     @Transactional
@@ -210,13 +214,21 @@ public class VistoriaService {
                 .orElseThrow(() -> new IllegalArgumentException("Vistoria não encontrada"));
         
         if (vistoria.getStatus() != VistoriaStatus.AGUARDANDO_ENGENHEIRO) {
-            throw new IllegalStateException("Vistoria não está aguardando engenheiro.");
+            throw new StaleInspectionException();
         }
         
         vistoria.setEngenheiro(engenheiro);
         vistoria.setParecerEngenheiro("Devolvido: " + motivo);
         vistoria.setStatus(VistoriaStatus.DEVOLVIDA_CLIENTE);
         
-        return vistoriaRepository.save(vistoria);
+        return salvarComControleConcorrencia(vistoria);
+    }
+
+    private Vistoria salvarComControleConcorrencia(Vistoria vistoria) {
+        try {
+            return vistoriaRepository.saveAndFlush(vistoria);
+        } catch (OptimisticLockingFailureException exception) {
+            throw new StaleInspectionException();
+        }
     }
 }

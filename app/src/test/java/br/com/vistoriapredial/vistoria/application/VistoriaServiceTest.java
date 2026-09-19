@@ -35,6 +35,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 class VistoriaServiceTest {
 
@@ -185,7 +186,7 @@ class VistoriaServiceTest {
         v.getImagens().add(evidence("uploads/b.webp"));
 
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(v));
-        when(vistoriaRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+        when(vistoriaRepository.saveAndFlush(any())).thenAnswer(i -> i.getArguments()[0]);
         when(iaIntegrationService.analisarImagens(any())).thenReturn("Laudo Mock");
 
         Vistoria submetida = vistoriaService.submeterVistoria(10L, cliente);
@@ -204,7 +205,7 @@ class VistoriaServiceTest {
         v.getImagens().add(evidence("uploads/a.jpg"));
 
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(v));
-        when(vistoriaRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+        when(vistoriaRepository.saveAndFlush(any())).thenAnswer(i -> i.getArguments()[0]);
         when(iaIntegrationService.analisarImagens(any())).thenThrow(new RuntimeException("API error"));
 
         Vistoria submetida = vistoriaService.submeterVistoria(10L, cliente);
@@ -219,13 +220,53 @@ class VistoriaServiceTest {
         v.setStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
 
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(v));
-        when(vistoriaRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+        when(vistoriaRepository.saveAndFlush(any())).thenAnswer(i -> i.getArguments()[0]);
 
         Vistoria aprovada = vistoriaService.aprovarVistoria(10L, engenheiro, "Tudo certo");
 
         assertEquals(VistoriaStatus.CONCLUIDA, aprovada.getStatus());
         assertEquals("Tudo certo", aprovada.getParecerEngenheiro());
         assertEquals(engenheiro, aprovada.getEngenheiro());
+    }
+
+    @Test
+    void shouldRejectApprovalWhenInspectionWasAlreadyProcessed() {
+        Vistoria vistoria = inspectionWithEvidence(VistoriaStatus.CONCLUIDA);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThatThrownBy(() -> vistoriaService.aprovarVistoria(10L, engenheiro, "Parecer"))
+                .isInstanceOf(StaleInspectionException.class);
+    }
+
+    @Test
+    void shouldRejectReturnWhenInspectionWasAlreadyProcessed() {
+        Vistoria vistoria = inspectionWithEvidence(VistoriaStatus.CONCLUIDA);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThatThrownBy(() -> vistoriaService.devolverAoCliente(10L, engenheiro, "Complementar"))
+                .isInstanceOf(StaleInspectionException.class);
+    }
+
+    @Test
+    void shouldTranslateConcurrentApprovalIntoStaleInspection() {
+        Vistoria vistoria = inspectionWithEvidence(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(vistoriaRepository.saveAndFlush(vistoria))
+                .thenThrow(new ObjectOptimisticLockingFailureException(Vistoria.class, 10L));
+
+        assertThatThrownBy(() -> vistoriaService.aprovarVistoria(10L, engenheiro, "Parecer"))
+                .isInstanceOf(StaleInspectionException.class);
+    }
+
+    @Test
+    void shouldTranslateConcurrentReturnIntoStaleInspection() {
+        Vistoria vistoria = inspectionWithEvidence(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(vistoriaRepository.saveAndFlush(vistoria))
+                .thenThrow(new ObjectOptimisticLockingFailureException(Vistoria.class, 10L));
+
+        assertThatThrownBy(() -> vistoriaService.devolverAoCliente(10L, engenheiro, "Complementar"))
+                .isInstanceOf(StaleInspectionException.class);
     }
 
     @Test

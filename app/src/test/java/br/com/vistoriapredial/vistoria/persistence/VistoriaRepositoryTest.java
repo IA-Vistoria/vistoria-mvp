@@ -11,6 +11,7 @@ import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.time.LocalDateTime;
 
@@ -71,5 +72,29 @@ class VistoriaRepositoryTest {
         assertThat(porCliente.getImagens()).hasSize(1);
         assertThat(entityManagerFactory.getPersistenceUnitUtil().isLoaded(porStatus, "imagens")).isTrue();
         assertThat(porStatus.getImagens()).hasSize(1);
+    }
+
+    @Test
+    void shouldRejectStaleConcurrentUpdate() {
+        Usuario cliente = usuarioRepository.saveAndFlush(new Usuario(
+                "Cliente", "cliente-concorrencia@test.com", "hash", PerfilEnum.ROLE_CLIENTE, null));
+        Vistoria vistoria = new Vistoria();
+        vistoria.setCliente(cliente);
+        vistoria.setStatus(VistoriaStatus.AGUARDANDO_ENGENHEIRO);
+        Long id = vistoriaRepository.saveAndFlush(vistoria).getId();
+        entityManager.clear();
+
+        Vistoria staleCopy = vistoriaRepository.findById(id).orElseThrow();
+        entityManager.detach(staleCopy);
+        Vistoria current = vistoriaRepository.findById(id).orElseThrow();
+        current.setStatus(VistoriaStatus.CONCLUIDA);
+        vistoriaRepository.saveAndFlush(current);
+        entityManager.clear();
+
+        staleCopy.setStatus(VistoriaStatus.DEVOLVIDA_CLIENTE);
+
+        assertThat(org.assertj.core.api.Assertions.catchThrowable(
+                () -> vistoriaRepository.saveAndFlush(staleCopy)))
+                .isInstanceOf(ObjectOptimisticLockingFailureException.class);
     }
 }
