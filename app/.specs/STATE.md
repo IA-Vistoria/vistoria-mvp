@@ -9,6 +9,7 @@
 - **Scope**: Toda a aplicação backend.
 - **Date**: 2026-09-18
 - **Status**: active
+- **Nota de revalidação (2026-09-19)**: `pom.xml` usa Spring Boot 3.2.3, não 4.1.1. A decisão de monólito modular continua válida; só o número de versão citado estava errado (ver `AGENTS.md`, seção 3).
 
 ### AD-002
 - **Decision**: Utilizar Spring RestClient nativo para integração HTTP com a API da Oracle (OCI).
@@ -19,12 +20,13 @@
 - **Status**: active
 
 ### AD-003
-- **Decision**: Empregar modelo multimodal (Gemini 2.5 Pro via OCI Generative AI) diretamente para visão e texto.
+- **Decision**: Empregar um único modelo multimodal via OCI Generative AI diretamente para visão e texto, numa chamada só.
 - **Reason**: Elimina a necessidade e o custo de treinar um modelo de visão computacional customizado do zero, recebendo foto e prompt técnico na mesma chamada.
-- **Trade-off**: Dependência de conectividade e latência do serviço externo da Oracle/Google.
+- **Trade-off**: Dependência de conectividade, latência e disponibilidade do modelo no catálogo da OCI.
 - **Scope**: Módulo de geração de laudos técnicos.
 - **Date**: 2026-09-18
 - **Status**: active
+- **Nota de revalidação (2026-09-19)**: o modelo citado originalmente (Gemini) nunca chegou a ser usado; a spec do time (repositório `infra`) mudou para `meta.llama-3.2-90b-vision-instruct` e, depois, esse também foi descontinuado pela OCI. Modelo vigente a confirmar antes de implementar: `meta.llama-4-scout-17b-16e-instruct` — ver `.specs/features/integracao-oci/spec.md`. Não fixar nome de modelo em código; a OCI aposenta modelos com frequência.
 
 ### AD-004
 - **Decision**: Arquitetura Human-in-the-Loop com papéis distintos (ROLE_CLIENTE e ROLE_ENGENHEIRO).
@@ -50,13 +52,21 @@
 - **Date**: 2026-09-19
 - **Status**: active
 
+### AD-007
+- **Decision**: Criar `.specs/features/integracao-oci/` para registrar, dentro deste repositório, o trabalho de trocar `LocalStorageService`/`MockIaIntegrationService` pelos adaptadores reais da OCI.
+- **Reason**: Essa informação existia só como uma spec (`docs/spec-backend.md`) no repositório `infra`, de outra pessoa do time. Sem uma spec correspondente aqui, o próximo passo real do projeto ficava invisível para quem só lê `vistoria-predial`.
+- **Trade-off**: Duas specs (`infra/docs/spec-backend.md` e `.specs/features/integracao-oci/`) descrevem o mesmo trabalho de ângulos diferentes; precisam ser revalidadas juntas quando uma mudar (ex.: modelo de IA descontinuado, mudança de bucket).
+- **Scope**: Novo pacote `integration/oci/`, `pom.xml` (driver e Flyway do Oracle), migrations.
+- **Date**: 2026-09-19
+- **Status**: active
+
 ## Handoff
 
-- **Feature**: .specs/features/gestao-vistorias
-- **Phase / Task**: Implementing — T1 a T7 concluídas e testadas; ver `tasks.md` para o detalhamento revalidado
-- **Completed**: Entidades, persistência, casos de uso (cliente e engenheiro), endpoints HTTP e migrations V1–V5; `spec.md` e `tasks.md` sincronizados com o código nesta revisão
-- **In-progress**: nenhuma tarefa desta feature em andamento no momento
-- **Next step**: avaliar os itens fora do escopo original de T1–T7 registrados em `tasks.md` (paginação das listagens; índices e transação curta na IA já corrigidos nesta revisão)
-- **Blockers**: none
+- **Feature**: .specs/features/integracao-oci
+- **Phase / Task**: Specify — spec, design e tasks criados nesta revisão; nenhuma tarefa (T1–T7) iniciada
+- **Completed**: `.specs/features/gestao-vistorias` revalidada por completo (spec, design e tasks agora batem com o código); `.specs/features/autenticacao-e-acesso/spec.md` com a tabela de rastreabilidade sincronizada com `tasks.md`
+- **In-progress**: nenhuma tarefa de `integracao-oci` em andamento
+- **Next step**: T1 de `integracao-oci/tasks.md` — validar contra o ambiente real (scripts de `infra/scripts/smoke-tests/`) o modelo vigente e o formato de payload multimodal, antes de escrever `OciGenAiIntegrationService`
+- **Blockers**: Generative AI bloqueado por limite da conta trial da OCI (ver `infra/README.md`); não bloqueia T2/T3/T6, só a validação real de T4
 - **Uncommitted files**: ver `git status` no momento da leitura — este documento não substitui a checagem real
-- **Branch**: ver `git branch` no momento da leitura (este campo ficou desatualizado antes por apontar para `main` enquanto o trabalho ocorria em uma branch dedicada)
+- **Branch**: ver `git branch` no momento da leitura
