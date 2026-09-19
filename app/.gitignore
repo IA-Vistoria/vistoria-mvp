@@ -1,0 +1,45 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/nbactions.xml
+/nb-configuration.xml
+%USERPROFILE%/.m2/
+
+### VS Code ###
+.vscode/
+
+### Local storage & uploads ###
+uploads/
+storage/uploads/
+
+### OS files ###
+.DS_Store
+Thumbs.db
+
+### Log files ###
+*.log
+
+### Agent instructions & local configs ###
+AGENTS.md
