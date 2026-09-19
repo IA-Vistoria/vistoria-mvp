@@ -228,8 +228,28 @@ describe("InspectionWorkflow", () => {
     render(<InspectionWorkflow inspectionId={10} />);
 
     expect(await screen.findAllByText("Pré-análise em andamento")).toHaveLength(2);
-    expect(screen.getByText("A vistoria está em modo de acompanhamento.")).toBeDefined();
+    expect(screen.getByText("Esta página atualiza sozinha. Não é necessário recarregar.")).toBeDefined();
     expect(screen.queryByRole("button", { name: "Enviar para análise" })).toBeNull();
+  });
+
+  it("atualiza sozinha quando o engenheiro decide em outra sessão (polling)", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(getMyInspection)
+        .mockResolvedValueOnce({ ...withEvidence, status: "AGUARDANDO_ENGENHEIRO" })
+        .mockResolvedValueOnce({ ...withEvidence, status: "CONCLUIDA" });
+
+      render(<InspectionWorkflow inspectionId={10} />);
+
+      expect(await screen.findByText("Aguardando revisão do engenheiro")).toBeDefined();
+
+      await vi.advanceTimersByTimeAsync(6000);
+
+      await waitFor(() => expect(screen.getAllByText("Vistoria concluída").length).toBeGreaterThan(0));
+      expect(getMyInspection).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

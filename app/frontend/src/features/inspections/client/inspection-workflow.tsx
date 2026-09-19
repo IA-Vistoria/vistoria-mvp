@@ -29,6 +29,12 @@ const trackingTitles = {
   CONCLUIDA: "Vistoria concluída",
 } as const;
 
+const POLLING_INTERVAL_MS = 6000;
+const POLLED_STATUSES: ReadonlySet<InspectionStatus> = new Set([
+  "AGUARDANDO_IA",
+  "AGUARDANDO_ENGENHEIRO",
+]);
+
 const protocolItems = PROTOCOL_GROUPS.flatMap((group) =>
   group.items.map((item) => ({ group, item })),
 );
@@ -81,6 +87,32 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
       active = false;
     };
   }, [inspectionId]);
+
+  // Enquanto a vistoria está em análise (IA ou engenheiro), o status pode mudar
+  // sem nenhuma ação do cliente nesta aba. Sem isso, a única forma de perceber
+  // a mudança seria recarregar a página manualmente.
+  useEffect(() => {
+    if (!inspection || !POLLED_STATUSES.has(inspection.status)) return;
+
+    let active = true;
+    const timer = setInterval(() => {
+      getMyInspection(inspectionId)
+        .then((loaded) => {
+          if (active) setInspection(loaded);
+        })
+        .catch(() => {
+          // Falha silenciosa: mantém o último estado conhecido e tenta de novo no próximo ciclo.
+        });
+    }, POLLING_INTERVAL_MS);
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+    // Depende só do status (não do objeto inteiro) para não recriar o
+    // intervalo a cada resposta do próprio polling.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspectionId, inspection?.status]);
 
   const selectedIndex = useMemo(
     () => Math.max(0, protocolItems.findIndex(({ item }) => item.code === selectedCode)),
@@ -210,7 +242,15 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
       {trackedTitle ? (
         <section className="tracking-panel" aria-live="polite">
           <FileCheck2 size={28} />
-          <div><p className="eyebrow">Acompanhamento</p><h2>{trackedTitle}</h2><p>A vistoria está em modo de acompanhamento.</p></div>
+          <div>
+            <p className="eyebrow">Acompanhamento</p>
+            <h2>{trackedTitle}</h2>
+            <p>
+              {POLLED_STATUSES.has(inspection.status)
+                ? "Esta página atualiza sozinha. Não é necessário recarregar."
+                : "A vistoria está em modo de acompanhamento."}
+            </p>
+          </div>
         </section>
       ) : null}
 
@@ -314,6 +354,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
               <p>Revise as evidências antes de concluir esta etapa.</p>
               {submitError ? <p className="item-error" role="alert">{submitError}</p> : null}
               <button className="button button--primary" disabled={submitting || uploading !== null} onClick={() => void sendInspection()}><Send size={17} />{submitting ? "Enviando..." : "Enviar para análise"}</button>
+              <small>O processamento pode levar alguns instantes. Você poderá acompanhar o andamento nesta mesma página.</small>
             </div>
           ) : null}
         </aside>
