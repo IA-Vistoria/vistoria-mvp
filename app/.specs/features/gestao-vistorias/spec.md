@@ -6,10 +6,10 @@ Quando clientes comuns compram um apartamento, eles precisam realizar uma vistor
 
 ## Goals
 
-- [ ] O cliente deve ser capaz de criar uma vistoria e seguir um protocolo padronizado (checklist) para enviar fotos e dados do apartamento.
-- [ ] O sistema deve processar os dados da vistoria através de uma IA para gerar um "Pré-laudo" automático.
-- [ ] O cliente deve conseguir solicitar a assinatura de um engenheiro cadastrado na plataforma.
-- [ ] O engenheiro deve ser capaz de revisar as fotos, dados e o pré-laudo gerado pela IA para emitir e assinar o Laudo Definitivo.
+- [x] O cliente deve ser capaz de criar uma vistoria e seguir um protocolo padronizado (checklist) para enviar fotos e dados do apartamento.
+- [x] O sistema deve processar os dados da vistoria através de uma IA para gerar um "Pré-laudo" automático (adaptador mockado nesta versão; ver seção de decisões no README).
+- [x] O cliente deve conseguir solicitar a assinatura de um engenheiro cadastrado na plataforma (fila técnica em `/api/vistorias/pendentes`, sem escolha manual de profissional — ver nota sobre "Alocação de Engenheiro" abaixo).
+- [x] O engenheiro deve ser capaz de revisar as fotos, dados e o pré-laudo gerado pela IA para emitir e assinar o Laudo Definitivo.
 
 ## Out of Scope
 
@@ -102,18 +102,20 @@ Every ambiguity is resolved or recorded here - nothing is left silently unclear.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| VISTORIA-01 | P1: Auto-vistoria e Protocolo | Specify | Pending |
-| VISTORIA-02 | P1: Geração de Pré-laudo por IA | Specify | Pending |
-| VISTORIA-03 | P1: Revisão e Assinatura do Engenheiro | Specify | Pending |
+| VISTORIA-01 | P1: Auto-vistoria e Protocolo | Implementing | Verified |
+| VISTORIA-02 | P1: Geração de Pré-laudo por IA | Implementing | Verified (mock) |
+| VISTORIA-03 | P1: Revisão e Assinatura do Engenheiro | Implementing | Verified |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
-**Coverage:** 3 total, 0 mapped to tasks, 3 unmapped ⚠️
+**Coverage:** 3 total, 3 mapped a `.specs/features/gestao-vistorias/tasks.md` (T1–T7, todas concluídas e testadas)
+
+> Revalidado em 2026-09-19: esta tabela estava desatualizada em relação ao código (marcava os três requisitos como `Pending`/`Specify` quando `VistoriaService`, `VistoriaController` e as migrations correspondentes já estavam implementados e testados). "Verified" aqui significa comportamento coberto por teste automatizado executado nesta revisão, não validação de produção.
 
 ---
 
 ## Success Criteria
 
-- [ ] Cliente consegue criar vistoria, fazer upload e submeter.
-- [ ] Pré-laudo é gerado via integração mock/real de IA.
-- [ ] Engenheiro consegue assumir o laudo e finalizá-lo com sucesso.
+- [x] Cliente consegue criar vistoria, fazer upload e submeter.
+- [x] Pré-laudo é gerado via integração mock/real de IA (mock nesta versão).
+- [x] Engenheiro consegue assumir o laudo e finalizá-lo com sucesso.

@@ -42,13 +42,21 @@
 - **Date**: 2026-09-19
 - **Status**: active
 
+### AD-006
+- **Decision**: Corrigir divergências entre `.specs/features/gestao-vistorias` e o código já implementado, em vez de tratar a feature como não iniciada.
+- **Reason**: `spec.md` e `tasks.md` descreviam a feature como "Phase 1 - Specify" com todos os requisitos `Pending`, mas `VistoriaService`, `VistoriaController`, as migrations e a suíte de testes correspondente já estavam implementados e passando. Tratar a documentação como fonte de verdade nesse estado levaria a reimplementar algo que já existe.
+- **Trade-off**: A tabela de rastreabilidade e o tracker de tarefas passam a exigir revalidação manual periódica contra o código para não voltar a divergir.
+- **Scope**: `.specs/features/gestao-vistorias/spec.md` e `tasks.md`.
+- **Date**: 2026-09-19
+- **Status**: active
+
 ## Handoff
 
 - **Feature**: .specs/features/gestao-vistorias
-- **Phase / Task**: Phase 1 - Specify
-- **Completed**: spec.md gerado e validado
-- **In-progress**: Aguardando aprovação do spec.md pelo usuário
-- **Next step**: Discutir open questions ou mover para Design/Tasks
+- **Phase / Task**: Implementing — T1 a T7 concluídas e testadas; ver `tasks.md` para o detalhamento revalidado
+- **Completed**: Entidades, persistência, casos de uso (cliente e engenheiro), endpoints HTTP e migrations V1–V5; `spec.md` e `tasks.md` sincronizados com o código nesta revisão
+- **In-progress**: nenhuma tarefa desta feature em andamento no momento
+- **Next step**: avaliar os itens fora do escopo original de T1–T7 registrados em `tasks.md` (paginação das listagens; índices e transação curta na IA já corrigidos nesta revisão)
 - **Blockers**: none
-- **Uncommitted files**: yes (spec.md)
-- **Branch**: main
+- **Uncommitted files**: ver `git status` no momento da leitura — este documento não substitui a checagem real
+- **Branch**: ver `git branch` no momento da leitura (este campo ficou desatualizado antes por apontar para `main` enquanto o trabalho ocorria em uma branch dedicada)

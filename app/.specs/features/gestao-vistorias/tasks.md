@@ -5,7 +5,21 @@
 Implement these tasks with the `tlc-spec-driven` skill.
 
 **Design**: `.specs/features/gestao-vistorias/design.md`
-**Status**: Draft
+**Status**: Implementado (revalidado em 2026-09-19 contra o código e os testes executados)
+
+## Status Tracker
+
+> Revalidado contra `src/main/java/br/com/vistoriapredial/vistoria/**` e a suíte de testes correspondente, não apenas contra a intenção descrita abaixo.
+
+- [x] **T1**: Entidades `Vistoria`, `VistoriaStatus` e `ImagemVistoria` mapeadas, com relacionamento a `Usuario`.
+- [x] **T2**: `VistoriaRepository` e `ImagemVistoriaRepository` (via cascade em `Vistoria`), com `VistoriaRepositoryTest`.
+- [x] **T3**: `IaIntegrationService` e `MockIaIntegrationService`, com `MockIaIntegrationServiceTest`.
+- [x] **T4**: Fluxo do cliente em `VistoriaService` (criação, upload, submissão), com `VistoriaServiceTest`.
+- [x] **T5**: Fluxo do engenheiro em `VistoriaService` (aprovação/devolução), com `VistoriaServiceTest`.
+- [x] **T6**: Endpoints do cliente em `VistoriaController`, com `VistoriaControllerTest`.
+- [x] **T7**: Endpoints do engenheiro em `VistoriaController`, com `VistoriaControllerTest`.
+
+Pendências reais identificadas nesta revisão (fora do escopo original das tarefas acima): paginação das listagens, índices de banco para `cliente_id`/`status` (adicionados em `V5__add_vistoria_indexes.sql`) e separação da chamada de IA em transações curtas (já corrigida em `VistoriaService.submeterVistoria`).
 
 ---
 
@@ -66,8 +80,8 @@ T6 → T7
 
 **Tools**: `filesystem`
 **Done when**:
-- [ ] Entidades mapeadas corretamente com `@Entity`.
-- [ ] Relacionamentos configurados (`@ManyToOne` com `Usuario`).
+- [x] Entidades mapeadas corretamente com `@Entity`.
+- [x] Relacionamentos configurados (`@ManyToOne` com `Usuario`).
 
 **Tests**: none
 **Gate**: Build
@@ -82,8 +96,8 @@ T6 → T7
 
 **Tools**: `filesystem`
 **Done when**:
-- [ ] Repositórios criados extendendo `JpaRepository`.
-- [ ] Teste de persistência de Vistoria roda com sucesso no H2.
+- [x] Repositórios criados extendendo `JpaRepository`.
+- [x] Teste de persistência de Vistoria roda com sucesso no H2.
 
 **Tests**: integration
 **Gate**: Full
@@ -98,8 +112,8 @@ T6 → T7
 
 **Tools**: `filesystem`
 **Done when**:
-- [ ] Interface e implementação (Mock/Dummy inicial) que recebe URLs de imagem e retorna uma string simulando o "Pré-laudo".
-- [ ] Retorna falha condicional ou timeout para testar o cenário de erro.
+- [x] Interface e implementação (Mock/Dummy inicial) que recebe URLs de imagem e retorna uma string simulando o "Pré-laudo".
+- [x] Retorna falha condicional ou timeout para testar o cenário de erro.
 
 **Tests**: unit
 **Gate**: Quick
@@ -114,8 +128,8 @@ T6 → T7
 
 **Tools**: `filesystem`
 **Done when**:
-- [ ] Testes unitários validam a máquina de estados (`EM_RASCUNHO` -> `AGUARDANDO_IA` ou `FALHA_IA`).
-- [ ] Faz uso do `StorageService` para salvar as imagens.
+- [x] Testes unitários validam a máquina de estados (`EM_RASCUNHO` -> `AGUARDANDO_IA` ou `FALHA_IA`).
+- [x] Faz uso do `StorageService` para salvar as imagens.
 
 **Tests**: unit
 **Gate**: Quick
@@ -130,7 +144,7 @@ T6 → T7
 
 **Tools**: `filesystem`
 **Done when**:
-- [ ] Testes unitários validam a transição `AGUARDANDO_ENGENHEIRO` -> `CONCLUIDA` ou `DEVOLVIDA_CLIENTE`.
+- [x] Testes unitários validam a transição `AGUARDANDO_ENGENHEIRO` -> `CONCLUIDA` ou `DEVOLVIDA_CLIENTE`.
 
 **Tests**: unit
 **Gate**: Quick
@@ -145,8 +159,8 @@ T6 → T7
 
 **Tools**: `filesystem`
 **Done when**:
-- [ ] `VistoriaControllerTest` valida HTTP 201 e 200 com MockMvc.
-- [ ] Segurança permite apenas perfil `ROLE_CLIENTE` acessar essas rotas.
+- [x] `VistoriaControllerTest` valida HTTP 201 e 200 com MockMvc.
+- [x] Segurança permite apenas perfil `ROLE_CLIENTE` acessar essas rotas.
 
 **Tests**: integration
 **Gate**: Full
@@ -161,8 +175,8 @@ T6 → T7
 
 **Tools**: `filesystem`
 **Done when**:
-- [ ] `VistoriaControllerTest` valida HTTP 200 com MockMvc.
-- [ ] Segurança permite apenas perfil `ROLE_ENGENHEIRO` acessar essas rotas.
+- [x] `VistoriaControllerTest` valida HTTP 200 com MockMvc.
+- [x] Segurança permite apenas perfil `ROLE_ENGENHEIRO` acessar essas rotas.
 
 **Tests**: integration
 **Gate**: Full

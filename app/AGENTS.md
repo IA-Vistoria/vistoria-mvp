@@ -59,7 +59,7 @@ Regras de resolução:
 Revalide este resumo antes de decisões sensíveis; o `pom.xml` prevalece para versões:
 
 - Java 21.
-- Spring Boot 4.1.1 no estado atual.
+- Spring Boot 3.2.3 no estado atual (conferido em `pom.xml`).
 - Maven Wrapper como forma canônica de execução.
 - Spring MVC, Spring Data JPA, Bean Validation, Spring Security e Flyway.
 - H2 para execução local atual e PostgreSQL como banco-alvo.
@@ -70,13 +70,12 @@ Revalide este resumo antes de decisões sensíveis; o `pom.xml` prevalece para v
 
 ### Alertas já identificados
 
-Antes de trabalhar nas áreas abaixo, revalide e trate a divergência no escopo correto:
+Este resumo foi revalidado em 2026-09-19 contra código, testes e migrations executados; itens sem lastro no repositório foram removidos. Ainda assim, revalide antes de decisões sensíveis — isto é um retrato, não uma garantia permanente:
 
-- Parte de `.specs` ainda menciona Spring Boot 3.x e `com.vistoriapredial`; o build usa Spring Boot 4.1.1 e `br.com.vistoriapredial`.
-- A migration `V1__create_initial_schema.sql` declara compatibilidade com PostgreSQL, mas usa `AUTO_INCREMENT`; não presuma portabilidade sem teste no PostgreSQL.
-- Existe fallback de segredo JWT para desenvolvimento; produção deve falhar de forma segura se o segredo real não estiver configurado.
-- `VistoriaPredialApplicationTests.contextLoads()` atualmente não sobe o contexto Spring; um teste vazio não conta como evidência de inicialização.
-- O projeto ainda está no início: `storage` e `shared.web.error` existem, mas os módulos de negócio descritos nas especificações ainda não estão todos implementados.
+- `VistoriaPredialApplicationTests.contextLoads()` usa `@SpringBootTest` na classe, então o contexto Spring real sobe como parte do teste (a suíte falha se a inicialização quebrar); o método com corpo vazio não é ausência de verificação.
+- `V1__create_initial_schema.sql` usa `GENERATED ALWAYS AS IDENTITY` (SQL padrão), não `AUTO_INCREMENT`. `PostgreSqlMigrationIntegrationTest` aplica todas as migrations em PostgreSQL real via Testcontainers — essa suíte exige Docker disponível no ambiente de execução.
+- `JwtService` já falha ao subir (`IllegalStateException`) se `JWT_SECRET` tiver menos de 32 bytes, e não há valor padrão versionado em `application.properties` para produção. Preserve esse comportamento em qualquer mudança de configuração de segurança.
+- Os módulos de `usuario` e `vistoria` descritos em `.specs/features/` já têm entidade, persistência, casos de uso, controller e testes implementados. Antes de tratar uma tarefa como "a implementar", confirme no código — a documentação em `.specs` pode estar atrasada em relação a ele.
 
 Esses alertas não autorizam correções fora da tarefa atual.
 
@@ -324,7 +323,7 @@ Se `tasks.md` exigir a skill `tlc-spec-driven`, siga seu fluxo. Se a skill não 
   - descrição no imperativo, sem ponto final e com no máximo 72 caracteres.
 - Não misture feature e refatoração independente no mesmo commit.
 - README, OpenAPI, coleção HTTP, `.specs` e exemplos devem refletir apenas capacidades verificadas.
-- Este `AGENTS.md` está atualmente ignorado pelo `.gitignore`. Não altere essa decisão silenciosamente; versioná-lo deve ser uma tarefa explícita.
+- Este `AGENTS.md` está atualmente versionado no repositório (o `.gitignore` reserva uma seção para "Agent instructions & local configs", mas nenhum padrão foi adicionado nela). Não mude esse estado silenciosamente; tornar o arquivo ignorado deve ser uma tarefa explícita e separada.
 
 ---
 
