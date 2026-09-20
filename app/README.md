@@ -27,15 +27,18 @@ A decisão técnica e a homologação final permanecem *Human-in-the-Loop*: a IA
 
 ### Escopo desta entrega (prova de conceito)
 
-O repositório atual é uma **validação técnica / PoC**, não o produto final com a interface conversacional das demos acima. O código demonstra cadastro, protocolo de evidências, upload, pré-análise por IA e revisão humana — o suficiente para provar o conceito ponta a ponta.
+Neste momento, a ideia central do MVP é: **a IA faz uma pré-análise das fotos** enviadas no protocolo — aponta indícios visuais (ex.: rachadura, mofo, umidade, acabamento), monta um **pré-laudo preliminar** e devolve isso para conferência humana. A IA **não** substitui laudo técnico nem homologação; ela antecipa a leitura das evidências.
+
+O repositório atual é uma **validação técnica / PoC**, não o produto final com a interface conversacional das demos acima. O código demonstra cadastro, protocolo de evidências, upload, **pré-análise por IA** e revisão humana — o suficiente para provar o conceito ponta a ponta.
 
 O programa completo (conversa guiada cômodo a cômodo, tema visual e experiência das telas de demonstração) será desenvolvido **após a infraestrutura no ambiente Oracle**. O tema da interface também será revisto. A IA de produção prevista é 100% Oracle (**OCI Vision** + **LLM / OCI Generative AI**); na PoC local usa-se VLM self-hosted ou mock.
 
 ### O que a PoC técnica já cobre
 
+- **Pré-análise por IA** das imagens do protocolo → pré-laudo preliminar (VLM local ou mock)
 - Cadastro/login (cliente e engenheiro) e proteção por perfil
 - Protocolo de evidências com upload validado de imagens
-- Pré-laudo preliminar por IA (VLM local ou mock) e fila de revisão humana
+- Fila de revisão humana (*Human-in-the-Loop*) sobre o pré-laudo
 - Devolução / aprovação com parecer e reenvio pelo cliente
 - Execução local via Docker Compose (frontend, backend e `inference`)
 
@@ -205,7 +208,7 @@ A suíte de backend usa Testcontainers; o teste PostgreSQL requer Docker.
 
 ### Limitações conhecidas
 
-- Esta entrega é uma **prova de conceito**. A IA em produção prevista é da Oracle (**OCI Vision** + **LLM / OCI Generative AI**); o container `inference` com VLM self-hosted existe só para demonstrar o fluxo Human-in-the-Loop localmente.
+- Esta entrega é uma **prova de conceito** focada na **pré-análise por IA** (pré-laudo preliminar), com revisão humana. A IA em produção prevista é da Oracle (**OCI Vision** + **LLM / OCI Generative AI**); o container `inference` com VLM self-hosted existe só para demonstrar esse fluxo localmente.
 - **Neste momento o MVP com IA exige GPU NVIDIA** (Compose com `gpus: all`). Máquinas sem GPU não conseguem subir o serviço `inference` como está configurado.
 - O ambiente Oracle Cloud ainda **não está configurado**; não há conexão ativa com Vision, LLM, Object Storage nem banco gerenciado da OCI.
 - O armazenamento ativo é local. A abstração `StorageService` permite trocar o adaptador, mas a integração com OCI Object Storage ainda não existe nesta versão.
