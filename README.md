@@ -2,16 +2,33 @@
 
 > Documentação técnica alinhada ao item **3.5** do edital Tech4Change 2026 (repositório e README).
 
-Repositório único do projeto, reunindo infraestrutura (Terraform + Ansible)
-e código da aplicação (backend Java/Spring Boot, frontend Next.js, PoC de
-IA), com o histórico de commit completo de cada parte preservado.
+Repositório único do projeto, reunindo o protótipo de produto, a prova de
+conceito técnica de IA e a infraestrutura (Terraform + Ansible), com o
+histórico de commit completo de cada parte preservado.
 
 ```
 .
-├── app/         # Backend, frontend e PoC de IA (histórico original: vistoria-predial)
-├── infra/       # Terraform, Ansible e scripts de infra na OCI (histórico original: infra)
-└── prototipo/   # Protótipo navegável (visão de produto)
+├── prototipo/   # Visão de produto (discovery): protótipo navegável, HTML/CSS/JS
+├── app/         # Prova de conceito técnica isolada: "a IA consegue avaliar por foto?"
+└── infra/       # Terraform, Ansible e o ambiente real na OCI
 ```
+
+**Antes de mais nada, um ponto importante para não gerar confusão**: durante
+o projeto, o time trabalhou em duas frentes em paralelo, e cada uma virou
+uma pasta diferente aqui:
+
+- **`prototipo/`** é o resultado do *discovery* de produto — a experiência
+  de usuário desenhada (onboarding, captura guiada, checklist e relatório).
+  É a visão do **Vistor.IA** enquanto produto.
+- **`app/`** é uma **prova de conceito técnica isolada**, feita por outra
+  parte do time em paralelo, para responder a uma única pergunta: **a IA
+  consegue avaliar defeitos numa foto de vistoria, ou não?** A stack usada
+  ali (Next.js, Spring Boot, PostgreSQL, VLM self-hospedado) foi a
+  conveniente para montar esse teste rápido — **não é a stack decidida
+  para o produto final, nem a aparência final do app**. Quem baixar e
+  rodar `app/` vai ver uma tela e um fluxo que **não têm relação com o
+  design do produto** mostrado em `prototipo/`; serve só para comprovar
+  (ou não) a viabilidade técnica do núcleo de IA.
 
 ## 1. Descrição da solução
 
@@ -29,13 +46,15 @@ multimodal para fazer essa pré-leitura das fotos — apontando indícios de
 rachadura, mofo, infiltração, falta de acabamento — **antes** da
 homologação humana, que continua sendo obrigatória e final.
 
-### Jornada do produto
+### Jornada do produto (visão de `prototipo/`)
+
+![Onboarding, captura guiada e checklist/relatório do protótipo navegável](prototipo/screenshots/onboarding-captura-checklist.png)
 
 | Etapa | O que acontece |
 | --- | --- |
-| **1. Fotografar** | Checklist guiado por cômodo indica o que fotografar em cada ambiente, com orientação em conversa (ex.: avisa se a foto saiu escura ou tremida) e pede ângulos críticos. |
-| **2. Detectar** | A IA analisa as fotos e identifica indícios de problemas, anotando no checklist. |
-| **3. Verificar** | Conferência ponto a ponto no imóvel: itens OK, a checar, ou com alerta — o que exige inspeção especializada (elétrica/hidráulica) fica marcado como fora do alcance da análise por imagem. |
+| **1. Onboarding** | O app explica o que vai acontecer antes de pedir a primeira foto. |
+| **2. Captura guiada** | O assistente pede foto por foto e comenta o que encontrou, cômodo a cômodo. |
+| **3. Checklist e relatório** | Itens derivados das fotos enviadas, com status (OK, a checar, alerta) e pontos de atenção. |
 | **4. Formalizar** | Relatório com fotos e descrições, pronto para envio. |
 
 A decisão técnica e a homologação final permanecem **Human-in-the-Loop**:
@@ -43,43 +62,48 @@ a IA sugere, a pessoa (cliente e, no fluxo técnico, o engenheiro) confirma.
 
 ### Escopo desta entrega
 
-O que está nesta entrega:
-- **Aplicação (PoC técnica)**, em `app/`: cadastro, protocolo de evidências,
-  upload, pré-análise por IA (mock ou VLM self-hosted) e fila de revisão
-  humana — ponta a ponta, mas ainda sem os serviços gerenciados da Oracle
-  plugados no lugar dos mocks locais.
-- **Infraestrutura real na OCI**, em `infra/`: o ambiente de nuvem
-  compartilhado (compartment, rede, Object Storage, Autonomous Database e
-  permissões de Generative AI) já provisionado — ver seção 7 pro estado
-  exato de cada peça.
-- **Protótipo navegável** da experiência de produto (conversa guiada,
-  onboarding, checklist): [`prototipo/VistorIA-prototipo-navegavel.html`](prototipo/VistorIA-prototipo-navegavel.html)
-  — independente da PoC técnica, mostra a visão final da interface.
+- **`prototipo/`** — a visão de produto validada no discovery, navegável
+  sem instalação: [`prototipo/VistorIA-prototipo-navegavel.html`](prototipo/VistorIA-prototipo-navegavel.html).
+- **`app/`** — a prova de conceito técnica de IA (ver aviso acima):
+  cadastro, protocolo de evidências, upload, pré-análise por IA (mock ou
+  VLM self-hospedado) e fila de revisão humana, ponta a ponta, só para
+  validar a viabilidade técnica do núcleo de IA.
+- **`infra/`** — o ambiente de nuvem compartilhado na OCI (compartment,
+  rede, Object Storage, Autonomous Database e permissões de Generative AI)
+  já provisionado — ver seção 7 pro estado exato de cada peça. Essa infra
+  ainda não está conectada a `app/` nem a `prototipo/`; é a base para o
+  produto final, que ainda será construído a partir do que o discovery e
+  a prova de conceito validaram.
 
 ## 2. Tecnologias, linguagens e frameworks utilizados
 
-| Camada | Tecnologia |
-| --- | --- |
-| Backend | Java 21, Spring Boot 3.2.3, Spring Security + JJWT, Spring Data JPA, Flyway |
-| Frontend | Next.js 16.3.5, React 19, TypeScript |
-| IA (PoC local) | Python/FastAPI, VLM `Qwen/Qwen3-VL-2B-Instruct` self-hosted (GPU NVIDIA) |
-| Banco (PoC local) | PostgreSQL 16 (Testcontainers) / H2 em memória para dev |
-| Infraestrutura | Terraform (`oracle/oci` provider), Ansible |
-| Testes | JUnit 5, Mockito, Testcontainers, Vitest |
-| Nuvem | Oracle Cloud Infrastructure (OCI) |
+| Camada | Tecnologia | Onde |
+| --- | --- | --- |
+| Protótipo de produto | HTML, CSS, JavaScript (estático) | `prototipo/` |
+| Backend (PoC de IA) | Java 21, Spring Boot 3.2.3, Spring Security + JJWT, Spring Data JPA, Flyway | `app/` — stack de teste, não decisão final |
+| Frontend (PoC de IA) | Next.js 16.3.5, React 19, TypeScript | `app/` — stack de teste, não decisão final |
+| IA (PoC de IA) | Python/FastAPI, VLM `Qwen/Qwen3-VL-2B-Instruct` self-hospedado (GPU NVIDIA) | `app/` |
+| Banco (PoC de IA) | PostgreSQL 16 (Testcontainers) / H2 em memória para dev | `app/` |
+| Infraestrutura real | Terraform (`oracle/oci` provider), Ansible | `infra/` |
+| Nuvem | Oracle Cloud Infrastructure (OCI): Object Storage, Autonomous Database, Generative AI | `infra/` |
 
 ## 3. Arquitetura geral do sistema
 
-### Arquitetura da aplicação (destino final, na VM da OCI)
+### Arquitetura de infraestrutura provisionada (`infra/`)
+
+Isto é o que existe de verdade na nuvem hoje — os nomes "Frontend" e
+"Backend" abaixo são as peças que o produto final vai ocupar, ainda
+**sem** tecnologia de frontend/backend definitivamente escolhida (ver
+aviso no topo do documento):
 
 ```mermaid
 flowchart TD
     User["Usuário (navegador)"] --> VMBox
 
-    subgraph VMBox["VM Ampere A1 (Always Free)"]
+    subgraph VMBox["VM Ampere A1 (Always Free) — ainda não criada, ver seção 7"]
         Nginx["Nginx<br/>proxy reverso e TLS"]
-        Frontend["Frontend<br/>Next.js"]
-        Backend["Backend<br/>Java 21, Spring Boot"]
+        Frontend["Frontend<br/>(stack a definir)"]
+        Backend["Backend<br/>(stack a definir)"]
         Nginx --> Frontend
         Nginx --> Backend
     end
@@ -89,7 +113,10 @@ flowchart TD
     Backend --> ADB["Autonomous DB<br/>grava os dados"]
 ```
 
-### Arquitetura atual da PoC (`app/`, execução local)
+### Arquitetura da prova de conceito técnica (`app/`, execução local isolada)
+
+Só descreve como `app/` funciona por dentro — não é a arquitetura do
+produto final:
 
 ```text
 Cliente / Engenheiro
@@ -106,7 +133,7 @@ Cliente / Engenheiro
          └── vlm   → VlmIntegrationService → inference VLM (:8001)
 ```
 
-### Arquitetura de rede (OCI)
+### Arquitetura de rede (OCI, `infra/`)
 
 ```mermaid
 flowchart TD
@@ -117,7 +144,7 @@ flowchart TD
     E --> F["VM, dentro da subnet"]
 ```
 
-### Arquitetura de identidade e acesso (OCI)
+### Arquitetura de identidade e acesso (OCI, `infra/`)
 
 ```mermaid
 flowchart TD
@@ -128,26 +155,29 @@ flowchart TD
     DG --> Compartment
 ```
 
-Detalhamento das fronteiras do backend e frontend:
+Detalhamento das fronteiras internas da PoC técnica:
 [`app/docs/architecture.md`](app/docs/architecture.md).
 
 ## 4. APIs, modelos de IA e bases de dados utilizadas
 
-| Camada | Nesta PoC (`app/`) | Ambiente OCI provisionado (`infra/`) |
+| Camada | Na prova de conceito técnica (`app/`) | Ambiente OCI provisionado (`infra/`) |
 | --- | --- | --- |
-| API da aplicação | REST própria sob `/api` | Mesma API, hospedada na VM |
-| Modelo de IA | VLM `Qwen/Qwen3-VL-2B-Instruct` self-hosted (ou mock) | **OCI Generative AI**, modelo multimodal on-demand (Chat API) |
+| API | REST própria sob `/api` (só para o teste técnico) | A definir junto do produto final |
+| Modelo de IA | VLM `Qwen/Qwen3-VL-2B-Instruct` self-hospedado (ou mock) | **OCI Generative AI**, modelo multimodal on-demand (Chat API) |
 | Banco de dados | H2 em memória (dev) / PostgreSQL via Testcontainers (testes) | **Oracle Autonomous Database** (Always Free, 26ai) |
 | Armazenamento de imagens | Sistema de arquivos local | **OCI Object Storage** (bucket `vistoria-fotos`) |
 
-O modelo de Generative AI validado contra o ambiente real foi
+O modelo de Generative AI validado contra o ambiente real da OCI foi
 `meta.llama-4-scout-17b-16e-instruct` — o modelo originalmente cogitado
 (`meta.llama-3.2-90b-vision-instruct`) foi descontinuado pela Oracle
 durante o desenvolvimento; ver `infra/docs/onboarding-backend-dev.md` para
 o histórico dessa descoberta e os scripts que validaram cada serviço
-isoladamente (`infra/scripts/smoke-tests/`).
+isoladamente (`infra/scripts/smoke-tests/`). Essa validação é sobre o
+**serviço da OCI em si**, não sobre `app/` — a prova de conceito em
+`app/` usa um modelo diferente (VLM self-hospedado), justamente porque é
+um teste isolado, anterior e independente da infraestrutura Oracle.
 
-### Endpoints principais da API (`app/`)
+### Endpoints da API de teste em `app/` (só da prova de conceito técnica)
 
 | Método | Endpoint | Perfil | Descrição |
 | --- | --- | --- | --- |
@@ -163,14 +193,21 @@ isoladamente (`infra/scripts/smoke-tests/`).
 
 ## 5. Instruções para instalação ou execução
 
-### Protótipo navegável (visão de produto, sem instalação)
+### Protótipo navegável — visão de produto, sem instalação
 
 Abra [`prototipo/VistorIA-prototipo-navegavel.html`](prototipo/VistorIA-prototipo-navegavel.html)
-diretamente no navegador.
+diretamente no navegador. É a forma mais fiel de ver a proposta do
+Vistor.IA como produto.
 
-### PoC técnica — desenvolvimento local sem Docker
+### Prova de conceito técnica de IA (`app/`) — só para testar se a IA avalia fotos
 
-Perfil padrão: H2 em memória, storage local, pré-laudo mock.
+⚠️ Isto roda **apenas o teste técnico de IA**, não o app final e não a
+experiência mostrada no protótipo acima. A tela, o fluxo e o banco de
+dados que aparecem aqui são só o necessário para provar a viabilidade
+técnica.
+
+**Sem Docker** (perfil padrão: H2 em memória, storage local, pré-laudo
+mock):
 
 ```powershell
 # terminal 1 — backend em http://localhost:8080
@@ -185,9 +222,8 @@ npm ci
 npm run dev
 ```
 
-### PoC técnica + IA local via Docker
-
-**Requer GPU NVIDIA** (driver + NVIDIA Container Toolkit).
+**Com Docker, IA real ligada** (**requer GPU NVIDIA** — driver + NVIDIA
+Container Toolkit):
 
 ```powershell
 cd app
@@ -198,10 +234,11 @@ curl http://127.0.0.1:8001/health
 
 Jornada de teste: cadastrar cliente → criar vistoria → enviar fotos →
 submeter → cadastrar engenheiro com `ENGINEER_REGISTRATION_CODE` → abrir
-a fila e conferir o pré-laudo. Detalhes da VLM local:
+a fila e conferir o pré-laudo (é aí que se vê se a IA identificou os
+defeitos ou não). Detalhes da VLM local:
 [`app/inference/README.md`](app/inference/README.md).
 
-### Infraestrutura na OCI
+### Infraestrutura na OCI (`infra/`)
 
 ```bash
 cd infra/terraform/environments/dev
@@ -219,25 +256,23 @@ e [`infra/docs/onboarding-backend-dev.md`](infra/docs/onboarding-backend-dev.md)
 
 | RM | Nome | Contribuição |
 | --- | --- | --- |
-| rm376917 | Cleivin de Moura Lauermann | Ambiente de IA do MVP e treinamento |
-| rm371636 | Vinícius de Oliveira Gonçalves | Frontend e backend |
-| rm376236 | João Batista Santana de Moraes | Infraestrutura e idealização do produto |
+| rm376917 | Cleivin de Moura Lauermann | Ambiente de IA da prova de conceito técnica e treinamento |
+| rm371636 | Vinícius de Oliveira Gonçalves | Frontend e backend da prova de conceito técnica |
+| rm376236 | João Batista Santana de Moraes | Infraestrutura, idealização e discovery do produto |
 
 ## 7. Limitações conhecidas e próximos passos
 
 ### Limitações conhecidas
 
-- Esta entrega é uma **prova de conceito** focada na pré-análise por IA
-  (pré-laudo preliminar), com revisão humana. O código de `app/` ainda usa
-  mock ou uma VLM self-hosted (`Qwen3-VL`) — a integração real com o
-  **OCI Generative AI** (`OciGenAiIntegrationService`) e com o
-  **OCI Object Storage** (`OciObjectStorageService`) ainda não foi
-  implementada no backend, embora a infraestrutura de destino já esteja
-  no ar (ver `infra/`).
-- O banco-alvo do backend hoje é **PostgreSQL/H2**; a migração para o
-  **Oracle Autonomous Database** (driver `ojdbc`, dialeto Flyway Oracle,
-  ajuste das migrations) ainda não foi feita no código, apesar do banco
-  já existir e estar acessível no ambiente OCI.
+- **`app/` é uma prova de conceito técnica isolada**, não o app final: ela
+  só testa se a IA consegue avaliar defeitos numa foto. A stack usada ali
+  (Next.js, Spring Boot, PostgreSQL) não é a decisão de tecnologia do
+  produto, e o visual/fluxo não representa a experiência final — isso
+  está em `prototipo/`.
+- A infraestrutura real na OCI (`infra/`) e a prova de conceito técnica
+  (`app/`) **ainda não estão conectadas**: `app/` usa um VLM
+  self-hospedado (`Qwen3-VL`) e storage local, não os serviços OCI já
+  provisionados.
 - **A VM da aplicação ainda não foi criada**: a região `sa-saopaulo-1` está
   sem capacidade disponível do shape Always Free `VM.Standard.A1.Flex`
   (erro `Out of host capacity` da própria OCI, não é falha de
@@ -246,28 +281,28 @@ e [`infra/docs/onboarding-backend-dev.md`](infra/docs/onboarding-backend-dev.md)
   (`max-on-demand-chat-request-per-minute-count = 0`) — resolvido após o
   upgrade da conta para Pay As You Go; validar novamente antes de
   considerar essa integração pronta.
-- O modelo de IA em produção ainda não passou por nenhum ajuste fino ou
-  treinamento customizado — é o modelo multimodal genérico da Oracle
-  (`meta.llama-4-scout-17b-16e-instruct`) usado como veio, sem dataset
-  próprio de defeitos de vistoria.
-- O MVP com IA local (Docker) exige GPU NVIDIA — máquinas sem GPU não
-  sobem o serviço `inference` como está configurado.
-- O convite de engenharia é um controle administrativo do MVP, não uma
-  validação automática do CREA.
+- O modelo de IA testado no ambiente OCI ainda não passou por nenhum
+  ajuste fino ou treinamento customizado — é o modelo multimodal genérico
+  da Oracle (`meta.llama-4-scout-17b-16e-instruct`) usado como veio, sem
+  dataset próprio de defeitos de vistoria.
+- A prova de conceito técnica com IA local (Docker) exige GPU NVIDIA —
+  máquinas sem GPU não sobem o serviço `inference` como está configurado.
+- O convite de engenharia em `app/` é um controle administrativo do
+  teste, não uma validação automática do CREA.
 
 ### Próximos passos
 
+- Definir a stack de frontend/backend do produto final, a partir do que o
+  discovery (`prototipo/`) e a prova de conceito técnica (`app/`)
+  validaram.
 - Destravar a criação da VM (nova tentativa em `sa-saopaulo-1`, ou avaliar
   shape/região alternativos temporariamente).
-- Implementar `OciObjectStorageService` e `OciGenAiIntegrationService` no
-  backend, substituindo os adaptadores locais/mock pelos serviços já
-  provisionados em `infra/`.
-- Migrar o schema e o driver do backend de PostgreSQL/H2 para o Oracle
-  Autonomous Database.
-- Rodar o `ansible-playbook` contra a VM assim que ela existir, subindo a
-  aplicação real no ambiente compartilhado.
+- Construir o backend do produto final consumindo os serviços já
+  provisionados em `infra/` (Object Storage, Generative AI, Autonomous
+  Database) — hoje nenhum código de aplicação usa essa infra ainda.
+- Rodar o `ansible-playbook` contra a VM assim que ela existir.
 - Validar o fluxo ponta a ponta na nuvem (submissão → pré-laudo via OCI
-  Generative AI → revisão do engenheiro), fora do compose local.
+  Generative AI → revisão do engenheiro).
 - Avaliar necessidade de fine-tuning ou prompt engineering dedicado para
   melhorar a precisão da detecção de defeitos.
 
