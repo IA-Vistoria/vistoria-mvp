@@ -143,12 +143,12 @@ Erros usam `application/problem+json` (RFC 9457).
 ### Pré-requisitos
 
 - Java 21 e Node.js 20+ (desenvolvimento local sem Docker)
-- Docker (compose do protótipo: frontend + backend + inference)
-- NVIDIA Container Toolkit para a VLM com GPU; sem GPU use `APP_IA_PROVIDER=mock` ou `MODEL_DEVICE=cpu`
+- Docker Compose (protótipo: frontend + backend + inference)
+- **GPU NVIDIA obrigatória neste momento** para rodar o MVP com a VLM (`docker compose` usa `gpus: all` e `MODEL_DEVICE=cuda`). É necessário driver NVIDIA + [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). Sem GPU o stack de IA do MVP **não sobe** neste estágio.
 
 ### Desenvolvimento local, sem Docker
 
-O perfil padrão usa H2 em memória e armazenamento local em `uploads/`.
+O perfil padrão usa H2 em memória, armazenamento local em `uploads/` e pré-laudo **mock** (não carrega a VLM). Isso serve para UI/API; **não** é o MVP com IA real.
 
 ```powershell
 # terminal 1 — backend em http://localhost:8080
@@ -164,9 +164,9 @@ npm run dev
 
 O frontend usa `http://localhost:8080/api` por padrão.
 
-### App + IA em Docker (PoC)
+### App + IA em Docker (MVP / PoC)
 
-O compose sobe `inference` (`:8001`), `backend` (`:8080`) e `frontend` (`:3000`).
+**Requer GPU NVIDIA.** O compose sobe `inference` (`:8001`), `backend` (`:8080`) e `frontend` (`:3000`).
 
 ```powershell
 copy .env.example .env
@@ -176,7 +176,7 @@ curl http://127.0.0.1:8001/health
 
 - UI: http://localhost:3000
 - API: http://localhost:8080/api
-- IA: http://localhost:8001/health (`model_loaded=true` antes de submeter vistoria)
+- IA: http://localhost:8001/health (`model_loaded=true` antes de submeter vistoria; a primeira carga do modelo pode demorar)
 
 Jornada de teste: cadastrar cliente → criar vistoria → enviar fotos → submeter → cadastrar engenheiro com `ENGINEER_REGISTRATION_CODE` → abrir a fila e conferir o pré-laudo.
 
@@ -210,6 +210,7 @@ A suíte de backend usa Testcontainers; o teste PostgreSQL requer Docker.
 ### Limitações conhecidas
 
 - Esta entrega é uma **prova de conceito**. A IA em produção prevista é da Oracle (**OCI Vision** + **LLM / OCI Generative AI**); o container `inference` com VLM self-hosted existe só para demonstrar o fluxo Human-in-the-Loop localmente.
+- **Neste momento o MVP com IA exige GPU NVIDIA** (Compose com `gpus: all`). Máquinas sem GPU não conseguem subir o serviço `inference` como está configurado.
 - O ambiente Oracle Cloud ainda **não está configurado**; não há conexão ativa com Vision, LLM, Object Storage nem banco gerenciado da OCI.
 - O armazenamento ativo é local. A abstração `StorageService` permite trocar o adaptador, mas a integração com OCI Object Storage ainda não existe nesta versão.
 - O convite de engenharia é um controle administrativo do MVP, não uma validação automática do CREA.
