@@ -23,6 +23,8 @@
 
 Na demonstração do MVP conceitual, o fluxo aparece em três momentos: **onboarding** (explica o processo antes da primeira foto), **captura guiada** (assistente pede foto a foto e comenta o que encontrou) e **checklist / relatório** (itens derivados das evidências, com status e próximos passos no local).
 
+Essa visão de produto está no protótipo navegável [`prototipo/VistorIA-prototipo-navegavel.html`](prototipo/VistorIA-prototipo-navegavel.html) (abra no navegador; é independente da PoC técnica abaixo).
+
 A decisão técnica e a homologação final permanecem *Human-in-the-Loop*: a IA sugere; o usuário (e, no fluxo técnico, o engenheiro) confirma.
 
 ### Escopo desta entrega (prova de conceito)
