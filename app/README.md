@@ -47,10 +47,6 @@ As telas abaixo são da implementação técnica atual — **não** representam 
 
 ![Protocolo guiado do cliente](.specs/features/frontend-redesign/evidence/02-cliente-protocolo-1440.png)
 
-**Engenheiro — revisão do pré-laudo**
-
-![Área de revisão técnica](.specs/features/frontend-redesign/evidence/04-engenheiro-revisao-1440.png)
-
 ## 2. Tecnologias, linguagens e frameworks utilizados
 
 | Tecnologia | Versão | Responsabilidade |
