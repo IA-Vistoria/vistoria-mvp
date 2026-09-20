@@ -1,0 +1,23 @@
+{
+  "analysis_id": "cc167c65-be6b-41e7-90f6-e78ccde0257c",
+  "image_quality": {
+    "usable": true,
+    "issues": []
+  },
+  "areas": [
+    {
+      "area": "parede|rodape",
+      "issue_type": "apparent_mold",
+      "description": "manchas escuras e áreas de descascamento na parede e rodapé, com evidência de mofo.",
+      "evidence": "manchas escuras e áreas de descascamento na parede e rodapé, com evidência de mofo.",
+      "severity": "alta",
+      "confidence": "alta",
+      "recommendation": "avaliação presencial",
+      "location": "na parede e rodapé, próximo ao chão"
+    }
+  ],
+  "overall_summary": "A parede e rodapé apresentam manchas escuras e descascamento, com evidência de mofo.",
+  "limitations": [
+    "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+  ]
+}

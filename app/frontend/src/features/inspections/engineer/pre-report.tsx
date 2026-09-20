@@ -1,0 +1,66 @@
+export function splitPreReport(value: string | null): string[] {
+  if (!value?.trim()) return [];
+  const trimmed = value.trim();
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed) as {
+        images?: Array<{
+          overallSummary?: string;
+          areas?: Array<{
+            area?: string;
+            issueType?: string;
+            confidence?: string;
+            description?: string;
+          }>;
+          imageQuality?: { usable?: boolean; issues?: string[] };
+        }>;
+      };
+      const lines: string[] = [];
+      (parsed.images ?? []).forEach((image, index) => {
+        lines.push(`Foto ${index + 1}`);
+        if (image.imageQuality && image.imageQuality.usable === false) {
+          lines.push("Imagem não utilizável para análise visual.");
+          for (const issue of image.imageQuality.issues ?? []) lines.push(issue);
+          return;
+        }
+        if (image.overallSummary) lines.push(`Resumo: ${image.overallSummary}`);
+        const areas = image.areas ?? [];
+        if (!areas.length) {
+          lines.push("Nenhum problema visual evidente.");
+        } else {
+          for (const area of areas) {
+            const confidence = area.confidence ? ` (confiança: ${area.confidence})` : "";
+            const description = area.description ? `: ${area.description}` : "";
+            lines.push(`[${area.area ?? "área"}] ${area.issueType ?? "achado"}${confidence}${description}`);
+          }
+        }
+      });
+      return lines;
+    } catch {
+      /* fall through to plain text */
+    }
+  }
+  return trimmed
+    .split(/\r?\n/)
+    .map((line) => line.trim().replace(/^[-*•]\s*/, ""))
+    .filter(Boolean);
+}
+
+export function PreReport({ value }: { value: string | null }) {
+  const findings = splitPreReport(value);
+  return (
+    <section className="pre-report" aria-labelledby="pre-report-title">
+      <p className="eyebrow">Análise preliminar</p>
+      <h2 id="pre-report-title">Pré-laudo da IA</h2>
+      {findings.length ? (
+        <ol>{findings.map((finding, index) => <li key={`${index}-${finding}`}>{finding}</li>)}</ol>
+      ) : (
+        <p className="pre-report__empty">Pré-laudo ainda não disponível</p>
+      )}
+      <aside className="human-loop-note">
+        <strong>Análise automatizada preliminar</strong>
+        <span>Este conteúdo não substitui a avaliação técnica profissional.</span>
+      </aside>
+    </section>
+  );
+}

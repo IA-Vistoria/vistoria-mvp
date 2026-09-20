@@ -1,0 +1,33 @@
+{
+  "analysis_id": "94b554ef-2c8d-48d3-8dc0-f3ddd8a5dc3b",
+  "image_quality": {
+    "usable": true,
+    "issues": []
+  },
+  "areas": [
+    {
+      "area": "parede",
+      "issue_type": "possible_moisture",
+      "description": "manchas e áreas de descascamento na parede, com padrões que sugerem umidade e possíveis danos por umidade.",
+      "evidence": "manchas escuras e áreas de desgaste na parede, com textura irregular e desgaste na superfície.",
+      "severity": "alta",
+      "confidence": "alta",
+      "recommendation": "avaliação presencial para confirmar a presença de umidade e o grau de danos.",
+      "location": "parte da parede próxima à janela e ao rodapé"
+    },
+    {
+      "area": "rodape",
+      "issue_type": "apparent_crack",
+      "description": "fissura aparente na base da parede, com sinais de desgaste e possível rachadura.",
+      "evidence": "fissura na borda do rodapé, com textura irregular e desgaste na superfície.",
+      "severity": "media",
+      "confidence": "media",
+      "recommendation": "avaliação presencial para confirmar a presença de fissura e o grau de danos.",
+      "location": "rodapé próximo à parede"
+    }
+  ],
+  "overall_summary": "A imagem mostra sinais visuais compatíveis com possível umidade e mofo na parede, com áreas de descascamento e fissura na base da parede. A avaliação presencial é recomendada para confirmar a presença de umidade e o grau de danos.",
+  "limitations": [
+    "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+  ]
+}

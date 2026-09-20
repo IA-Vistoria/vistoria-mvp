@@ -1,0 +1,23 @@
+{
+  "analysis_id": "50b2e9d7-d718-4ea2-b266-67c0d3e38536",
+  "image_quality": {
+    "usable": true,
+    "issues": []
+  },
+  "areas": [
+    {
+      "area": "parede|rodape",
+      "issue_type": "possible_moisture",
+      "description": "manchas escuras e áreas de descascamento na parede e rodapé, com evidência de umidade e possíveis sinais de infiltração.",
+      "evidence": "manchas escuras e áreas de descascamento na parede e rodapé, com evidência de umidade e possíveis sinais de infiltração.",
+      "severity": "alta",
+      "confidence": "alta",
+      "recommendation": "avaliação presencial",
+      "location": "parte inferior da parede e rodapé, próximo ao chão"
+    }
+  ],
+  "overall_summary": "A imagem mostra uma parede e rodapé com manchas escuras, possivelmente de umidade, e áreas de descascamento. Há sinais visuais compatíveis com umidade e mofo, mas não há evidência clara de mofo aparente.",
+  "limitations": [
+    "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+  ]
+}

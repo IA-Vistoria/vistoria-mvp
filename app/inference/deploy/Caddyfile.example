@@ -1,0 +1,23 @@
+# Exemplo Caddy: TLS automático + proxy para o container na mesma VM.
+# Use quando a VM tem IP/DNS público e porta 80/443 liberadas no firewall.
+#
+# 1) Aponte o DNS (A/AAAA) do domínio para o IP da VM.
+# 2) docker compose up do vistoria-ia (porta 8001 só em localhost é o ideal).
+# 3) Instale Caddy e use este arquivo como /etc/caddy/Caddyfile.
+
+api.seudominio.com {
+	encode gzip
+	reverse_proxy 127.0.0.1:8001
+
+	header {
+		# Segurança básica de resposta
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		-Server
+	}
+
+	# Limite simples de tamanho de upload (ajuste se subir MAX_IMAGE_SIZE_MB)
+	request_body {
+		max_size 20MB
+	}
+}
