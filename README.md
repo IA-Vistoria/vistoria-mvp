@@ -8,8 +8,9 @@ IA), com o histórico de commit completo de cada parte preservado.
 
 ```
 .
-├── app/      # Backend, frontend e PoC de IA (histórico original: vistoria-predial)
-└── infra/    # Terraform, Ansible e scripts de infra na OCI (histórico original: infra)
+├── app/         # Backend, frontend e PoC de IA (histórico original: vistoria-predial)
+├── infra/       # Terraform, Ansible e scripts de infra na OCI (histórico original: infra)
+└── prototipo/   # Protótipo navegável (visão de produto)
 ```
 
 ## 1. Descrição da solução
@@ -52,7 +53,7 @@ O que está nesta entrega:
   permissões de Generative AI) já provisionado — ver seção 7 pro estado
   exato de cada peça.
 - **Protótipo navegável** da experiência de produto (conversa guiada,
-  onboarding, checklist): [`app/prototipo/VistorIA-prototipo-navegavel.html`](app/prototipo/VistorIA-prototipo-navegavel.html)
+  onboarding, checklist): [`prototipo/VistorIA-prototipo-navegavel.html`](prototipo/VistorIA-prototipo-navegavel.html)
   — independente da PoC técnica, mostra a visão final da interface.
 
 ## 2. Tecnologias, linguagens e frameworks utilizados
@@ -164,7 +165,7 @@ isoladamente (`infra/scripts/smoke-tests/`).
 
 ### Protótipo navegável (visão de produto, sem instalação)
 
-Abra [`app/prototipo/VistorIA-prototipo-navegavel.html`](app/prototipo/VistorIA-prototipo-navegavel.html)
+Abra [`prototipo/VistorIA-prototipo-navegavel.html`](prototipo/VistorIA-prototipo-navegavel.html)
 diretamente no navegador.
 
 ### PoC técnica — desenvolvimento local sem Docker
