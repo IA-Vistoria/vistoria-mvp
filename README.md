@@ -166,5 +166,4 @@ Passo a passo completo: [`infra/docs/spec-ambiente-dev.md`](infra/docs/spec-ambi
 - Convite de engenharia é controle administrativo do teste, não validação de CREA.
 
 **Próximos passos:** destravar a VM, construir o backend do produto final
-sobre a infra já provisionada, migrar de PostgreSQL para o Autonomous DB,
-rodar o Ansible contra a VM, validar o fluxo ponta a ponta na nuvem.
+sobre a infra já provisionada, migrar de PostgreSQL para o Autonomous DB.
