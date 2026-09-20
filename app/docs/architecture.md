@@ -8,6 +8,14 @@ O banco-alvo é PostgreSQL e o desenvolvimento local pode usar H2. Flyway é a f
 
 ## 2. Contêineres e dependências
 
+No protótipo, o repositório sobe o programa e a IA juntos no mesmo `docker-compose.yml`, em **containers separados**:
+
+| Serviço | Porta | Papel |
+| --- | --- | --- |
+| `frontend` | 3000 | Next.js |
+| `backend` | 8080 | Spring Boot |
+| `inference` | 8001 | FastAPI + VLM (pré-laudo) |
+
 ```mermaid
 flowchart LR
     Client["Cliente"] --> Web["Next.js 16"]
@@ -16,10 +24,13 @@ flowchart LR
     API --> DB[("PostgreSQL ou H2")]
     API --> Storage["StorageService"]
     Storage --> Files[("Arquivos locais")]
-    API --> Mock["MockIaIntegrationService"]
+    API --> IaPort["IaIntegrationService"]
+    IaPort -->|mock| Mock["MockIaIntegrationService"]
+    IaPort -->|vlm| Vlm["VlmIntegrationService"]
+    Vlm -->|"VLM_URL rede Docker"| Inference["inference VLM :8001"]
 ```
 
-Não existe chamada OCI ativa. `IaIntegrationService` define a fronteira de integração, e `MockIaIntegrationService` é o adaptador usado atualmente.
+`IaIntegrationService` é a porta de pré-análise. Com `app.ia.provider=mock` usa `MockIaIntegrationService`; com `vlm` (default no compose) usa `VlmIntegrationService` contra o container `inference` (`VLM_URL=http://inference:8001` + `VLM_API_KEY`). O código da VLM fica em `inference/` neste repositório.
 
 ## 3. Fronteiras do backend
 

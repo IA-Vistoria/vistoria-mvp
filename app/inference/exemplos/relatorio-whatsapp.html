@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Testes MVP IA Vistoria — para WhatsApp</title>
+  <style>
+    :root {
+      --bg: #f3f5f7;
+      --card: #fff;
+      --text: #1a1f26;
+      --muted: #5b6775;
+      --ok: #1b7f4a;
+      --warn: #b35c00;
+      --bad: #b42318;
+      --border: #d8dee6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 1rem;
+    }
+    header {
+      max-width: 900px;
+      margin: 0 auto 1.25rem;
+    }
+    h1 { font-size: 1.35rem; margin: 0 0 0.35rem; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+    .tip {
+      max-width: 900px;
+      margin: 0 auto 1.25rem;
+      background: #e8f1ff;
+      border: 1px solid #c5d8f7;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      font-size: 0.92rem;
+    }
+    .card {
+      max-width: 900px;
+      margin: 0 auto 1.5rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: #fafbfc;
+    }
+    .card-head h2 { margin: 0; font-size: 1.05rem; }
+    .badge {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .badge.ok { background: #e6f6ec; color: var(--ok); }
+    .badge.warn { background: #fff3e6; color: var(--warn); }
+    .badge.bad { background: #fdeceb; color: var(--bad); }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .photo {
+      padding: 0.85rem;
+      border-right: 1px solid var(--border);
+      background: #111;
+    }
+    @media (max-width: 760px) {
+      .photo { border-right: 0; border-bottom: 1px solid var(--border); }
+    }
+    .photo img {
+      width: 100%;
+      max-height: 420px;
+      object-fit: contain;
+      display: block;
+      border-radius: 8px;
+      background: #000;
+    }
+    .json-wrap { padding: 0.85rem; }
+    .summary {
+      font-size: 0.92rem;
+      margin: 0 0 0.75rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    pre {
+      margin: 0;
+      background: #0f1419;
+      color: #e6edf5;
+      border-radius: 8px;
+      padding: 0.85rem;
+      font-size: 0.72rem;
+      line-height: 1.35;
+      overflow: auto;
+      max-height: 420px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    footer {
+      max-width: 900px;
+      margin: 0 auto 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MVP IA Vistoria — testes com exemplos</h1>
+    <p>Modelo: Qwen3-VL-2B-Instruct · endpoint POST /analyze · linguagem de indício visual</p>
+  </header>
+
+  <div class="tip">
+    <strong>Como mandar no WhatsApp:</strong> abra este arquivo no navegador → tire print de cada card (foto + JSON) → envie os prints no grupo.
+    Ou zip a pasta <code>exemplos</code> inteira e mande o arquivo.
+  </div>
+
+  <!-- 1 -->
+  <section class="card">
+    <div class="card-head">
+      <h2>1) image1.jpg — sala limpa</h2>
+      <span class="badge warn">resumo ok · areas com ruído</span>
+    </div>
+    <div class="grid">
+      <div class="photo"><img src="image1.jpg" alt="image1" /></div>
+      <div class="json-wrap">
+        <p class="summary">Resumo da IA: ambiente limpo, sem defeitos visíveis. Ainda preencheu areas com insufficient_evidence (ponto a ajustar).</p>
+        <pre>{
+  "analysis_id": "689c0fd6-f60b-45ab-b155-2d3475c5c499",
+  "image_quality": { "usable": true, "issues": [] },
+  "areas": [
+    {
+      "area": "parede",
+      "issue_type": "insufficient_evidence",
+      "description": "Sinal visual de umidade ou mofo na parede.",
+      "evidence": "A parede é branca e lisa, com iluminação natural e sem sinais visuais de umidade, mofo ou desgaste.",
+      "severity": "baixa",
+      "confidence": "baixa",
+      "recommendation": "Avaliação presencial recomendada para confirmar a presença de umidade ou mofo.",
+      "location": "pared da sala, próximo à janela"
+    },
+    {
+      "area": "rodape",
+      "issue_type": "insufficient_evidence",
+      "description": "Sinal visual de umidade ou mofo na base da parede.",
+      "evidence": "O rodapé é branco e liso, sem sinais visuais de umidade, mofo ou desgaste.",
+      "severity": "baixa",
+      "confidence": "baixa",
+      "recommendation": "Avaliação presencial recomendada para confirmar a presença de umidade ou mofo.",
+      "location": "rodapé da parede, próximo à janela"
+    }
+  ],
+  "overall_summary": "A imagem mostra uma sala com paredes brancas, rodapés brancos e piso de madeira. Não há sinais visuais de umidade, mofo, descascamento, bolhas, riscos, furos, fissuras, desgaste, peças quebradas, descolamento ou partes faltantes. A iluminação é natural e a imagem é clara.",
+  "limitations": [
+    "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+  ]
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="card">
+    <div class="card-head">
+      <h2>2) image2.jpg — ambiente limpo</h2>
+      <span class="badge ok">OK · areas vazio</span>
+    </div>
+    <div class="grid">
+      <div class="photo"><img src="image2.jpg" alt="image2" /></div>
+      <div class="json-wrap">
+        <p class="summary">Resumo da IA: sem manchas, mofo, rachaduras ou desgaste. Comportamento ideal.</p>
+        <pre>{
+  "analysis_id": "b507f584-e6b5-4543-9eb2-255c4324728a",
+  "image_quality": { "usable": true, "issues": [] },
+  "areas": [],
+  "overall_summary": "A imagem mostra um ambiente interno com paredes e rodapés brancos, piso de cerâmica e uma porta de vidro. Não há sinais visuais de manchas, sujeira, mofo, rachaduras, furos, desgaste, descolamento ou partes faltantes. A iluminação é clara e a imagem é de boa qualidade.",
+  "limitations": [
+    "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+  ]
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="card">
+    <div class="card-head">
+      <h2>3) image3.jpg — mancha / umidade perto da janela</h2>
+      <span class="badge bad">problemas detectados</span>
+    </div>
+    <div class="grid">
+      <div class="photo"><img src="image3.jpg" alt="image3" /></div>
+      <div class="json-wrap">
+        <p class="summary">Resumo da IA: possível umidade + descascamento (alta) e fissura aparente no rodapé (média).</p>
+        <pre>{
+  "analysis_id": "94b554ef-2c8d-48d3-8dc0-f3ddd8a5dc3b",
+  "image_quality": { "usable": true, "issues": [] },
+  "areas": [
+    {
+      "area": "parede",
+      "issue_type": "possible_moisture",
+      "description": "manchas e áreas de descascamento na parede, com padrões que sugerem umidade e possíveis danos por umidade.",
+      "evidence": "manchas escuras e áreas de desgaste na parede, com textura irregular e desgaste na superfície.",
+      "severity": "alta",
+      "confidence": "alta",
+      "recommendation": "avaliação presencial para confirmar a presença de umidade e o grau de danos.",
+      "location": "parte da parede próxima à janela e ao rodapé"
+    },
+    {
+      "area": "rodape",
+      "issue_type": "apparent_crack",
+      "description": "fissura aparente na base da parede, com sinais de desgaste e possível rachadura.",
+      "evidence": "fissura na borda do rodapé, com textura irregular e desgaste na superfície.",
+      "severity": "media",
+      "confidence": "media",
+      "recommendation": "avaliação presencial para confirmar a presença de fissura e o grau de danos.",
+      "location": "rodapé próximo à parede"
+    }
+  ],
+  "overall_summary": "A imagem mostra sinais visuais compatíveis com possível umidade e mofo na parede, com áreas de descascamento e fissura na base da parede. A avaliação presencial é recomendada para confirmar a presença de umidade e o grau de danos.",
+  "limitations": [
+    "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+  ]
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="card">
+    <div class="card-head">
+      <h2>4) image 4.jpg — canto com mancha escura</h2>
+      <span class="badge bad">problemas detectados</span>
+    </div>
+    <div class="grid">
+      <div class="photo"><img src="image 4.jpg" alt="image 4" /></div>
+      <div class="json-wrap">
+        <p class="summary">Resumo da IA: manchas escuras e descascamento, compatível com possível umidade (alta).</p>
+        <pre>{
+  "analysis_id": "50b2e9d7-d718-4ea2-b266-67c0d3e38536",
+  "image_quality": { "usable": true, "issues": [] },
+  "areas": [
+    {
+      "area": "parede|rodape",
+      "issue_type": "possible_moisture",
+      "description": "manchas escuras e áreas de descascamento na parede e rodapé, com evidência de umidade e possíveis sinais de infiltração.",
+      "evidence": "manchas escuras e áreas de descascamento na parede e rodapé, com evidência de umidade e possíveis sinais de infiltração.",
+      "severity": "alta",
+      "confidence": "alta",
+      "recommendation": "avaliação presencial",
+      "location": "parte inferior da parede e rodapé, próximo ao chão"
+    }
+  ],
+  "overall_summary": "A imagem mostra uma parede e rodapé com manchas escuras, possivelmente de umidade, e áreas de descascamento. Há sinais visuais compatíveis com umidade e mofo, mas não há evidência clara de mofo aparente.",
+  "limitations": [
+    "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+  ]
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="card">
+    <div class="card-head">
+      <h2>5) image 5.jpg — mancha / mofo aparente</h2>
+      <span class="badge bad">problemas detectados</span>
+    </div>
+    <div class="grid">
+      <div class="photo"><img src="image 5.jpg" alt="image 5" /></div>
+      <div class="json-wrap">
+        <p class="summary">Resumo da IA: manchas escuras + descascamento, rotulado como mofo aparente (alta).</p>
+        <pre>{
+  "analysis_id": "cc167c65-be6b-41e7-90f6-e78ccde0257c",
+  "image_quality": { "usable": true, "issues": [] },
+  "areas": [
+    {
+      "area": "parede|rodape",
+      "issue_type": "apparent_mold",
+      "description": "manchas escuras e áreas de descascamento na parede e rodapé, com evidência de mofo.",
+      "evidence": "manchas escuras e áreas de descascamento na parede e rodapé, com evidência de mofo.",
+      "severity": "alta",
+      "confidence": "alta",
+      "recommendation": "avaliação presencial",
+      "location": "na parede e rodapé, próximo ao chão"
+    }
+  ],
+  "overall_summary": "A parede e rodapé apresentam manchas escuras e descascamento, com evidência de mofo.",
+  "limitations": [
+    "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+  ]
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Arquivo gerado para compartilhar evidências do MVP. Não substitui vistoria técnica presencial.
+  </footer>
+</body>
+</html>

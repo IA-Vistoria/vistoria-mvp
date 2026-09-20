@@ -136,23 +136,23 @@ class VistoriaControllerTest {
         updated.setStatus(VistoriaStatus.EM_RASCUNHO);
         ReflectionTestUtils.setField(updated, "id", 10L);
         ImagemVistoria image = new ImagemVistoria();
-        image.setProtocoloItem("SALA_PISO");
+        image.setProtocoloItem("SALA_PAREDES_REVESTIMENTOS");
         image.setDataUpload(LocalDateTime.of(2026, 9, 19, 4, 0));
         ReflectionTestUtils.setField(image, "id", 20L);
         updated.getImagens().add(image);
-        when(vistoriaService.uploadImagem(eq(10L), any(), eq("SALA_PISO"), any())).thenReturn(updated);
+        when(vistoriaService.uploadImagem(eq(10L), any(), eq("SALA_PAREDES_REVESTIMENTOS"), any())).thenReturn(updated);
 
         mockMvc.perform(multipart("/api/vistorias/10/imagens")
                         .file(file)
-                        .param("protocoloItem", "SALA_PISO"))
+                        .param("protocoloItem", "SALA_PAREDES_REVESTIMENTOS"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.imagens[0].id").value(20))
-                .andExpect(jsonPath("$.imagens[0].protocoloItem").value("SALA_PISO"))
+                .andExpect(jsonPath("$.imagens[0].protocoloItem").value("SALA_PAREDES_REVESTIMENTOS"))
                 .andExpect(jsonPath("$.imagens[0].dataUpload").exists())
                 .andExpect(jsonPath("$.imagens[0].conteudoUrl")
                         .value("/api/vistorias/10/imagens/20/conteudo"))
-                .andExpect(jsonPath("$.imagens[0].url").doesNotExist());
+                .andExpect(jsonPath("$.imagens[0].storagePath").exists());
     }
 
     @Test
@@ -160,11 +160,11 @@ class VistoriaControllerTest {
     void shouldReturnProblemDetailForInvalidEvidence() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "fraude.png", "image/png", "texto".getBytes());
         doThrow(new InvalidEvidenceException("O conteúdo não corresponde ao tipo informado."))
-                .when(vistoriaService).uploadImagem(eq(10L), any(), eq("SALA_PISO"), any());
+                .when(vistoriaService).uploadImagem(eq(10L), any(), eq("SALA_PAREDES_REVESTIMENTOS"), any());
 
         mockMvc.perform(multipart("/api/vistorias/10/imagens")
                         .file(file)
-                        .param("protocoloItem", "SALA_PISO"))
+                        .param("protocoloItem", "SALA_PAREDES_REVESTIMENTOS"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.title").value("Evidência inválida"))

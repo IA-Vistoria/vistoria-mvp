@@ -1,0 +1,507 @@
+{
+  "service": "MVP IA Vistoria",
+  "version": "0.1.0",
+  "base_url": "https://{HOST_PUBLICO_OU_IP}:8001",
+  "env_for_backend": "VLM_URL=https://{HOST_PUBLICO}\nVLM_API_KEY={mesma_API_KEY_do_servico}",
+  "auth": {
+    "type": "api_key",
+    "headers_accepted": ["X-API-Key", "Authorization: Bearer <key>"],
+    "public_paths": ["/health", "/docs", "/openapi.json", "/redoc", "/static"],
+    "protected_paths": ["/analyze"],
+    "notes": "Em produção REQUIRE_API_KEY=true e API_KEY forte. /health fica público para probes."
+  },
+  "language_rule": "A IA nunca afirma diagnóstico técnico definitivo. Só relata indícios visuais (ex.: possible_moisture, apparent_crack).",
+
+  "endpoints": {
+    "GET /health": {
+      "description": "Indica se o modelo está carregado e pronto.",
+      "success_http_status": 200,
+      "not_ready_http_status": 503,
+      "response_schema": {
+        "status": {
+          "type": "string",
+          "enum": ["ok", "model_not_ready"]
+        },
+        "model_loaded": { "type": "boolean" },
+        "model_id": { "type": "string" },
+        "device": {
+          "type": "string",
+          "enum": ["cuda", "cpu"]
+        }
+      }
+    },
+    "POST /analyze": {
+      "description": "Recebe uma imagem e devolve JSON estruturado de análise visual.",
+      "content_type": "multipart/form-data",
+      "form_field": "image",
+      "accepted_mime_types": [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "image/bmp"
+      ],
+      "max_image_size_mb": 15,
+      "success_http_status": 200,
+      "error_http_statuses": [400, 500, 503]
+    }
+  },
+
+  "analyze_success_response_schema": {
+    "analysis_id": {
+      "type": "string",
+      "format": "uuid",
+      "required": true,
+      "description": "ID gerado a cada análise."
+    },
+    "image_quality": {
+      "type": "object",
+      "required": true,
+      "fields": {
+        "usable": {
+          "type": "boolean",
+          "description": "true = imagem processável; false = rejeitada na validação (areas vem vazio)."
+        },
+        "issues": {
+          "type": "array",
+          "items": "string",
+          "description": "Lista de problemas de qualidade/validação. Vazia quando usable=true e sem alertas."
+        }
+      }
+    },
+    "areas": {
+      "type": "array",
+      "required": true,
+      "description": "Lista de achados visuais. Pode ser [].",
+      "item_fields": {
+        "area": {
+          "type": "string",
+          "recommended_values": ["parede", "rodape", "outro"],
+          "description": "Região observada. Preferir um valor único."
+        },
+        "issue_type": {
+          "type": "string",
+          "enum": [
+            "possible_moisture",
+            "apparent_mold",
+            "apparent_crack",
+            "peeling",
+            "stain",
+            "dirt",
+            "bubble",
+            "scratch",
+            "hole",
+            "wear",
+            "broken_piece",
+            "detachment",
+            "missing_part",
+            "insufficient_evidence",
+            "other_visual_issue"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "Descrição visual sem diagnóstico definitivo."
+        },
+        "evidence": {
+          "type": "string",
+          "description": "O que na imagem sustenta a observação."
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["baixa", "media", "alta"]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["baixa", "media", "alta"]
+        },
+        "recommendation": {
+          "type": "string",
+          "description": "Sugestão cautelosa, tipicamente avaliação presencial."
+        },
+        "location": {
+          "type": ["string", "null"],
+          "description": "Localização aproximada na imagem, se identificável."
+        }
+      }
+    },
+    "overall_summary": {
+      "type": "string",
+      "required": true,
+      "description": "Resumo em português do que foi observado."
+    },
+    "limitations": {
+      "type": "array",
+      "items": "string",
+      "required": true,
+      "description": "Limitações da análise. Sempre incluir aviso de que não substitui vistoria presencial."
+    }
+  },
+
+  "image_quality_issues_possible_values": [
+    "empty_file",
+    "file_too_large_max_15mb",
+    "unsupported_mime_type:{mime}",
+    "not_a_decodable_image",
+    "unsupported_or_corrupt_image",
+    "unsupported_image_format",
+    "image_too_small",
+    "model_output_not_json",
+    "schema_mapping_failed"
+  ],
+
+  "issue_type_meanings": {
+    "possible_moisture": "Sinais visuais compatíveis com possível umidade.",
+    "apparent_mold": "Manchas/textura aparentes compatíveis com mofo.",
+    "apparent_crack": "Fissura/rachadura aparente na superfície.",
+    "peeling": "Descascamento de tinta/revestimento.",
+    "stain": "Mancha visual sem classificação mais específica.",
+    "dirt": "Sujeira aparente.",
+    "bubble": "Bolhas aparentes na superfície.",
+    "scratch": "Riscos aparentes.",
+    "hole": "Furos aparentes.",
+    "wear": "Desgaste aparente.",
+    "broken_piece": "Peça quebrada/trincada aparente.",
+    "detachment": "Descolamento aparente.",
+    "missing_part": "Parte faltante aparente.",
+    "insufficient_evidence": "Evidência visual insuficiente para afirmar problema.",
+    "other_visual_issue": "Outro problema visual identificável."
+  },
+
+  "all_possible_outcomes": {
+    "A_health_ok": {
+      "http_status": 200,
+      "endpoint": "GET /health",
+      "when": "Modelo carregado e pronto.",
+      "body": {
+        "status": "ok",
+        "model_loaded": true,
+        "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+        "device": "cuda"
+      }
+    },
+
+    "B_health_not_ready": {
+      "http_status": 503,
+      "endpoint": "GET /health",
+      "when": "Serviço no ar, mas modelo ainda não carregou ou falhou no load.",
+      "body": {
+        "status": "model_not_ready",
+        "model_loaded": false,
+        "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+        "device": "cuda"
+      }
+    },
+
+    "C_analyze_with_findings": {
+      "http_status": 200,
+      "endpoint": "POST /analyze",
+      "when": "Imagem válida com um ou mais problemas visuais.",
+      "body": {
+        "analysis_id": "94b554ef-2c8d-48d3-8dc0-f3ddd8a5dc3b",
+        "image_quality": {
+          "usable": true,
+          "issues": []
+        },
+        "areas": [
+          {
+            "area": "parede",
+            "issue_type": "possible_moisture",
+            "description": "Manchas e áreas de descascamento na parede, com padrões que sugerem umidade.",
+            "evidence": "Manchas escuras e textura irregular na superfície da parede.",
+            "severity": "alta",
+            "confidence": "alta",
+            "recommendation": "Recomenda-se avaliação presencial da causa da mancha.",
+            "location": "parte da parede próxima à janela e ao rodapé"
+          },
+          {
+            "area": "rodape",
+            "issue_type": "apparent_crack",
+            "description": "Fissura aparente na base da parede.",
+            "evidence": "Linha irregular na borda do rodapé com desgaste na superfície.",
+            "severity": "media",
+            "confidence": "media",
+            "recommendation": "Recomenda-se avaliação presencial.",
+            "location": "rodapé próximo à parede"
+          },
+          {
+            "area": "parede",
+            "issue_type": "apparent_mold",
+            "description": "Manchas escuras com textura aparente compatível com mofo.",
+            "evidence": "Áreas escuras irregulares sobre mancha na parede.",
+            "severity": "alta",
+            "confidence": "media",
+            "recommendation": "Recomenda-se avaliação presencial.",
+            "location": "região inferior da parede"
+          },
+          {
+            "area": "parede",
+            "issue_type": "peeling",
+            "description": "Descascamento aparente da tinta/revestimento.",
+            "evidence": "Áreas com tinta levantada ou ausente revelando camada inferior.",
+            "severity": "media",
+            "confidence": "alta",
+            "recommendation": "Recomenda-se avaliação presencial.",
+            "location": "centro da área danificada"
+          },
+          {
+            "area": "parede",
+            "issue_type": "stain",
+            "description": "Mancha aparente na superfície.",
+            "evidence": "Alteração de cor irregular na parede.",
+            "severity": "baixa",
+            "confidence": "media",
+            "recommendation": "Recomenda-se avaliação presencial se houver progressão.",
+            "location": "canto superior"
+          },
+          {
+            "area": "rodape",
+            "issue_type": "dirt",
+            "description": "Sujeira aparente no rodapé.",
+            "evidence": "Acúmulo escuro na junção com o piso.",
+            "severity": "baixa",
+            "confidence": "media",
+            "recommendation": "Limpeza e nova avaliação visual se persistir.",
+            "location": "base do rodapé"
+          },
+          {
+            "area": "parede",
+            "issue_type": "bubble",
+            "description": "Bolhas aparentes na superfície pintada.",
+            "evidence": "Relevos circulares sob a tinta.",
+            "severity": "media",
+            "confidence": "media",
+            "recommendation": "Recomenda-se avaliação presencial.",
+            "location": "região média da parede"
+          },
+          {
+            "area": "parede",
+            "issue_type": "scratch",
+            "description": "Riscos aparentes na superfície.",
+            "evidence": "Linhas finas claras/escuras na pintura.",
+            "severity": "baixa",
+            "confidence": "alta",
+            "recommendation": "Registro visual; avaliar necessidade de reparo.",
+            "location": "lado direito"
+          },
+          {
+            "area": "parede",
+            "issue_type": "hole",
+            "description": "Furo aparente na parede.",
+            "evidence": "Abertura circular ou irregular na superfície.",
+            "severity": "media",
+            "confidence": "alta",
+            "recommendation": "Recomenda-se avaliação presencial.",
+            "location": "altura média"
+          },
+          {
+            "area": "rodape",
+            "issue_type": "wear",
+            "description": "Desgaste aparente no rodapé.",
+            "evidence": "Perda de acabamento e marcas de uso.",
+            "severity": "baixa",
+            "confidence": "media",
+            "recommendation": "Registro visual.",
+            "location": "trecho próximo à porta"
+          },
+          {
+            "area": "rodape",
+            "issue_type": "broken_piece",
+            "description": "Peça do rodapé aparentemente quebrada/trincada.",
+            "evidence": "Segmento interrompido ou trinca visível.",
+            "severity": "media",
+            "confidence": "media",
+            "recommendation": "Recomenda-se avaliação presencial.",
+            "location": "canto"
+          },
+          {
+            "area": "rodape",
+            "issue_type": "detachment",
+            "description": "Descolamento aparente do rodapé.",
+            "evidence": "Afastamento entre rodapé e parede/piso.",
+            "severity": "media",
+            "confidence": "media",
+            "recommendation": "Recomenda-se avaliação presencial.",
+            "location": "junção com a parede"
+          },
+          {
+            "area": "rodape",
+            "issue_type": "missing_part",
+            "description": "Parte aparentemente faltante no acabamento.",
+            "evidence": "Trecho sem peça onde o acabamento deveria continuar.",
+            "severity": "media",
+            "confidence": "media",
+            "recommendation": "Recomenda-se avaliação presencial.",
+            "location": "extremidade do rodapé"
+          },
+          {
+            "area": "outro",
+            "issue_type": "other_visual_issue",
+            "description": "Outro problema visual identificável na imagem.",
+            "evidence": "Alteração visual não classificada nos tipos principais.",
+            "severity": "baixa",
+            "confidence": "baixa",
+            "recommendation": "Recomenda-se avaliação presencial.",
+            "location": null
+          }
+        ],
+        "overall_summary": "Há múltiplos indícios visuais na parede/rodapé; recomenda-se avaliação presencial. Isto não é diagnóstico técnico definitivo.",
+        "limitations": [
+          "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+        ]
+      }
+    },
+
+    "D_analyze_no_findings": {
+      "http_status": 200,
+      "endpoint": "POST /analyze",
+      "when": "Imagem válida sem problemas visuais evidentes.",
+      "body": {
+        "analysis_id": "b507f584-e6b5-4543-9eb2-255c4324728a",
+        "image_quality": {
+          "usable": true,
+          "issues": []
+        },
+        "areas": [],
+        "overall_summary": "Ambiente com paredes e rodapés sem sinais visuais evidentes de manchas, mofo, rachaduras ou desgaste.",
+        "limitations": [
+          "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+        ]
+      }
+    },
+
+    "E_analyze_insufficient_evidence": {
+      "http_status": 200,
+      "endpoint": "POST /analyze",
+      "when": "Imagem válida, mas evidência visual fraca/ambígua.",
+      "body": {
+        "analysis_id": "689c0fd6-f60b-45ab-b155-2d3475c5c499",
+        "image_quality": {
+          "usable": true,
+          "issues": []
+        },
+        "areas": [
+          {
+            "area": "parede",
+            "issue_type": "insufficient_evidence",
+            "description": "Não há evidência visual suficiente para afirmar um problema específico.",
+            "evidence": "Superfície clara e uniforme, sem alteração evidente de cor ou textura.",
+            "severity": "baixa",
+            "confidence": "baixa",
+            "recommendation": "Recomenda-se nova foto mais próxima ou avaliação presencial.",
+            "location": null
+          }
+        ],
+        "overall_summary": "A imagem é utilizável, mas não há indícios visuais claros de defeito.",
+        "limitations": [
+          "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+        ]
+      }
+    },
+
+    "F_analyze_image_rejected": {
+      "http_status": 200,
+      "endpoint": "POST /analyze",
+      "when": "Arquivo rejeitado na validação (não é imagem utilizável). HTTP ainda pode ser 200 com usable=false.",
+      "body": {
+        "analysis_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "image_quality": {
+          "usable": false,
+          "issues": [
+            "not_a_decodable_image"
+          ]
+        },
+        "areas": [],
+        "overall_summary": "Imagem não pôde ser utilizada para análise visual.",
+        "limitations": [
+          "Análise baseada apenas em imagem; não substitui vistoria técnica presencial.",
+          "Imagem rejeitada na validação prévia."
+        ]
+      },
+      "other_rejected_examples": [
+        {
+          "issues": ["empty_file"]
+        },
+        {
+          "issues": ["file_too_large_max_15mb"]
+        },
+        {
+          "issues": ["unsupported_mime_type:application/pdf"]
+        },
+        {
+          "issues": ["unsupported_image_format"]
+        },
+        {
+          "issues": ["image_too_small"]
+        }
+      ]
+    },
+
+    "G_analyze_model_output_unparseable": {
+      "http_status": 200,
+      "endpoint": "POST /analyze",
+      "when": "Imagem válida, mas a saída do modelo não veio em JSON utilizável.",
+      "body": {
+        "analysis_id": "c0ffee00-1111-2222-3333-444455556666",
+        "image_quality": {
+          "usable": true,
+          "issues": ["model_output_not_json"]
+        },
+        "areas": [],
+        "overall_summary": "A análise visual não pôde ser estruturada de forma confiável a partir da resposta do modelo.",
+        "limitations": [
+          "Análise baseada apenas em imagem; não substitui vistoria técnica presencial.",
+          "Resposta do modelo não estava em JSON válido."
+        ]
+      }
+    },
+
+    "H_analyze_bad_upload": {
+      "http_status": 400,
+      "endpoint": "POST /analyze",
+      "when": "Falha ao ler o arquivo enviado.",
+      "body": {
+        "detail": "Could not read uploaded file"
+      }
+    },
+
+    "I_analyze_model_not_loaded": {
+      "http_status": 503,
+      "endpoint": "POST /analyze",
+      "when": "Modelo não está carregado.",
+      "body": {
+        "detail": "Model is not loaded",
+        "error": "model_not_ready"
+      }
+    },
+
+    "J_analyze_internal_error": {
+      "http_status": 500,
+      "endpoint": "POST /analyze",
+      "when": "Falha interna na inferência/processamento.",
+      "body": {
+        "detail": "Analysis failed due to an internal error"
+      }
+    }
+  },
+
+  "backend_integration_notes": [
+    "SaaS: o browser nunca chama a VLM. Só o backend, após autenticar o tenant.",
+    "Oracle Cloud: preferir VLM em subnet privada; VLM_URL=http://<IP_privado>:8001",
+    "Usar VLM_URL como base e chamar POST {VLM_URL}/analyze com multipart field 'image'.",
+    "Enviar header X-API-Key (ou Authorization: Bearer) com a mesma API_KEY do serviço.",
+    "Antes de analisar em produção, checar GET {VLM_URL}/health e exigir status=ok e model_loaded=true.",
+    "Tratar HTTP 200 com image_quality.usable=false como rejeição de imagem (não como sucesso de vistoria).",
+    "Tratar areas=[] como 'nenhum problema visual evidente', não como erro.",
+    "severity e confidence só aceitam: baixa | media | alta.",
+    "location pode ser null.",
+    "Não interpretar issue_type como diagnóstico estrutural definitivo.",
+    "Rate limit / fila no backend para proteger a GPU de abuso multi-tenant.",
+    "Link HTTPS público da VLM só para demo; produção = rede privada na VCN."
+  ],
+
+  "request_examples": {
+    "curl_analyze": "curl -X POST https://{HOST}/analyze -H \"X-API-Key: $API_KEY\" -F \"image=@foto.jpg\"",
+    "curl_health": "curl https://{HOST}/health"
+  }
+}

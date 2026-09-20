@@ -1,0 +1,33 @@
+{
+  "analysis_id": "689c0fd6-f60b-45ab-b155-2d3475c5c499",
+  "image_quality": {
+    "usable": true,
+    "issues": []
+  },
+  "areas": [
+    {
+      "area": "parede",
+      "issue_type": "insufficient_evidence",
+      "description": "Sinal visual de umidade ou mofo na parede.",
+      "evidence": "A parede é branca e lisa, com iluminação natural e sem sinais visuais de umidade, mofo ou desgaste.",
+      "severity": "baixa",
+      "confidence": "baixa",
+      "recommendation": "Avaliação presencial recomendada para confirmar a presença de umidade ou mofo.",
+      "location": "pared da sala, próximo à janela"
+    },
+    {
+      "area": "rodape",
+      "issue_type": "insufficient_evidence",
+      "description": "Sinal visual de umidade ou mofo na base da parede.",
+      "evidence": "O rodapé é branco e liso, sem sinais visuais de umidade, mofo ou desgaste.",
+      "severity": "baixa",
+      "confidence": "baixa",
+      "recommendation": "Avaliação presencial recomendada para confirmar a presença de umidade ou mofo.",
+      "location": "rodapé da parede, próximo à janela"
+    }
+  ],
+  "overall_summary": "A imagem mostra uma sala com paredes brancas, rodapés brancos e piso de madeira. Não há sinais visuais de umidade, mofo, descascamento, bolhas, riscos, furos, fissuras, desgaste, peças quebradas, descolamento ou partes faltantes. A iluminação é natural e a imagem é clara.",
+  "limitations": [
+    "Análise baseada apenas em imagem; não substitui vistoria técnica presencial."
+  ]
+}

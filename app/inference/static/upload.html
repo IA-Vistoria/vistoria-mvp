@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Teste — inference / IA Vistoria</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e8eef6;
+      --muted: #8b9bb0;
+      --accent: #2f6fed;
+      --border: #2a3648;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1c2b45, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 1.4rem; margin: 0 0 0.35rem; }
+    p { color: var(--muted); margin: 0 0 1.5rem; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin: 0 0 0.35rem; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    input[type="file"], input[type="password"] {
+      width: 100%;
+      margin-bottom: 1rem;
+      background: #0b1017;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.55rem 0.7rem;
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      border: 0;
+      border-radius: 8px;
+      padding: 0.7rem 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: wait; }
+    pre {
+      margin-top: 1.25rem;
+      background: #0b1017;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow: auto;
+      max-height: 60vh;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>inference — upload de teste</h1>
+    <p>Envia a imagem para <code>POST /analyze</code> e mostra o JSON retornado.</p>
+    <div class="panel">
+      <label for="apiKey">API key (header X-API-Key)</label>
+      <input id="apiKey" type="password" placeholder="cole a API_KEY do .env" autocomplete="off" />
+      <label for="file">Imagem</label>
+      <input id="file" type="file" accept="image/jpeg,image/png,image/webp,image/bmp" />
+      <button id="btn" type="button">Analisar</button>
+      <pre id="out">Aguardando imagem…</pre>
+    </div>
+  </main>
+  <script>
+    const btn = document.getElementById("btn");
+    const out = document.getElementById("out");
+    const fileInput = document.getElementById("file");
+    const apiKeyInput = document.getElementById("apiKey");
+
+    btn.addEventListener("click", async () => {
+      const file = fileInput.files?.[0];
+      if (!file) {
+        out.textContent = "Selecione uma imagem primeiro.";
+        return;
+      }
+      btn.disabled = true;
+      out.textContent = "Enviando…";
+      try {
+        const body = new FormData();
+        body.append("image", file);
+        const headers = {};
+        const key = apiKeyInput.value.trim();
+        if (key) headers["X-API-Key"] = key;
+        const res = await fetch("/analyze", { method: "POST", body, headers });
+        const text = await res.text();
+        try {
+          out.textContent = JSON.stringify(JSON.parse(text), null, 2);
+        } catch {
+          out.textContent = `HTTP ${res.status}\n${text}`;
+        }
+      } catch (err) {
+        out.textContent = String(err);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -12,6 +12,6 @@ export const inspectionStatus: Record<InspectionStatus, StatusPresentation> = {
   AGUARDANDO_IA: { label: "Pré-análise em andamento", action: "Acompanhar análise", tone: "warning" },
   FALHA_IA: { label: "Pré-análise indisponível", action: "Ver andamento", tone: "danger" },
   AGUARDANDO_ENGENHEIRO: { label: "Em revisão técnica", action: "Acompanhar revisão", tone: "warning" },
-  CONCLUIDA: { label: "Vistoria concluída", action: "Consultar resultado", tone: "success" },
+  CONCLUIDA: { label: "Concluída", action: "Ver resultado da IA", tone: "success" },
 };
 

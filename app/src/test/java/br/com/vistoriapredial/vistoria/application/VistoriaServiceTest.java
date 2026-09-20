@@ -196,12 +196,12 @@ class VistoriaServiceTest {
         when(storageService.store(eq(file), anyString())).thenReturn("uploads/a.jpg");
         when(vistoriaRepository.saveAndFlush(any())).thenAnswer(i -> i.getArguments()[0]);
 
-        Vistoria result = vistoriaService.uploadImagem(10L, cliente, "SALA_PISO", file);
+        Vistoria result = vistoriaService.uploadImagem(10L, cliente, "SALA_PAREDES_REVESTIMENTOS", file);
 
         assertThat(result).isSameAs(v);
         assertEquals(1, v.getImagens().size());
         assertThat(v.getImagens().getFirst().getUrl()).isEqualTo("uploads/a.jpg");
-        assertThat(v.getImagens().getFirst().getProtocoloItem()).isEqualTo("SALA_PISO");
+        assertThat(v.getImagens().getFirst().getProtocoloItem()).isEqualTo("SALA_PAREDES_REVESTIMENTOS");
 
         ArgumentCaptor<String> fileName = ArgumentCaptor.forClass(String.class);
         verify(storageService).store(eq(file), fileName.capture());
@@ -222,7 +222,7 @@ class VistoriaServiceTest {
         when(vistoriaRepository.saveAndFlush(any()))
                 .thenThrow(new IllegalStateException("Falha ao persistir evidência"));
 
-        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, cliente, "SALA_PISO", file))
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, cliente, "SALA_PAREDES_REVESTIMENTOS", file))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Falha ao persistir evidência");
 
@@ -257,7 +257,7 @@ class VistoriaServiceTest {
         when(evidenceFileValidator.validate(invalid))
                 .thenThrow(new InvalidEvidenceException("O conteúdo não corresponde ao tipo informado."));
 
-        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, cliente, "SALA_PISO", invalid))
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, cliente, "SALA_PAREDES_REVESTIMENTOS", invalid))
                 .isInstanceOf(InvalidEvidenceException.class);
 
         assertThat(vistoria.getImagens()).containsExactly(existing);
@@ -269,7 +269,7 @@ class VistoriaServiceTest {
     void shouldThrowVistoriaNotFoundWhenInspectionDoesNotExist() {
         when(vistoriaRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> vistoriaService.uploadImagem(999L, cliente, "SALA_PISO", null))
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(999L, cliente, "SALA_PAREDES_REVESTIMENTOS", null))
                 .isInstanceOf(VistoriaNotFoundException.class);
     }
 
@@ -280,7 +280,7 @@ class VistoriaServiceTest {
         ReflectionTestUtils.setField(outroCliente, "id", 55L);
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
 
-        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, outroCliente, "SALA_PISO", null))
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, outroCliente, "SALA_PAREDES_REVESTIMENTOS", null))
                 .isInstanceOf(VistoriaAccessDeniedException.class);
     }
 
@@ -320,8 +320,9 @@ class VistoriaServiceTest {
 
         Vistoria submetida = vistoriaService.submeterVistoria(10L, cliente);
 
-        assertEquals(VistoriaStatus.AGUARDANDO_ENGENHEIRO, submetida.getStatus());
+        assertEquals(VistoriaStatus.CONCLUIDA, submetida.getStatus());
         assertEquals("Laudo Mock", submetida.getPreLaudoIa());
+        assertThat(submetida.getDataConclusao()).isNotNull();
         verify(iaIntegrationService).analisarImagens(List.of("uploads/a.jpg", "uploads/b.webp"));
     }
 

@@ -1,0 +1,45 @@
+services:
+  vistoria-ia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vistoria-ia:0.1.0
+    ports:
+      # Em produção com tunnel Cloudflare, você pode comentar ports e usar só a rede interna.
+      - "${PORT:-8001}:8001"
+    env_file:
+      - .env
+    volumes:
+      - hf_cache:/models/hf_cache
+    # Requires NVIDIA Container Toolkit. Remova e use MODEL_DEVICE=cpu sem GPU.
+    gpus: all
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
+
+  # Opcional: link HTTPS público sem abrir porta no firewall (Cloudflare Tunnel).
+  # Uso: docker compose --profile tunnel up -d
+  # Precisa de TUNNEL_TOKEN no .env (criado no Zero Trust da Cloudflare).
+  cloudflared:
+    profiles: ["tunnel"]
+    image: cloudflare/cloudflared:2025.2.1
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    depends_on:
+      vistoria-ia:
+        condition: service_started
+    env_file:
+      - .env
+
+volumes:
+  hf_cache:

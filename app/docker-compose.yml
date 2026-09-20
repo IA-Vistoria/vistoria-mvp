@@ -1,0 +1,73 @@
+services:
+  inference:
+    build:
+      context: ./inference
+      dockerfile: Dockerfile
+    image: vistoria-predial-inference:local
+    ports:
+      - "${PORT:-8001}:8001"
+    environment:
+      MODEL_ID: ${MODEL_ID:-Qwen/Qwen3-VL-2B-Instruct}
+      MODEL_DEVICE: ${MODEL_DEVICE:-cuda}
+      MAX_IMAGE_SIZE_MB: ${MAX_IMAGE_SIZE_MB:-15}
+      PORT: "8001"
+      LOAD_IN_4BIT: ${LOAD_IN_4BIT:-false}
+      MAX_NEW_TOKENS: ${MAX_NEW_TOKENS:-1024}
+      API_KEY: ${VLM_API_KEY}
+      REQUIRE_API_KEY: ${REQUIRE_API_KEY:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    volumes:
+      - hf_cache:/models/hf_cache
+    # Requer NVIDIA Container Toolkit. Sem GPU: MODEL_DEVICE=cpu e remova a linha gpus.
+    gpus: all
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 300s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vistoria-predial-backend:local
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      ENGINEER_REGISTRATION_CODE: ${ENGINEER_REGISTRATION_CODE}
+      APP_IA_PROVIDER: ${APP_IA_PROVIDER:-vlm}
+      VLM_URL: ${VLM_URL:-http://inference:8001}
+      VLM_API_KEY: ${VLM_API_KEY}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      STORAGE_UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - inference
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080/api}
+    image: vistoria-predial-frontend:local
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  uploads_data:
+  hf_cache:

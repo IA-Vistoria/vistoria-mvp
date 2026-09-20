@@ -41,4 +41,19 @@ Thumbs.db
 ### Log files ###
 *.log
 
+### Docker local env ###
+.env
+!.env.example
+
+### Inference (Python / HuggingFace) ###
+inference/.venv/
+inference/venv/
+inference/**/__pycache__/
+inference/*.py[cod]
+inference/.pytest_cache/
+inference/.mypy_cache/
+inference/.ruff_cache/
+inference/hf_cache/
+inference/.cache/
+
 ### Agent instructions & local configs ###

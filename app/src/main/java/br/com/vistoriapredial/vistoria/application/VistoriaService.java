@@ -149,7 +149,7 @@ public class VistoriaService {
         VistoriaStatus statusFinal;
         try {
             preLaudo = iaIntegrationService.analisarImagens(urls);
-            statusFinal = VistoriaStatus.AGUARDANDO_ENGENHEIRO;
+            statusFinal = VistoriaStatus.CONCLUIDA;
         } catch (RuntimeException falhaIa) {
             LOGGER.warn("Falha ao gerar pré-laudo da vistoria {}", vistoriaId, falhaIa);
             statusFinal = VistoriaStatus.FALHA_IA;
@@ -162,6 +162,9 @@ public class VistoriaService {
                     .orElseThrow(VistoriaNotFoundException::new);
             vistoria.setPreLaudoIa(preLaudoFinal);
             vistoria.setStatus(statusConclusao);
+            if (statusConclusao == VistoriaStatus.CONCLUIDA) {
+                vistoria.setDataConclusao(LocalDateTime.now());
+            }
             return salvarComControleConcorrencia(vistoria);
         });
     }

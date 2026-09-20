@@ -1,6 +1,46 @@
 export function splitPreReport(value: string | null): string[] {
   if (!value?.trim()) return [];
-  return value
+  const trimmed = value.trim();
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed) as {
+        images?: Array<{
+          overallSummary?: string;
+          areas?: Array<{
+            area?: string;
+            issueType?: string;
+            confidence?: string;
+            description?: string;
+          }>;
+          imageQuality?: { usable?: boolean; issues?: string[] };
+        }>;
+      };
+      const lines: string[] = [];
+      (parsed.images ?? []).forEach((image, index) => {
+        lines.push(`Foto ${index + 1}`);
+        if (image.imageQuality && image.imageQuality.usable === false) {
+          lines.push("Imagem não utilizável para análise visual.");
+          for (const issue of image.imageQuality.issues ?? []) lines.push(issue);
+          return;
+        }
+        if (image.overallSummary) lines.push(`Resumo: ${image.overallSummary}`);
+        const areas = image.areas ?? [];
+        if (!areas.length) {
+          lines.push("Nenhum problema visual evidente.");
+        } else {
+          for (const area of areas) {
+            const confidence = area.confidence ? ` (confiança: ${area.confidence})` : "";
+            const description = area.description ? `: ${area.description}` : "";
+            lines.push(`[${area.area ?? "área"}] ${area.issueType ?? "achado"}${confidence}${description}`);
+          }
+        }
+      });
+      return lines;
+    } catch {
+      /* fall through to plain text */
+    }
+  }
+  return trimmed
     .split(/\r?\n/)
     .map((line) => line.trim().replace(/^[-*•]\s*/, ""))
     .filter(Boolean);

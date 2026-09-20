@@ -25,6 +25,7 @@ export interface Evidence {
   protocoloItem: ProtocolItemCode;
   dataUpload: string;
   conteudoUrl: string;
+  storagePath?: string | null;
 }
 
 export interface PageResponse<T> {

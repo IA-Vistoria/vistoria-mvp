@@ -20,20 +20,22 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { ApiError } from "@/lib/api";
 import { getMyInspection, submitInspection, uploadEvidence } from "../api";
 import { EvidenceImage } from "../shared/evidence-image";
-import { PROTOCOL_GROUPS, calculateProgress, validateEvidenceFile } from "../shared/protocol";
+import {
+  PROTOCOL_GROUPS,
+  PROTOCOL_ITEM_TOTAL,
+  calculateProgress,
+  validateEvidenceFile,
+} from "../shared/protocol";
 import type { Inspection, InspectionStatus, ProtocolItemCode } from "../types";
+import { InspectionResults } from "./inspection-results";
 
 const trackingTitles = {
-  AGUARDANDO_IA: "Pré-análise em andamento",
-  AGUARDANDO_ENGENHEIRO: "Aguardando revisão do engenheiro",
+  AGUARDANDO_IA: "Análise da IA em andamento",
   CONCLUIDA: "Vistoria concluída",
 } as const;
 
-const POLLING_INTERVAL_MS = 6000;
-const POLLED_STATUSES: ReadonlySet<InspectionStatus> = new Set([
-  "AGUARDANDO_IA",
-  "AGUARDANDO_ENGENHEIRO",
-]);
+const POLLING_INTERVAL_MS = 4000;
+const POLLED_STATUSES: ReadonlySet<InspectionStatus> = new Set(["AGUARDANDO_IA"]);
 
 const protocolItems = PROTOCOL_GROUPS.flatMap((group) =>
   group.items.map((item) => ({ group, item })),
@@ -41,9 +43,9 @@ const protocolItems = PROTOCOL_GROUPS.flatMap((group) =>
 
 const journeySteps = [
   ["Imóvel", "Dados do imóvel"],
-  ["Evidências", "Fotos e orientações"],
-  ["Revisão", "Confira as informações"],
-  ["Envio", "Finalize a solicitação"],
+  ["Paredes", "Fotos das paredes"],
+  ["Envio", "Análise pela IA"],
+  ["Resultado", "Relatório por imagem"],
 ] as const;
 
 type JourneyStepState = "complete" | "active" | "pending";
@@ -54,16 +56,20 @@ function getJourneyStepState(status: InspectionStatus, index: number): JourneySt
     return index === 1 ? "active" : "pending";
   }
 
-  if (status === "FALHA_IA") {
-    return index < journeySteps.length - 1 ? "complete" : "active";
+  if (status === "FALHA_IA" || status === "AGUARDANDO_IA") {
+    return index < 2 ? "complete" : index === 2 ? "active" : "pending";
   }
 
-  return "complete";
+  if (status === "CONCLUIDA") {
+    return "complete";
+  }
+
+  return index < journeySteps.length - 1 ? "complete" : "active";
 }
 
 export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   const [inspection, setInspection] = useState<Inspection | null>(null);
-  const [selectedCode, setSelectedCode] = useState<ProtocolItemCode>("SALA_PISO");
+  const [selectedCode, setSelectedCode] = useState<ProtocolItemCode>("SALA_PAREDES_REVESTIMENTOS");
   const [loadError, setLoadError] = useState(false);
   const [uploading, setUploading] = useState<ProtocolItemCode | null>(null);
   const [itemErrors, setItemErrors] = useState<Partial<Record<ProtocolItemCode, string>>>({});
@@ -88,9 +94,6 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
     };
   }, [inspectionId]);
 
-  // Enquanto a vistoria está em análise (IA ou engenheiro), o status pode mudar
-  // sem nenhuma ação do cliente nesta aba. Sem isso, a única forma de perceber
-  // a mudança seria recarregar a página manualmente.
   useEffect(() => {
     if (!inspection || !POLLED_STATUSES.has(inspection.status)) return;
 
@@ -101,7 +104,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
           if (active) setInspection(loaded);
         })
         .catch(() => {
-          // Falha silenciosa: mantém o último estado conhecido e tenta de novo no próximo ciclo.
+          /* keep last known state */
         });
     }, POLLING_INTERVAL_MS);
 
@@ -109,8 +112,6 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
       active = false;
       clearInterval(timer);
     };
-    // Depende só do status (não do objeto inteiro) para não recriar o
-    // intervalo a cada resposta do próprio polling.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inspectionId, inspection?.status]);
 
@@ -162,7 +163,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   async function sendInspection() {
     if (!inspection || submitLock.current) return;
     if (inspection.imagens.length === 0) {
-      setSubmitError("Adicione ao menos uma evidência antes de enviar a vistoria.");
+      setSubmitError("Adicione ao menos uma foto de parede antes de enviar.");
       return;
     }
     submitLock.current = true;
@@ -188,6 +189,20 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   }
   if (!inspection) return <AsyncState title="Carregando protocolo" description="Buscando as evidências já confirmadas para este imóvel." />;
 
+  if (inspection.status === "CONCLUIDA") {
+    return (
+      <div className="workflow-page">
+        <div className="workflow-titlebar">
+          <div>
+            <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar para vistorias</Link>
+            <StatusBadge status={inspection.status} />
+          </div>
+        </div>
+        <InspectionResults inspection={inspection} />
+      </div>
+    );
+  }
+
   const editable = inspection.status === "EM_RASCUNHO" || inspection.status === "DEVOLVIDA_CLIENTE";
   const progress = calculateProgress(inspection.imagens);
   const trackedTitle = inspection.status in trackingTitles
@@ -199,9 +214,9 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
       <div className="workflow-titlebar">
         <div>
           <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar para vistorias</Link>
-          <p className="eyebrow">Jornada do cliente</p>
-          <h1>Jornada guiada de vistoria</h1>
-          <p>Siga o protocolo, registre cada ambiente e envie as evidências para análise.</p>
+          <p className="eyebrow">MVP — paredes</p>
+          <h1>Análise visual de paredes</h1>
+          <p>Envie fotos das paredes; a IA analisa e libera o resultado automaticamente.</p>
         </div>
         <StatusBadge status={inspection.status} />
       </div>
@@ -224,32 +239,21 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
         </ol>
       </nav>
 
-      {inspection.status === "DEVOLVIDA_CLIENTE" ? (
-        <section className="engineer-note" aria-labelledby="engineer-note-title">
-          <AlertTriangle size={22} />
-          <div><h2 id="engineer-note-title">Complementação solicitada</h2><p>{inspection.parecerEngenheiro || "O engenheiro solicitou novas evidências."}</p></div>
-        </section>
-      ) : null}
-
       {inspection.status === "FALHA_IA" ? (
         <section className="tracking-panel" role="alert">
           <AlertTriangle size={28} />
-          <div><p className="eyebrow">Falha real do processamento</p><h2>Pré-análise não foi concluída</h2><p>Suas evidências continuam salvas. Reenvie este mesmo caso para uma nova tentativa.</p></div>
-          <button className="button button--primary" disabled={submitting} onClick={() => void sendInspection()}>{submitting ? "Reenviando..." : "Reenviar para pré-análise"}</button>
+          <div><p className="eyebrow">Falha no processamento</p><h2>A análise da IA não foi concluída</h2><p>Suas fotos continuam salvas. Reenvie para tentar novamente.</p></div>
+          <button className="button button--primary" disabled={submitting} onClick={() => void sendInspection()}>{submitting ? "Reenviando..." : "Reenviar para análise"}</button>
         </section>
       ) : null}
 
-      {trackedTitle ? (
+      {trackedTitle && inspection.status === "AGUARDANDO_IA" ? (
         <section className="tracking-panel" aria-live="polite">
           <FileCheck2 size={28} />
           <div>
             <p className="eyebrow">Acompanhamento</p>
             <h2>{trackedTitle}</h2>
-            <p>
-              {POLLED_STATUSES.has(inspection.status)
-                ? "Esta página atualiza sozinha. Não é necessário recarregar."
-                : "A vistoria está em modo de acompanhamento."}
-            </p>
+            <p>Esta página atualiza sozinha. Em seguida o resultado aparece por imagem.</p>
           </div>
         </section>
       ) : null}
@@ -262,8 +266,11 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
             <span>Vistoria #{inspection.id}</span>
           </div>
           <section className="workflow-progress" aria-label="Progresso da documentação">
-            <div><strong>{progress} de 12 itens documentados</strong><span>O progresso considera itens confirmados pela Vistor.IA.</span></div>
-            <progress value={progress} max={12}>{progress} de 12</progress>
+            <div>
+              <strong>{progress} de {PROTOCOL_ITEM_TOTAL} {PROTOCOL_ITEM_TOTAL === 1 ? "item documentado" : "itens documentados"}</strong>
+              <span>Você pode enviar várias fotos do mesmo item.</span>
+            </div>
+            <progress value={progress} max={PROTOCOL_ITEM_TOTAL}>{progress} de {PROTOCOL_ITEM_TOTAL}</progress>
           </section>
           <nav className="protocol-navigation" aria-label="Itens do protocolo">
             {PROTOCOL_GROUPS.map((group, groupIndex) => {
@@ -289,7 +296,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
         <section className="focused-protocol" aria-live="polite">
           <aside className="photo-guidance">
             <Camera size={24} />
-            <div><strong>Dicas para boas fotos</strong><ul><li>Use boa iluminação e enquadre o ambiente completo.</li><li>Registre também fissuras, manchas ou sinais de umidade.</li><li>Evite fotos tremidas ou muito próximas.</li></ul></div>
+            <div><strong>Dicas para boas fotos</strong><ul><li>Use boa iluminação e enquadre a parede completa.</li><li>Registre fissuras, manchas ou sinais de umidade.</li><li>Evite fotos tremidas ou muito próximas.</li></ul></div>
           </aside>
           {protocolItems.map(({ group, item }, index) => {
             const evidence = inspection.imagens.filter((entry) => entry.protocoloItem === item.code);
@@ -327,7 +334,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
                 <footer className="protocol-pager">
                   <button className="button button--secondary" type="button" disabled={!previous} onClick={() => selectRelative(-1)}><ArrowLeft size={17} />{previous ? `Voltar: ${previous.label}` : "Primeiro item"}</button>
                   <span>{evidence.length} {evidence.length === 1 ? "foto registrada" : "fotos registradas"}</span>
-                  <button className="button button--primary" type="button" disabled={!next} onClick={() => selectRelative(1)}>{next ? `Próximo: ${next.label}` : "Protocolo revisado"}<ArrowRight size={17} /></button>
+                  <button className="button button--primary" type="button" disabled={!next} onClick={() => selectRelative(1)}>{next ? `Próximo: ${next.label}` : "Pronto para enviar"}<ArrowRight size={17} /></button>
                 </footer>
               </article>
             );
@@ -337,24 +344,29 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
         <aside className="submission-guide" aria-label="Orientações antes do envio">
           <section>
             <FileCheck2 size={24} />
-            <div><h2>Antes de enviar</h2><p>Confira se as imagens representam o estado atual do imóvel.</p></div>
+            <div><h2>Antes de enviar</h2><p>Confira se as fotos mostram bem as paredes do imóvel.</p></div>
           </section>
           <ul className="submission-checklist">
             <li><CheckCircle2 size={18} />Fotos nítidas e bem iluminadas</li>
-            <li><CheckCircle2 size={18} />Ambientes principais registrados</li>
-            <li className={progress === 12 ? "is-complete" : ""}><span>{progress}</span>12 itens no total</li>
+            <li className={progress >= 1 ? "is-complete" : ""}><span>{inspection.imagens.length}</span>foto(s) de parede</li>
           </ul>
           <section className="next-steps">
             <Info size={22} />
-            <div><h2>O que acontece depois?</h2><ol><li><strong>IA gera pré-laudo</strong><span>Análise preliminar das evidências.</span></li><li><strong>Engenheiro revisa</strong><span>Validação técnica profissional.</span></li><li><strong>Vistoria concluída</strong><span>Resultado disponível no painel.</span></li></ol></div>
+            <div>
+              <h2>O que acontece depois?</h2>
+              <ol>
+                <li><strong>IA analisa as fotos</strong><span>Indícios visuais por imagem.</span></li>
+                <li><strong>Vistoria concluída</strong><span>Resultado liberado automaticamente.</span></li>
+              </ol>
+            </div>
           </section>
-          <div className="professional-warning"><AlertTriangle size={19} /><p><strong>Importante</strong>A IA auxilia a análise. A validação final é feita por engenheiro civil.</p></div>
+          <div className="professional-warning"><AlertTriangle size={19} /><p><strong>Importante</strong>Esta é uma análise visual preliminar e não substitui vistoria técnica presencial.</p></div>
           {editable ? (
             <div className="workflow-submit">
-              <p>Revise as evidências antes de concluir esta etapa.</p>
+              <p>Revise as fotos antes de concluir.</p>
               {submitError ? <p className="item-error" role="alert">{submitError}</p> : null}
-              <button className="button button--primary" disabled={submitting || uploading !== null} onClick={() => void sendInspection()}><Send size={17} />{submitting ? "Enviando..." : "Enviar para análise"}</button>
-              <small>O processamento pode levar alguns instantes. Você poderá acompanhar o andamento nesta mesma página.</small>
+              <button className="button button--primary" disabled={submitting || uploading !== null} onClick={() => void sendInspection()}><Send size={17} />{submitting ? "Analisando..." : "Enviar para análise da IA"}</button>
+              <small>O processamento pode levar alguns instantes por foto. O resultado aparece nesta página.</small>
             </div>
           ) : null}
         </aside>

@@ -10,6 +10,7 @@ import {
   ACCEPTED_EVIDENCE_TYPES,
   MAX_EVIDENCE_BYTES,
   PROTOCOL_GROUPS,
+  PROTOCOL_ITEM_TOTAL,
   calculateProgress,
 } from "../shared/protocol";
 
@@ -36,28 +37,52 @@ const draft: Inspection = {
 const withEvidence: Inspection = {
   ...draft,
   imagens: [
-    { id: 1, protocoloItem: "SALA_PISO", dataUpload: "2026-09-19T08:10:00", conteudoUrl: "/api/foto/1" },
+    {
+      id: 1,
+      protocoloItem: "SALA_PAREDES_REVESTIMENTOS",
+      dataUpload: "2026-09-19T08:10:00",
+      conteudoUrl: "/api/foto/1",
+      storagePath: "uploads/a.jpg",
+    },
   ],
 };
 
+const concluded: Inspection = {
+  ...withEvidence,
+  status: "CONCLUIDA",
+  dataConclusao: "2026-09-19T09:00:00",
+  preLaudoIa: JSON.stringify({
+    version: 1,
+    images: [
+      {
+        storagePath: "uploads/a.jpg",
+        overallSummary: "Há indícios visuais de possível umidade.",
+        limitations: ["Análise baseada apenas em imagem."],
+        imageQuality: { usable: true, issues: [] },
+        areas: [
+          {
+            area: "parede",
+            issueType: "possible_moisture",
+            description: "Mancha aparente.",
+            evidence: "Alteração de cor.",
+            severity: "media",
+            confidence: "media",
+            recommendation: "Avaliação presencial.",
+            location: null,
+          },
+        ],
+      },
+    ],
+  }),
+};
+
 describe("contrato do protocolo", () => {
-  it("define cinco grupos e os mesmos doze códigos do backend", () => {
-    expect(PROTOCOL_GROUPS).toHaveLength(5);
+  it("define apenas paredes no MVP", () => {
+    expect(PROTOCOL_GROUPS).toHaveLength(1);
+    expect(PROTOCOL_ITEM_TOTAL).toBe(1);
     expect(ACCEPTED_EVIDENCE_TYPES).toEqual(["image/jpeg", "image/png", "image/webp"]);
-    expect(PROTOCOL_GROUPS.flatMap((group) => group.items)).toHaveLength(12);
     expect(PROTOCOL_GROUPS.flatMap((group) => group.items.map((item) => item.code))).toEqual([
-      "SALA_PISO",
       "SALA_PAREDES_REVESTIMENTOS",
-      "SALA_TETO_ILUMINACAO",
-      "COZINHA_PISO",
-      "COZINHA_PAREDES_BANCADAS",
-      "COZINHA_INSTALACOES",
-      "BANHEIRO_REVESTIMENTOS",
-      "BANHEIRO_HIDRAULICA",
-      "QUARTO_PISO",
-      "QUARTO_PAREDES_TETO",
-      "INSTALACOES_ELETRICAS",
-      "INSTALACOES_HIDRAULICAS",
     ]);
   });
 
@@ -65,8 +90,7 @@ describe("contrato do protocolo", () => {
     expect(calculateProgress([
       ...withEvidence.imagens,
       { ...withEvidence.imagens[0], id: 2 },
-      { ...withEvidence.imagens[0], id: 3, protocoloItem: "COZINHA_PISO" },
-    ])).toBe(2);
+    ])).toBe(1);
   });
 });
 
@@ -80,33 +104,13 @@ describe("InspectionWorkflow", () => {
     vi.mocked(loadEvidence).mockResolvedValue(new Blob(["foto"], { type: "image/jpeg" }));
   });
 
-  it("renderiza cinco grupos, doze itens e progresso persistido", async () => {
+  it("renderiza o item de paredes e progresso persistido", async () => {
     vi.mocked(getMyInspection).mockResolvedValue(withEvidence);
     render(<InspectionWorkflow inspectionId={10} />);
 
-    expect(await screen.findByText("1 de 12 itens documentados")).toBeDefined();
-    expect(screen.getAllByTestId("protocol-group")).toHaveLength(5);
-    expect(document.querySelectorAll(".protocol-item")).toHaveLength(12);
-  });
-
-  it("organiza o protocolo em etapas, navegação lateral e item focado", async () => {
-    vi.mocked(getMyInspection).mockResolvedValue(withEvidence);
-    const user = userEvent.setup();
-    render(<InspectionWorkflow inspectionId={10} />);
-
-    const steps = await screen.findByRole("navigation", { name: "Etapas da vistoria" });
-    expect(within(steps).getAllByRole("listitem")).toHaveLength(4);
-
-    const protocol = screen.getByRole("navigation", { name: "Itens do protocolo" });
-    expect(within(protocol).getAllByRole("button")).toHaveLength(12);
-    expect(screen.getByRole("heading", { name: "Piso" })).toBeDefined();
-    expect(screen.getByText("Dicas para boas fotos")).toBeDefined();
-    expect(screen.getByRole("complementary", { name: "Orientações antes do envio" })).toBeDefined();
-
-    await user.click(within(protocol).getByRole("button", { name: /Paredes e revestimentos/ }));
-
-    expect(screen.getByRole("heading", { name: "Paredes e revestimentos" })).toBeDefined();
-    expect(screen.getByRole("button", { name: /Próximo: Teto e iluminação/ })).toBeDefined();
+    expect(await screen.findByText("1 de 1 item documentado")).toBeDefined();
+    expect(screen.getAllByTestId("protocol-group")).toHaveLength(1);
+    expect(document.querySelectorAll(".protocol-item")).toHaveLength(1);
   });
 
   it.each([
@@ -115,137 +119,105 @@ describe("InspectionWorkflow", () => {
     ["tamanho", oversizedFile(), "10 MB"],
   ])("rejeita arquivo %s sem chamar a API", async (_, file, message) => {
     render(<InspectionWorkflow inspectionId={10} />);
-    const item = await screen.findByTestId("protocol-item-SALA_PISO");
+    const item = await screen.findByTestId("protocol-item-SALA_PAREDES_REVESTIMENTOS");
 
-    fireEvent.change(within(item).getByLabelText("Adicionar foto de Sala — Piso"), { target: { files: [file] } });
+    fireEvent.change(within(item).getByLabelText("Adicionar foto de Paredes — Paredes"), {
+      target: { files: [file] },
+    });
 
     expect((await within(item).findByRole("alert")).textContent).toContain(message);
     expect(uploadEvidence).not.toHaveBeenCalled();
   });
 
-  it("envia FormData com código exato e preserva evidências anteriores", async () => {
+  it("envia FormData com código de paredes", async () => {
     const updated = {
       ...withEvidence,
       imagens: [
         ...withEvidence.imagens,
-        { id: 2, protocoloItem: "COZINHA_PISO", dataUpload: "2026-09-19T08:20:00", conteudoUrl: "/api/foto/2" },
+        {
+          id: 2,
+          protocoloItem: "SALA_PAREDES_REVESTIMENTOS",
+          dataUpload: "2026-09-19T08:20:00",
+          conteudoUrl: "/api/foto/2",
+          storagePath: "uploads/b.jpg",
+        },
       ],
     } satisfies Inspection;
     vi.mocked(getMyInspection).mockResolvedValue(withEvidence);
     vi.mocked(uploadEvidence).mockResolvedValue(updated);
     const user = userEvent.setup();
     render(<InspectionWorkflow inspectionId={10} />);
-    const item = await screen.findByTestId("protocol-item-COZINHA_PISO");
-    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], "cozinha.jpg", { type: "image/jpeg" });
+    const item = await screen.findByTestId("protocol-item-SALA_PAREDES_REVESTIMENTOS");
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], "parede.jpg", { type: "image/jpeg" });
 
-    await user.upload(within(item).getByLabelText("Adicionar foto de Cozinha — Piso"), file);
+    await user.upload(within(item).getByLabelText("Adicionar foto de Paredes — Paredes"), file);
 
-    await waitFor(() => expect(uploadEvidence).toHaveBeenCalledWith(10, "COZINHA_PISO", file));
-    expect(await screen.findByText("2 de 12 itens documentados")).toBeDefined();
-    expect(screen.getByTestId("protocol-item-SALA_PISO").textContent).toContain("1 foto");
-  });
-
-  it("permite repetir upload falho sem apagar o restante do rascunho", async () => {
-    vi.mocked(getMyInspection).mockResolvedValue(withEvidence);
-    vi.mocked(uploadEvidence)
-      .mockRejectedValueOnce(new ApiError({ type: "about:blank", title: "Falha", status: 503, detail: "Serviço temporariamente indisponível." }))
-      .mockResolvedValueOnce({ ...withEvidence, imagens: [...withEvidence.imagens, { id: 2, protocoloItem: "QUARTO_PISO", dataUpload: "2026-09-19T08:30:00", conteudoUrl: "/api/foto/2" }] });
-    const user = userEvent.setup();
-    render(<InspectionWorkflow inspectionId={10} />);
-    const item = await screen.findByTestId("protocol-item-QUARTO_PISO");
-    const file = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], "quarto.png", { type: "image/png" });
-
-    await user.upload(within(item).getByLabelText("Adicionar foto de Quarto — Piso"), file);
-    await user.click(await within(item).findByRole("button", { name: "Tentar novamente" }));
-
-    expect(uploadEvidence).toHaveBeenCalledTimes(2);
-    expect(screen.getByTestId("protocol-item-SALA_PISO").textContent).toContain("1 foto");
-    expect(await screen.findByText("2 de 12 itens documentados")).toBeDefined();
+    await waitFor(() =>
+      expect(uploadEvidence).toHaveBeenCalledWith(10, "SALA_PAREDES_REVESTIMENTOS", file),
+    );
+    expect(await screen.findByText("1 de 1 item documentado")).toBeDefined();
+    expect(screen.getByTestId("protocol-item-SALA_PAREDES_REVESTIMENTOS").textContent).toContain("2 foto");
   });
 
   it("impede submissão sem evidência confirmada", async () => {
     const user = userEvent.setup();
     render(<InspectionWorkflow inspectionId={10} />);
-    await screen.findByText("0 de 12 itens documentados");
+    await screen.findByText("0 de 1 item documentado");
 
-    await user.click(screen.getByRole("button", { name: "Enviar para análise" }));
+    await user.click(screen.getByRole("button", { name: "Enviar para análise da IA" }));
 
-    expect((await screen.findByRole("alert")).textContent).toContain("ao menos uma evidência");
+    expect((await screen.findByRole("alert")).textContent).toContain("ao menos uma foto");
     expect(submitInspection).not.toHaveBeenCalled();
   });
 
-  it("submete uma vez e renderiza o status devolvido", async () => {
+  it("submete e mostra o resultado quando a IA conclui", async () => {
     vi.mocked(getMyInspection).mockResolvedValue(withEvidence);
-    vi.mocked(submitInspection).mockResolvedValue({ ...withEvidence, status: "AGUARDANDO_ENGENHEIRO" });
+    vi.mocked(submitInspection).mockResolvedValue(concluded);
     const user = userEvent.setup();
     render(<InspectionWorkflow inspectionId={10} />);
-    await screen.findByText("1 de 12 itens documentados");
+    await screen.findByText("1 de 1 item documentado");
 
-    await user.dblClick(screen.getByRole("button", { name: "Enviar para análise" }));
+    await user.dblClick(screen.getByRole("button", { name: "Enviar para análise da IA" }));
 
     await waitFor(() => expect(submitInspection).toHaveBeenCalledTimes(1));
-    expect(await screen.findByText("Aguardando revisão do engenheiro")).toBeDefined();
-  });
-
-  it("conclui as etapas do cliente quando a vistoria já foi enviada", async () => {
-    vi.mocked(getMyInspection).mockResolvedValue({
-      ...withEvidence,
-      status: "AGUARDANDO_ENGENHEIRO",
-    });
-    render(<InspectionWorkflow inspectionId={10} />);
-
-    const steps = await screen.findByRole("navigation", { name: "Etapas da vistoria" });
-    const items = within(steps).getAllByRole("listitem");
-
-    expect(items).toHaveLength(4);
-    expect(items.every((item) => item.classList.contains("is-complete"))).toBe(true);
-    expect(items.some((item) => item.getAttribute("aria-current") === "step")).toBe(false);
-  });
-
-  it("exibe parecer e mantém upload disponível em devolução", async () => {
-    vi.mocked(getMyInspection).mockResolvedValue({ ...withEvidence, status: "DEVOLVIDA_CLIENTE", parecerEngenheiro: "Fotografe novamente a parede norte." });
-    render(<InspectionWorkflow inspectionId={10} />);
-
-    expect(await screen.findByText("Fotografe novamente a parede norte.")).toBeDefined();
-    expect(screen.getByLabelText("Adicionar foto de Sala — Piso")).toBeDefined();
+    expect(await screen.findByText("Vistoria concluída")).toBeDefined();
+    expect(await screen.findByText("Possível umidade")).toBeDefined();
   });
 
   it("reenvia o mesmo caso somente quando a IA falhou", async () => {
     vi.mocked(getMyInspection).mockResolvedValue({ ...withEvidence, status: "FALHA_IA" });
-    vi.mocked(submitInspection).mockResolvedValue({ ...withEvidence, status: "AGUARDANDO_ENGENHEIRO" });
+    vi.mocked(submitInspection).mockResolvedValue(concluded);
     const user = userEvent.setup();
     render(<InspectionWorkflow inspectionId={10} />);
 
-    await user.click(await screen.findByRole("button", { name: "Reenviar para pré-análise" }));
+    await user.click(await screen.findByRole("button", { name: "Reenviar para análise" }));
 
     expect(submitInspection).toHaveBeenCalledWith(10);
-    expect(await screen.findByText("Aguardando revisão do engenheiro")).toBeDefined();
-    expect(screen.queryByLabelText("Adicionar foto de Sala — Piso")).toBeNull();
+    expect(await screen.findByText("Possível umidade")).toBeDefined();
   });
 
-  it("mantém acompanhamento sem upload quando o caso não é editável", async () => {
+  it("mantém acompanhamento sem upload enquanto a IA processa", async () => {
     vi.mocked(getMyInspection).mockResolvedValue({ ...withEvidence, status: "AGUARDANDO_IA" });
     render(<InspectionWorkflow inspectionId={10} />);
 
-    expect(await screen.findAllByText("Pré-análise em andamento")).toHaveLength(2);
-    expect(screen.getByText("Esta página atualiza sozinha. Não é necessário recarregar.")).toBeDefined();
-    expect(screen.queryByRole("button", { name: "Enviar para análise" })).toBeNull();
+    expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
+    expect(screen.queryByRole("button", { name: "Enviar para análise da IA" })).toBeNull();
   });
 
-  it("atualiza sozinha quando o engenheiro decide em outra sessão (polling)", async () => {
+  it("atualiza sozinha quando a análise termina (polling)", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       vi.mocked(getMyInspection)
-        .mockResolvedValueOnce({ ...withEvidence, status: "AGUARDANDO_ENGENHEIRO" })
-        .mockResolvedValueOnce({ ...withEvidence, status: "CONCLUIDA" });
+        .mockResolvedValueOnce({ ...withEvidence, status: "AGUARDANDO_IA" })
+        .mockResolvedValueOnce(concluded);
 
       render(<InspectionWorkflow inspectionId={10} />);
 
-      expect(await screen.findByText("Aguardando revisão do engenheiro")).toBeDefined();
+      expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
 
-      await vi.advanceTimersByTimeAsync(6000);
+      await vi.advanceTimersByTimeAsync(4000);
 
-      await waitFor(() => expect(screen.getAllByText("Vistoria concluída").length).toBeGreaterThan(0));
+      await waitFor(() => expect(screen.getByText("Possível umidade")).toBeDefined());
       expect(getMyInspection).toHaveBeenCalledTimes(2);
     } finally {
       vi.useRealTimers();

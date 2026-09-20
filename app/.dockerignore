@@ -1,0 +1,13 @@
+target/
+.git/
+.idea/
+.vscode/
+.specs/
+frontend/
+uploads/
+*.md
+.env
+.env.*
+!.env.example
+**/node_modules/
+**/.next/

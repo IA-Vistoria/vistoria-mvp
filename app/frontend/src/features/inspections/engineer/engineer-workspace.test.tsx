@@ -41,8 +41,20 @@ const pending: Inspection = {
 
 describe("pré-laudo", () => {
   it("mantém somente linhas reais, removendo marcadores sem inferir conteúdo", () => {
-    expect(splitPreReport("- Linha A\n\n* Linha B\r\n• Linha C")).toEqual(["Linha A", "Linha B", "Linha C"]);
+expect(splitPreReport("- Linha A\n\n* Linha B\r\n• Linha C")).toEqual(["Linha A", "Linha B", "Linha C"]);
     expect(splitPreReport("  ")).toEqual([]);
+    expect(splitPreReport(JSON.stringify({
+      version: 1,
+      images: [{
+        overallSummary: "Resumo teste",
+        areas: [{ area: "parede", issueType: "stain", description: "Mancha" }],
+        imageQuality: { usable: true, issues: [] },
+      }],
+    }))).toEqual([
+      "Foto 1",
+      "Resumo: Resumo teste",
+      "[parede] stain: Mancha",
+    ]);
   });
 });
 
@@ -84,7 +96,7 @@ describe("EngineerReview", () => {
   it("integra fila, galeria, pré-laudo e decisão no mesmo workspace", async () => {
     const secondEvidence = {
       id: 4,
-      protocoloItem: "SALA_PISO" as const,
+      protocoloItem: "SALA_PAREDES_REVESTIMENTOS" as const,
       dataUpload: "2026-09-19T09:12:00",
       conteudoUrl: "/api/foto/4",
     };
@@ -100,12 +112,12 @@ describe("EngineerReview", () => {
     const queue = await screen.findByRole("region", { name: "Fila de revisão" });
     expect(within(queue).getAllByRole("link")).toHaveLength(2);
     expect(within(queue).getByRole("link", { name: /vistoria #20/i }).getAttribute("aria-current")).toBe("page");
-    expect(await screen.findByAltText("Evidência em destaque: Sala — Paredes e revestimentos")).toBeDefined();
+    expect(await screen.findByAltText("Evidência em destaque: Paredes — Paredes")).toBeDefined();
     expect(screen.getByRole("heading", { name: "Pré-laudo da IA" })).toBeDefined();
     expect(screen.getByRole("heading", { name: "Decisão técnica" })).toBeDefined();
 
-    await user.click(screen.getByRole("button", { name: "Visualizar Sala — Piso, evidência 2" }));
-    expect(await screen.findByAltText("Evidência em destaque: Sala — Piso")).toBeDefined();
+    await user.click(screen.getByRole("button", { name: "Visualizar Paredes — Paredes, evidência 2" }));
+    expect(await screen.findByAltText("Evidência em destaque: Paredes — Paredes")).toBeDefined();
   });
 
   it("exibe evidências e linhas reais sem inventar severidade ou confiança", async () => {
@@ -113,7 +125,7 @@ describe("EngineerReview", () => {
 
     expect(await screen.findByText("Fissura aparente na parede norte")).toBeDefined();
     expect(screen.getByText("Sinal de umidade próximo à janela")).toBeDefined();
-    expect(await screen.findByAltText("Sala — Paredes e revestimentos, evidência 1")).toBeDefined();
+    expect(await screen.findByAltText("Paredes — Paredes, evidência 1")).toBeDefined();
     expect(screen.queryByText(/severidade/i)).toBeNull();
     expect(screen.queryByText(/confiança/i)).toBeNull();
   });
@@ -144,7 +156,8 @@ describe("EngineerReview", () => {
 
     await waitFor(() => expect(reviewInspection).toHaveBeenCalledTimes(1));
     expect(reviewInspection).toHaveBeenCalledWith(20, true, "Estrutura em condições de uso.");
-    expect(await screen.findAllByText("Vistoria concluída")).toHaveLength(2);
+    expect(await screen.findAllByText("Concluída")).toHaveLength(1);
+    expect(await screen.findByText("Vistoria concluída")).toBeDefined();
   });
 
   it("devolve uma única vez com false e retorna à fila", async () => {
