@@ -104,7 +104,7 @@ T1 -> T2 -> T3 -> T4 -> T5 -> T6 -> T7 -> T8
 
 ### T4: Aplicar identidade IA-first e simplificar o acesso
 
-**Status:** Pending  
+**Status:** Complete  
 **Depends on:** T3  
 **Requirement:** AIR-01, AIR-06  
 **Where:** metadata, autenticação pública, `DashboardShell`, tokens globais e componentes UI.

@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowRight, Building2, Eye, EyeOff, HardHat, ShieldCheck } from "lucide-react";
+import { ArrowRight, Camera, Eye, EyeOff, ScanLine, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 
 import { ApiError } from "@/lib/api";
-import { setSession, type UserRole } from "@/lib/auth";
+import { setSession } from "@/lib/auth";
 import { login, register } from "./auth-service";
 import { roleHome } from "./role-home";
 
@@ -21,9 +21,6 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [perfil, setPerfil] = useState<UserRole>("ROLE_CLIENTE");
-  const [crea, setCrea] = useState("");
-  const [codigoConvite, setCodigoConvite] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showSenha, setShowSenha] = useState(false);
@@ -50,17 +47,13 @@ export function AuthForm({ mode }: AuthFormProps) {
             nome: nome.trim(),
             email: email.trim(),
             senha,
-            perfil,
-            ...(perfil === "ROLE_ENGENHEIRO"
-              ? { crea: crea.trim(), codigoConvite: codigoConvite.trim() }
-              : {}),
+            perfil: "ROLE_CLIENTE",
           })
         : await login({ email: email.trim(), senha });
       setSession(session);
       router.replace(roleHome(session.perfil));
     } catch (reason: unknown) {
       setSenha("");
-      setCodigoConvite("");
       setError(
         reason instanceof ApiError
           ? reason.problem.detail
@@ -75,36 +68,36 @@ export function AuthForm({ mode }: AuthFormProps) {
     <main className="auth-page">
       <section className="auth-story" aria-label="Sobre a Vistor.IA">
         <div className="brand-lockup brand-lockup--light">
-          <Building2 aria-hidden="true" size={34} strokeWidth={1.8} />
+          <ScanLine aria-hidden="true" size={34} strokeWidth={1.9} />
           <span>Vistor.IA</span>
         </div>
         <div className="auth-story__content">
-          <p className="eyebrow">Vistoria predial inteligente</p>
-          <h1>Mais clareza para cuidar do seu imóvel.</h1>
+          <p className="eyebrow">Evidência visual, contexto humano</p>
+          <h1>Relatório de vistoria por IA</h1>
           <p>
-            Registre evidências com um roteiro simples e receba uma análise técnica revisada por
-            engenharia civil.
+            Capture cada ambiente com um roteiro simples, revise os indícios visuais e organize
+            tudo em um documento claro e rastreável.
           </p>
           <div className="auth-proof">
             <ShieldCheck aria-hidden="true" size={24} />
-            <span>A IA organiza o pré-laudo. O engenheiro valida a decisão.</span>
+            <span>Cada conclusão permanece ligada à foto e ao contexto que você confirmou.</span>
           </div>
         </div>
-        <p className="auth-story__foot">Tecnologia com responsabilidade técnica.</p>
+        <p className="auth-story__foot">Organização visual. Decisões transparentes.</p>
       </section>
 
       <section className="auth-panel" aria-labelledby="auth-title">
         <div className="auth-card">
           <div className="brand-lockup auth-card__brand">
-            <Building2 aria-hidden="true" size={30} strokeWidth={1.8} />
+            <ScanLine aria-hidden="true" size={30} strokeWidth={1.9} />
             <span>Vistor.IA</span>
           </div>
           <p className="eyebrow">{isRegister ? "Comece sua jornada" : "Bem-vindo de volta"}</p>
           <h2 id="auth-title">{isRegister ? "Crie sua conta" : "Entre na sua conta"}</h2>
           <p className="auth-card__intro">
             {isRegister
-              ? "Escolha seu perfil para acessar a experiência certa."
-              : "Acesse suas vistorias e acompanhe cada etapa."}
+              ? "Crie seu acesso para começar a primeira vistoria."
+              : "Retome suas evidências, revisões e relatórios."}
           </p>
 
           {notice || error ? (
@@ -124,52 +117,6 @@ export function AuthForm({ mode }: AuthFormProps) {
                   onChange={(event) => setNome(event.target.value)}
                 />
               </label>
-            ) : null}
-
-            {isRegister ? (
-              <label>
-                <span>Perfil</span>
-                <select
-                  value={perfil}
-                  onChange={(event) => {
-                    const nextRole = event.target.value as UserRole;
-                    setPerfil(nextRole);
-                    if (nextRole === "ROLE_CLIENTE") {
-                      setCrea("");
-                      setCodigoConvite("");
-                    }
-                  }}
-                >
-                  <option value="ROLE_CLIENTE">Cliente / responsável pelo imóvel</option>
-                  <option value="ROLE_ENGENHEIRO">Engenheiro civil</option>
-                </select>
-              </label>
-            ) : null}
-
-            {isRegister && perfil === "ROLE_ENGENHEIRO" ? (
-              <>
-                <label>
-                  <span>CREA</span>
-                  <input
-                    autoComplete="off"
-                    required
-                    value={crea}
-                    onChange={(event) => setCrea(event.target.value)}
-                    placeholder="Número de registro profissional"
-                  />
-                </label>
-                <label>
-                  <span>Código de convite</span>
-                  <input
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={codigoConvite}
-                    onChange={(event) => setCodigoConvite(event.target.value)}
-                    placeholder="Fornecido pela equipe Vistor.IA"
-                  />
-                </label>
-              </>
             ) : null}
 
             <label>
@@ -223,8 +170,8 @@ export function AuthForm({ mode }: AuthFormProps) {
           </p>
 
           <div className="auth-professional-note">
-            <HardHat aria-hidden="true" size={19} />
-            <span>Ambiente preparado para clientes e profissionais de engenharia.</span>
+            <Camera aria-hidden="true" size={19} />
+            <span>A análise aponta indícios visuais e não substitui uma avaliação técnica presencial.</span>
           </div>
         </div>
       </section>

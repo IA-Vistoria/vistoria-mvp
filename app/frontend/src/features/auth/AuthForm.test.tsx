@@ -67,62 +67,52 @@ describe("AuthForm", () => {
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/client"));
   });
 
-  it("mostra CREA obrigatório somente ao selecionar engenheiro", async () => {
-    const user = userEvent.setup();
+  it("não apresenta escolha de perfil nem campos profissionais no cadastro", () => {
     render(<AuthForm mode="register" />);
 
-    expect(screen.queryByLabelText("CREA")).toBeNull();
-    await user.selectOptions(screen.getByLabelText("Perfil"), "ROLE_ENGENHEIRO");
-
-    expect((screen.getByLabelText("CREA") as HTMLInputElement).required).toBe(true);
-    expect((screen.getByLabelText("Código de convite") as HTMLInputElement).required).toBe(true);
-    await user.selectOptions(screen.getByLabelText("Perfil"), "ROLE_CLIENTE");
+    expect(screen.queryByLabelText("Perfil")).toBeNull();
     expect(screen.queryByLabelText("CREA")).toBeNull();
     expect(screen.queryByLabelText("Código de convite")).toBeNull();
   });
 
-  it("envia o código de convite somente no cadastro de engenheiro", async () => {
-    vi.mocked(register).mockResolvedValue(engineerSession);
+  it("sempre envia cadastro público como cliente", async () => {
+    vi.mocked(register).mockResolvedValue(clientSession);
     const user = userEvent.setup();
     render(<AuthForm mode="register" />);
 
-    await user.type(screen.getByLabelText("Nome completo"), "Ana Engenheira");
-    await user.selectOptions(screen.getByLabelText("Perfil"), "ROLE_ENGENHEIRO");
-    await user.type(screen.getByLabelText("CREA"), "CREA-SP 123");
-    await user.type(screen.getByLabelText("Código de convite"), "convite-seguro");
+    await user.type(screen.getByLabelText("Nome completo"), "Ana Cliente");
     await user.type(screen.getByLabelText("E-mail"), "ana@exemplo.com");
     await user.type(screen.getByLabelText("Senha"), "segredo123");
     await user.click(screen.getByRole("button", { name: "Criar conta" }));
 
-    await waitFor(() => expect(register).toHaveBeenCalledWith(expect.objectContaining({
-      perfil: "ROLE_ENGENHEIRO",
-      crea: "CREA-SP 123",
-      codigoConvite: "convite-seguro",
-    })));
+    await waitFor(() => expect(register).toHaveBeenCalledWith({
+      nome: "Ana Cliente",
+      email: "ana@exemplo.com",
+      senha: "segredo123",
+      perfil: "ROLE_CLIENTE",
+    }));
   });
 
-  it("mascara e limpa o convite profissional após erro", async () => {
+  it("limpa somente a senha após erro de cadastro", async () => {
     vi.mocked(register).mockRejectedValue(new ApiError({
-      type: "urn:vistoria:problem:forbidden",
-      title: "Cadastro profissional não autorizado",
-      status: 403,
-      detail: "O código de convite profissional é inválido.",
+      type: "urn:vistoria:problem:validation-error",
+      title: "Dados inválidos",
+      status: 422,
+      detail: "Revise os dados informados.",
     }));
     const user = userEvent.setup();
     render(<AuthForm mode="register" />);
 
-    await user.type(screen.getByLabelText("Nome completo"), "Ana Engenheira");
-    await user.selectOptions(screen.getByLabelText("Perfil"), "ROLE_ENGENHEIRO");
-    await user.type(screen.getByLabelText("CREA"), "CREA-SP 123");
-    const convite = screen.getByLabelText("Código de convite") as HTMLInputElement;
-    expect(convite.type).toBe("password");
-    await user.type(convite, "convite-incorreto");
+    await user.type(screen.getByLabelText("Nome completo"), "Ana Cliente");
     await user.type(screen.getByLabelText("E-mail"), "ana@exemplo.com");
-    await user.type(screen.getByLabelText("Senha"), "segredo123");
+    const senha = screen.getByLabelText("Senha") as HTMLInputElement;
+    await user.type(senha, "segredo123");
     await user.click(screen.getByRole("button", { name: "Criar conta" }));
 
     expect(await screen.findByRole("alert")).toBeDefined();
-    expect(convite.value).toBe("");
+    expect(senha.value).toBe("");
+    expect((screen.getByLabelText("Nome completo") as HTMLInputElement).value).toBe("Ana Cliente");
+    expect((screen.getByLabelText("E-mail") as HTMLInputElement).value).toBe("ana@exemplo.com");
   });
 
   it("exibe o aviso de sessão expirada na tela de login", async () => {
@@ -135,24 +125,11 @@ describe("AuthForm", () => {
     );
   });
 
-  it("envia cadastro de cliente sem o campo CREA", async () => {
-    vi.mocked(register).mockResolvedValue(clientSession);
-    const user = userEvent.setup();
+  it("apresenta a proposta IA-first sem engenharia no acesso", () => {
     render(<AuthForm mode="register" />);
 
-    await user.type(screen.getByLabelText("Nome completo"), "João da Silva");
-    await user.type(screen.getByLabelText("E-mail"), "joao@exemplo.com");
-    await user.type(screen.getByLabelText("Senha"), "segredo123");
-    await user.click(screen.getByRole("button", { name: "Criar conta" }));
-
-    await waitFor(() =>
-      expect(register).toHaveBeenCalledWith({
-        nome: "João da Silva",
-        email: "joao@exemplo.com",
-        senha: "segredo123",
-        perfil: "ROLE_CLIENTE",
-      }),
-    );
+    expect(screen.getByRole("heading", { name: "Relatório de vistoria por IA" })).toBeDefined();
+    expect(screen.queryByText(/engenheir/i)).toBeNull();
   });
 
   it.each([409, 422])("preserva campos não sensíveis após erro %s", async (status) => {
