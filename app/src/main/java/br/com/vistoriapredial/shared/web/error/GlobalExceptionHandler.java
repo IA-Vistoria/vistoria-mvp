@@ -8,6 +8,9 @@ import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundExc
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
 import br.com.vistoriapredial.vistoria.application.exception.VistoriaAccessDeniedException;
 import br.com.vistoriapredial.vistoria.application.exception.VistoriaNotFoundException;
+import br.com.vistoriapredial.vistoria.application.exception.FindingNotFoundException;
+import br.com.vistoriapredial.vistoria.application.exception.IncompleteReviewException;
+import br.com.vistoriapredial.vistoria.application.exception.InvalidReviewException;
 import br.com.vistoriapredial.usuario.application.exception.EngineerRegistrationDeniedException;
 import br.com.vistoriapredial.usuario.application.exception.UsuarioConflictException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -167,6 +170,45 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 ProblemTypes.STALE_INSPECTION,
                 "Vistoria desatualizada",
                 "A vistoria já foi processada ou alterada por outra sessão.",
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(FindingNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleFindingNotFound(
+            FindingNotFoundException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.NOT_FOUND,
+                ProblemTypes.FINDING_NOT_FOUND,
+                "Achado não encontrado",
+                exception.getMessage(),
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(IncompleteReviewException.class)
+    public ResponseEntity<ProblemDetail> handleIncompleteReview(
+            IncompleteReviewException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.CONFLICT,
+                ProblemTypes.INCOMPLETE_REVIEW,
+                "Revisão incompleta",
+                exception.getMessage(),
+                URI.create(request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(InvalidReviewException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidReview(
+            InvalidReviewException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ProblemTypes.INVALID_REVIEW,
+                "Revisão inválida",
+                exception.getMessage(),
                 URI.create(request.getRequestURI())
         );
     }

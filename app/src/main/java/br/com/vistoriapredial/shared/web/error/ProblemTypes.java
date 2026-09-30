@@ -35,6 +35,12 @@ public final class ProblemTypes {
             URI.create("urn:vistoria:problem:forbidden");
     public static final URI STALE_INSPECTION =
             URI.create("urn:vistoria:problem:stale-inspection");
+    public static final URI FINDING_NOT_FOUND =
+            URI.create("urn:vistoria:problem:finding-not-found");
+    public static final URI INCOMPLETE_REVIEW =
+            URI.create("urn:vistoria:problem:incomplete-review");
+    public static final URI INVALID_REVIEW =
+            URI.create("urn:vistoria:problem:invalid-review");
     public static final URI INTERNAL_ERROR =
             URI.create("urn:vistoria:problem:internal-error");
 

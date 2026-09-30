@@ -24,7 +24,20 @@ class PostgreSqlMigrationIntegrationTest {
             MigrateResult result = flyway.migrate();
 
             assertThat(result.success).isTrue();
-            assertThat(result.targetSchemaVersion).isEqualTo("6");
+            assertThat(result.targetSchemaVersion).isEqualTo("7");
+
+            try (var connection = postgres.createConnection("");
+                 var statement = connection.prepareStatement("""
+                         SELECT data_type
+                           FROM information_schema.columns
+                          WHERE table_schema = 'public'
+                            AND table_name = 'tb_vistoria'
+                            AND column_name = 'revisao_usuario'
+                         """);
+                 var columns = statement.executeQuery()) {
+                assertThat(columns.next()).isTrue();
+                assertThat(columns.getString("data_type")).isEqualTo("text");
+            }
 
             try (var connection = postgres.createConnection("");
                  var statement = connection.prepareStatement("""

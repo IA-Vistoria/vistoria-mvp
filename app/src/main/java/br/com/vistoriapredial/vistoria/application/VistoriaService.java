@@ -30,6 +30,17 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import br.com.vistoriapredial.vistoria.application.analysis.VistoriaSubmetidaEvent;
+import br.com.vistoriapredial.vistoria.application.analysis.AnaliseVistoria;
+import br.com.vistoriapredial.vistoria.application.analysis.PreLaudoParser;
+import br.com.vistoriapredial.vistoria.application.exception.IncompleteReviewException;
+import br.com.vistoriapredial.vistoria.application.exception.InvalidReviewException;
+import br.com.vistoriapredial.vistoria.application.review.DecisaoRevisao;
+import br.com.vistoriapredial.vistoria.application.review.RevisaoAchado;
+import br.com.vistoriapredial.vistoria.application.review.RevisaoAchadoStore;
+import br.com.vistoriapredial.vistoria.application.review.RevisarAchadoCommand;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Set;
 
 @Service
 public class VistoriaService {
@@ -38,16 +49,25 @@ public class VistoriaService {
     private final StorageService storageService;
     private final EvidenceFileValidator evidenceFileValidator;
     private final ApplicationEventPublisher eventPublisher;
+    private final PreLaudoParser preLaudoParser;
+    private final RevisaoAchadoStore reviewStore;
+    private final Clock clock;
 
     public VistoriaService(
             VistoriaRepository vistoriaRepository,
             StorageService storageService,
             EvidenceFileValidator evidenceFileValidator,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            PreLaudoParser preLaudoParser,
+            RevisaoAchadoStore reviewStore,
+            Clock clock) {
         this.vistoriaRepository = vistoriaRepository;
         this.storageService = storageService;
         this.evidenceFileValidator = evidenceFileValidator;
         this.eventPublisher = eventPublisher;
+        this.preLaudoParser = preLaudoParser;
+        this.reviewStore = reviewStore;
+        this.clock = clock;
     }
 
     // Fluxo Cliente
@@ -128,6 +148,91 @@ public class VistoriaService {
         Vistoria saved = salvarComControleConcorrencia(vistoria);
         eventPublisher.publishEvent(new VistoriaSubmetidaEvent(saved.getId()));
         return saved;
+    }
+
+    @Transactional
+    public Vistoria revisarAchado(
+            Long vistoriaId,
+            Usuario cliente,
+            RevisarAchadoCommand command) {
+        Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
+        if (vistoria.getStatus() != VistoriaStatus.REVISAO_PENDENTE) {
+            throw new StaleInspectionException();
+        }
+        RevisarAchadoCommand normalized = validateReview(command);
+        preLaudoParser.requireFinding(
+                vistoria, normalized.imagemId(), normalized.indiceAchado());
+        RevisaoAchado review = new RevisaoAchado(
+                normalized.imagemId(),
+                normalized.indiceAchado(),
+                normalized.decisao(),
+                normalized.contexto(),
+                normalized.tipoCorrigido(),
+                Instant.now(clock));
+        vistoria.setRevisaoUsuario(reviewStore.upsert(vistoria.getRevisaoUsuario(), review));
+        return salvarComControleConcorrencia(vistoria);
+    }
+
+    @Transactional
+    public Vistoria concluirRelatorio(Long vistoriaId, Usuario cliente) {
+        Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
+        if (vistoria.getStatus() == VistoriaStatus.RELATORIO_DISPONIVEL) {
+            return vistoria;
+        }
+        if (vistoria.getStatus() != VistoriaStatus.REVISAO_PENDENTE) {
+            throw new StaleInspectionException();
+        }
+        AnaliseVistoria analysis = preLaudoParser.parse(vistoria, vistoria.getPreLaudoIa());
+        Set<String> reviewed = reviewStore.read(vistoria.getRevisaoUsuario()).stream()
+                .map(review -> findingKey(review.imagemId(), review.indiceAchado()))
+                .collect(Collectors.toSet());
+        boolean incomplete = analysis.imagens().stream()
+                .flatMap(image -> image.achados().stream()
+                        .map(finding -> findingKey(image.imagemId(), finding.indice())))
+                .anyMatch(key -> !reviewed.contains(key));
+        if (incomplete) {
+            throw new IncompleteReviewException();
+        }
+        vistoria.disponibilizarRelatorio(LocalDateTime.now(clock));
+        return salvarComControleConcorrencia(vistoria);
+    }
+
+    private RevisarAchadoCommand validateReview(RevisarAchadoCommand command) {
+        if (command == null || command.imagemId() == null || command.imagemId() <= 0
+                || command.indiceAchado() == null || command.indiceAchado() < 0
+                || command.decisao() == null) {
+            throw new InvalidReviewException("A referência e a decisão do achado são obrigatórias.");
+        }
+        String context = trimToNull(command.contexto());
+        if (context == null || context.length() > 1000) {
+            throw new InvalidReviewException("O contexto deve ter entre 1 e 1000 caracteres.");
+        }
+        String correctedType = trimToNull(command.tipoCorrigido());
+        if (command.decisao() == DecisaoRevisao.CORRIGIDO
+                && (correctedType == null || correctedType.length() > 80)) {
+            throw new InvalidReviewException("Informe o tipo corrigido do achado.");
+        }
+        if (correctedType != null && correctedType.length() > 80) {
+            throw new InvalidReviewException("O tipo corrigido deve ter no máximo 80 caracteres.");
+        }
+        return new RevisarAchadoCommand(
+                command.imagemId(),
+                command.indiceAchado(),
+                command.decisao(),
+                context,
+                command.decisao() == DecisaoRevisao.CORRIGIDO ? correctedType : null);
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String findingKey(long imageId, int findingIndex) {
+        return imageId + ":" + findingIndex;
     }
 
     @Transactional(readOnly = true)

@@ -86,7 +86,7 @@ T1 -> T2 -> T3 -> T4 -> T5 -> T6 -> T7 -> T8
 
 ### T3: Persistir revisão e disponibilizar o relatório
 
-**Status:** Pending  
+**Status:** Complete  
 **Depends on:** T2  
 **Requirement:** AIR-03, AIR-04, AIR-05  
 **Where:** migration V7, domínio/application, endpoints e ProblemDetail.

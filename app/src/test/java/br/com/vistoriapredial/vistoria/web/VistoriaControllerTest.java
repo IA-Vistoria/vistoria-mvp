@@ -36,6 +36,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
+import br.com.vistoriapredial.vistoria.application.exception.FindingNotFoundException;
+import br.com.vistoriapredial.vistoria.application.exception.IncompleteReviewException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -422,6 +424,111 @@ class VistoriaControllerTest {
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.status").value("AGUARDANDO_IA"))
                 .andExpect(jsonPath("$.analiseIa").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReviewFindingAndReturnPersistedReview() throws Exception {
+        Vistoria vistoria = reviewableInspectionResponse();
+        vistoria.setRevisaoUsuario("""
+                {"version":1,"revisoes":[{
+                  "imagemId":20,"indiceAchado":0,"decisao":"CONFIRMADO",
+                  "contexto":"Marca antiga.","tipoCorrigido":null,
+                  "revisadoEm":"2026-09-30T12:00:00Z"
+                }]}
+                """);
+        when(vistoriaService.revisarAchado(eq(10L), eq(cliente), any())).thenReturn(vistoria);
+
+        mockMvc.perform(put("/api/vistorias/10/revisao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"imagemId":20,"indiceAchado":0,"decisao":"CONFIRMADO",
+                                 "contexto":"Marca antiga."}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REVISAO_PENDENTE"))
+                .andExpect(jsonPath("$.revisoes[0].imagemId").value(20))
+                .andExpect(jsonPath("$.revisoes[0].indiceAchado").value(0))
+                .andExpect(jsonPath("$.revisoes[0].decisao").value("CONFIRMADO"))
+                .andExpect(jsonPath("$.revisoes[0].contexto").value("Marca antiga."));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldRejectBlankReviewContextAtHttpBoundary() throws Exception {
+        mockMvc.perform(put("/api/vistorias/10/revisao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"imagemId":20,"indiceAchado":0,"decisao":"REJEITADO",
+                                 "contexto":"   "}
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errors[0].pointer").value("#/contexto"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnNotFoundForUnknownFinding() throws Exception {
+        when(vistoriaService.revisarAchado(eq(10L), eq(cliente), any()))
+                .thenThrow(new FindingNotFoundException());
+
+        mockMvc.perform(put("/api/vistorias/10/revisao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"imagemId":20,"indiceAchado":99,"decisao":"CONFIRMADO",
+                                 "contexto":"Confirmo."}
+                                """))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:finding-not-found"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnConflictForIncompleteReview() throws Exception {
+        when(vistoriaService.concluirRelatorio(10L, cliente))
+                .thenThrow(new IncompleteReviewException());
+
+        mockMvc.perform(post("/api/vistorias/10/relatorio"))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:incomplete-review"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldMakeReportAvailable() throws Exception {
+        Vistoria vistoria = reviewableInspectionResponse();
+        vistoria.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
+        vistoria.setDataConclusao(LocalDateTime.of(2026, 9, 30, 12, 0));
+        when(vistoriaService.concluirRelatorio(10L, cliente)).thenReturn(vistoria);
+
+        mockMvc.perform(post("/api/vistorias/10/relatorio"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RELATORIO_DISPONIVEL"))
+                .andExpect(jsonPath("$.dataConclusao").value("2026-09-30T12:00:00"));
+    }
+
+    private Vistoria reviewableInspectionResponse() {
+        Vistoria vistoria = new Vistoria();
+        vistoria.setCliente(cliente);
+        vistoria.setStatus(VistoriaStatus.REVISAO_PENDENTE);
+        vistoria.setPreLaudoIa("""
+                {"version":1,"images":[{
+                  "storagePath":"uploads/a.jpg",
+                  "imageQuality":{"usable":true,"issues":[]},
+                  "limitations":[],
+                  "areas":[{"issueType":"stain","description":"Marca escura."}]
+                }]}
+                """);
+        ReflectionTestUtils.setField(vistoria, "id", 10L);
+        ImagemVistoria image = new ImagemVistoria();
+        image.setId(20L);
+        image.setUrl("uploads/a.jpg");
+        image.setProtocoloItem("SALA_PAREDES_REVESTIMENTOS");
+        vistoria.getImagens().add(image);
+        return vistoria;
     }
 
     @Test

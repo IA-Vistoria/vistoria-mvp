@@ -1,6 +1,7 @@
 package br.com.vistoriapredial.vistoria.application.analysis;
 
 import br.com.vistoriapredial.vistoria.application.exception.InvalidAiAnalysisException;
+import br.com.vistoriapredial.vistoria.application.exception.FindingNotFoundException;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -95,6 +96,22 @@ public class PreLaudoParser {
         }
 
         return new AnaliseVistoria(SUPPORTED_VERSION, List.copyOf(images));
+    }
+
+    public AchadoRef requireFinding(Vistoria vistoria, long imageId, int findingIndex) {
+        return parse(vistoria, vistoria.getPreLaudoIa()).imagens().stream()
+                .filter(image -> image.imagemId().equals(imageId))
+                .filter(image -> findingIndex >= 0 && findingIndex < image.achados().size())
+                .map(image -> new AchadoRef(imageId, findingIndex, image.achados().get(findingIndex)))
+                .findFirst()
+                .orElseThrow(FindingNotFoundException::new);
+    }
+
+    public record AchadoRef(
+            long imagemId,
+            int indiceAchado,
+            AnaliseVistoria.AchadoIa achado
+    ) {
     }
 
     private JsonNode readRoot(String raw) {

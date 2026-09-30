@@ -4,14 +4,17 @@ import br.com.vistoriapredial.vistoria.application.analysis.AnaliseVistoria;
 import br.com.vistoriapredial.vistoria.application.analysis.PreLaudoParser;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import org.springframework.stereotype.Component;
+import br.com.vistoriapredial.vistoria.application.review.RevisaoAchadoStore;
 
 @Component
 public class VistoriaResponseMapper {
 
     private final PreLaudoParser preLaudoParser;
+    private final RevisaoAchadoStore reviewStore;
 
-    public VistoriaResponseMapper(PreLaudoParser preLaudoParser) {
+    public VistoriaResponseMapper(PreLaudoParser preLaudoParser, RevisaoAchadoStore reviewStore) {
         this.preLaudoParser = preLaudoParser;
+        this.reviewStore = reviewStore;
     }
 
     public VistoriaResponseDto toResponse(Vistoria vistoria) {
@@ -26,7 +29,8 @@ public class VistoriaResponseMapper {
                 vistoria.getImagens().stream()
                         .map(image -> ImagemVistoriaResponseDto.from(vistoria.getId(), image))
                         .toList(),
-                analysis
+                analysis,
+                reviewStore.read(vistoria.getRevisaoUsuario())
         );
     }
 

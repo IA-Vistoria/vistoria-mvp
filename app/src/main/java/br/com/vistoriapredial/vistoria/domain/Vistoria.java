@@ -37,6 +37,9 @@ public class Vistoria {
     @Column(columnDefinition = "TEXT")
     private String parecerEngenheiro;
 
+    @Column(name = "revisao_usuario", columnDefinition = "TEXT")
+    private String revisaoUsuario;
+
     @Column(length = 255)
     private String endereco;
 
@@ -114,6 +117,14 @@ public class Vistoria {
         this.parecerEngenheiro = parecerEngenheiro;
     }
 
+    public String getRevisaoUsuario() {
+        return revisaoUsuario;
+    }
+
+    public void setRevisaoUsuario(String revisaoUsuario) {
+        this.revisaoUsuario = revisaoUsuario;
+    }
+
     public List<ImagemVistoria> getImagens() {
         return imagens;
     }
@@ -177,6 +188,14 @@ public class Vistoria {
         if (status != VistoriaStatus.AGUARDANDO_IA) {
             throw new IllegalStateException("A vistoria não possui análise em andamento.");
         }
+    }
+
+    public void disponibilizarRelatorio(LocalDateTime concludedAt) {
+        if (status != VistoriaStatus.REVISAO_PENDENTE) {
+            throw new IllegalStateException("A vistoria não está pronta para gerar o relatório.");
+        }
+        status = VistoriaStatus.RELATORIO_DISPONIVEL;
+        dataConclusao = concludedAt;
     }
 
     @PrePersist

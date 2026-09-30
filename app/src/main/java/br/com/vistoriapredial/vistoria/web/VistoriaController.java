@@ -101,6 +101,27 @@ public class VistoriaController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(responseMapper.toResponse(v));
     }
 
+    @PutMapping("/{id}/revisao")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<VistoriaResponseDto> revisarAchado(
+            @PathVariable Long id,
+            @RequestBody @Valid RevisarAchadoRequestDto request,
+            Authentication auth) {
+        Usuario cliente = getUsuario(auth);
+        Vistoria vistoria = vistoriaService.revisarAchado(id, cliente, request.toCommand());
+        return ResponseEntity.ok(responseMapper.toResponse(vistoria));
+    }
+
+    @PostMapping("/{id}/relatorio")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<VistoriaResponseDto> concluirRelatorio(
+            @PathVariable Long id,
+            Authentication auth) {
+        Usuario cliente = getUsuario(auth);
+        Vistoria vistoria = vistoriaService.concluirRelatorio(id, cliente);
+        return ResponseEntity.ok(responseMapper.toResponse(vistoria));
+    }
+
     @GetMapping("/{vistoriaId}/imagens/{imagemId}/conteudo")
     @PreAuthorize("hasAnyRole('CLIENTE', 'ENGENHEIRO')")
     public ResponseEntity<Resource> buscarEvidencia(

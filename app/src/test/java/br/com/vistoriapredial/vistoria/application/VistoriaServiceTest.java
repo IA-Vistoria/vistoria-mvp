@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.ArgumentCaptor;
@@ -45,6 +44,17 @@ import static org.mockito.Mockito.*;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import br.com.vistoriapredial.vistoria.application.analysis.VistoriaSubmetidaEvent;
+import br.com.vistoriapredial.vistoria.application.analysis.PreLaudoParser;
+import br.com.vistoriapredial.vistoria.application.exception.FindingNotFoundException;
+import br.com.vistoriapredial.vistoria.application.exception.IncompleteReviewException;
+import br.com.vistoriapredial.vistoria.application.exception.InvalidReviewException;
+import br.com.vistoriapredial.vistoria.application.review.DecisaoRevisao;
+import br.com.vistoriapredial.vistoria.application.review.RevisaoAchadoStore;
+import br.com.vistoriapredial.vistoria.application.review.RevisarAchadoCommand;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 
 class VistoriaServiceTest {
 
@@ -60,7 +70,6 @@ class VistoriaServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
-    @InjectMocks
     private VistoriaService vistoriaService;
 
     private Usuario cliente;
@@ -75,6 +84,16 @@ class VistoriaServiceTest {
 
         engenheiro = new Usuario("Eng", "eng@test.com", "pass", PerfilEnum.ROLE_ENGENHEIRO, "1234");
         ReflectionTestUtils.setField(engenheiro, "id", 2L);
+
+        var objectMapper = JsonMapper.builder().findAndAddModules().build();
+        vistoriaService = new VistoriaService(
+                vistoriaRepository,
+                storageService,
+                evidenceFileValidator,
+                eventPublisher,
+                new PreLaudoParser(objectMapper),
+                new RevisaoAchadoStore(objectMapper),
+                Clock.fixed(Instant.parse("2026-09-30T12:00:00Z"), ZoneOffset.UTC));
 
     }
 
@@ -333,6 +352,139 @@ class VistoriaServiceTest {
     }
 
     @Test
+    void shouldUpsertReviewWithoutChangingOriginalAnalysis() {
+        Vistoria vistoria = reviewableInspection(validAnalysisWithTwoFindings());
+        String originalAnalysis = vistoria.getPreLaudoIa();
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(vistoriaRepository.saveAndFlush(vistoria)).thenReturn(vistoria);
+
+        vistoriaService.revisarAchado(10L, cliente, new RevisarAchadoCommand(
+                20L, 0, DecisaoRevisao.CONFIRMADO, "  Marca já observada.  ", null));
+        Vistoria updated = vistoriaService.revisarAchado(10L, cliente, new RevisarAchadoCommand(
+                20L, 0, DecisaoRevisao.CORRIGIDO, " É apenas uma sombra. ", " Sombra "));
+
+        assertThat(updated.getPreLaudoIa()).isEqualTo(originalAnalysis);
+        var reviews = new RevisaoAchadoStore(JsonMapper.builder().findAndAddModules().build())
+                .read(updated.getRevisaoUsuario());
+        assertThat(reviews).hasSize(1);
+        assertThat(reviews.getFirst().imagemId()).isEqualTo(20L);
+        assertThat(reviews.getFirst().indiceAchado()).isZero();
+        assertThat(reviews.getFirst().decisao()).isEqualTo(DecisaoRevisao.CORRIGIDO);
+        assertThat(reviews.getFirst().contexto()).isEqualTo("É apenas uma sombra.");
+        assertThat(reviews.getFirst().tipoCorrigido()).isEqualTo("Sombra");
+        assertThat(reviews.getFirst().revisadoEm()).isEqualTo(Instant.parse("2026-09-30T12:00:00Z"));
+    }
+
+    @Test
+    void shouldRejectReviewFromAnotherClient() {
+        Usuario outroCliente = new Usuario("Outro", "outro-review@test.com", "pass", PerfilEnum.ROLE_CLIENTE, null);
+        ReflectionTestUtils.setField(outroCliente, "id", 99L);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(
+                reviewableInspection(validAnalysisWithTwoFindings())));
+
+        assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, outroCliente,
+                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CONFIRMADO, "Confirmo.", null)))
+                .isInstanceOf(VistoriaAccessDeniedException.class);
+    }
+
+    @Test
+    void shouldRejectReviewForUnknownFinding() {
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(
+                reviewableInspection(validAnalysisWithTwoFindings())));
+
+        assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, cliente,
+                new RevisarAchadoCommand(20L, 99, DecisaoRevisao.CONFIRMADO, "Confirmo.", null)))
+                .isInstanceOf(FindingNotFoundException.class);
+    }
+
+    @Test
+    void shouldRequireCorrectedTypeForCorrectedFinding() {
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(
+                reviewableInspection(validAnalysisWithTwoFindings())));
+
+        assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, cliente,
+                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CORRIGIDO, "Corrijo.", "  ")))
+                .isInstanceOf(InvalidReviewException.class)
+                .hasMessage("Informe o tipo corrigido do achado.");
+    }
+
+    @Test
+    void shouldRejectReviewOutsidePendingReviewState() {
+        Vistoria vistoria = reviewableInspection(validAnalysisWithTwoFindings());
+        vistoria.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, cliente,
+                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CONFIRMADO, "Confirmo.", null)))
+                .isInstanceOf(StaleInspectionException.class);
+    }
+
+    @Test
+    void shouldBlockReportWhileAnyFindingHasNoReview() {
+        Vistoria vistoria = reviewableInspection(validAnalysisWithTwoFindings());
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(vistoriaRepository.saveAndFlush(vistoria)).thenReturn(vistoria);
+        vistoriaService.revisarAchado(10L, cliente, new RevisarAchadoCommand(
+                20L, 0, DecisaoRevisao.CONFIRMADO, "Confirmo.", null));
+
+        assertThatThrownBy(() -> vistoriaService.concluirRelatorio(10L, cliente))
+                .isInstanceOf(IncompleteReviewException.class)
+                .hasMessage("Revise todos os achados antes de gerar o relatório.");
+        assertThat(vistoria.getStatus()).isEqualTo(VistoriaStatus.REVISAO_PENDENTE);
+    }
+
+    @Test
+    void shouldMakeReportAvailableWhenEveryFindingIsReviewed() {
+        Vistoria vistoria = reviewableInspection(validAnalysisWithTwoFindings());
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(vistoriaRepository.saveAndFlush(vistoria)).thenReturn(vistoria);
+        vistoriaService.revisarAchado(10L, cliente, new RevisarAchadoCommand(
+                20L, 0, DecisaoRevisao.CONFIRMADO, "Confirmo.", null));
+        vistoriaService.revisarAchado(10L, cliente, new RevisarAchadoCommand(
+                20L, 1, DecisaoRevisao.REJEITADO, "Não corresponde ao local.", null));
+
+        Vistoria completed = vistoriaService.concluirRelatorio(10L, cliente);
+
+        assertThat(completed.getStatus()).isEqualTo(VistoriaStatus.RELATORIO_DISPONIVEL);
+        assertThat(completed.getDataConclusao()).isEqualTo(
+                java.time.LocalDateTime.of(2026, 9, 30, 12, 0));
+        assertThat(completed.getPreLaudoIa()).isEqualTo(validAnalysisWithTwoFindings());
+    }
+
+    @Test
+    void shouldReturnSameReportWithoutSavingAgain() {
+        Vistoria vistoria = reviewableInspection(validAnalysisWithTwoFindings());
+        vistoria.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
+        vistoria.setDataConclusao(java.time.LocalDateTime.of(2026, 9, 30, 11, 0));
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        Vistoria result = vistoriaService.concluirRelatorio(10L, cliente);
+
+        assertThat(result).isSameAs(vistoria);
+        assertThat(result.getDataConclusao()).isEqualTo(java.time.LocalDateTime.of(2026, 9, 30, 11, 0));
+        verify(vistoriaRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void shouldAllowReportWhenValidAnalysisHasNoFindings() {
+        Vistoria vistoria = reviewableInspection("""
+                {"version":1,"images":[{
+                  "storagePath":"uploads/a.jpg",
+                  "imageQuality":{"usable":true,"issues":[]},
+                  "limitations":[],"areas":[]
+                }]}
+                """);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(vistoriaRepository.saveAndFlush(vistoria)).thenReturn(vistoria);
+
+        Vistoria result = vistoriaService.concluirRelatorio(10L, cliente);
+
+        assertThat(result.getStatus()).isEqualTo(VistoriaStatus.RELATORIO_DISPONIVEL);
+        assertThat(result.getDataConclusao()).isEqualTo(
+                java.time.LocalDateTime.of(2026, 9, 30, 12, 0));
+    }
+
+    @Test
     void shouldAprovarVistoria() {
         Vistoria v = new Vistoria();
         v.setId(10L);
@@ -471,5 +623,25 @@ class VistoriaServiceTest {
 
     private StoredFile storedJpeg() {
         return new StoredFile(new ByteArrayResource(new byte[] {1, 2, 3}), MediaType.IMAGE_JPEG, 3);
+    }
+
+    private Vistoria reviewableInspection(String analysis) {
+        Vistoria vistoria = inspectionWithEvidence(VistoriaStatus.REVISAO_PENDENTE);
+        vistoria.setPreLaudoIa(analysis);
+        return vistoria;
+    }
+
+    private String validAnalysisWithTwoFindings() {
+        return """
+                {"version":1,"images":[{
+                  "storagePath":"uploads/a.jpg",
+                  "imageQuality":{"usable":true,"issues":[]},
+                  "limitations":[],
+                  "areas":[
+                    {"issueType":"stain","description":"Marca escura."},
+                    {"issueType":"crack","description":"Linha fina."}
+                  ]
+                }]}
+                """;
     }
 }
