@@ -10,12 +10,15 @@ import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDenie
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
+import br.com.vistoriapredial.vistoria.application.exception.IncompleteInspectionException;
+import br.com.vistoriapredial.vistoria.application.command.RegistrarEvidenciaCommand;
 import br.com.vistoriapredial.vistoria.application.exception.VistoriaAccessDeniedException;
 import br.com.vistoriapredial.vistoria.application.exception.VistoriaNotFoundException;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 import br.com.vistoriapredial.vistoria.domain.AmbienteVistoria;
+import br.com.vistoriapredial.vistoria.domain.CategoriaEvidencia;
 import br.com.vistoriapredial.vistoria.domain.RoteiroVistoriaConflitoException;
 import br.com.vistoriapredial.vistoria.domain.TipoAmbiente;
 import br.com.vistoriapredial.vistoria.domain.TipoImovel;
@@ -220,25 +223,43 @@ class VistoriaControllerTest {
         Vistoria updated = new Vistoria();
         updated.setCliente(cliente);
         updated.setStatus(VistoriaStatus.EM_RASCUNHO);
+        updated.configurarRoteiro(TipoImovel.APARTAMENTO, List.of(
+                AmbienteVistoria.criar(TipoAmbiente.SALA, "Sala de estar", 0)));
         ReflectionTestUtils.setField(updated, "id", 10L);
-        ImagemVistoria image = new ImagemVistoria();
-        image.setProtocoloItem("SALA_PAREDES_REVESTIMENTOS");
-        image.setDataUpload(LocalDateTime.of(2026, 9, 19, 4, 0));
+        AmbienteVistoria sala = updated.getAmbientes().getFirst();
+        ReflectionTestUtils.setField(sala, "id", 11L);
+        ImagemVistoria image = new ImagemVistoria(
+                updated,
+                sala,
+                CategoriaEvidencia.VISAO_GERAL,
+                "uploads/sala.jpg",
+                LocalDateTime.of(2026, 9, 19, 4, 0));
         ReflectionTestUtils.setField(image, "id", 20L);
         updated.getImagens().add(image);
-        when(vistoriaService.uploadImagem(eq(10L), any(), eq("SALA_PAREDES_REVESTIMENTOS"), any())).thenReturn(updated);
+        when(vistoriaService.uploadImagem(eq(10L), any(), any(RegistrarEvidenciaCommand.class), any()))
+                .thenReturn(updated);
 
         mockMvc.perform(multipart("/api/vistorias/10/imagens")
                         .file(file)
-                        .param("protocoloItem", "SALA_PAREDES_REVESTIMENTOS"))
+                        .param("ambienteId", "11")
+                        .param("categoria", "VISAO_GERAL"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.imagens[0].id").value(20))
-                .andExpect(jsonPath("$.imagens[0].protocoloItem").value("SALA_PAREDES_REVESTIMENTOS"))
+                .andExpect(jsonPath("$.imagens[0].ambienteId").value(11))
+                .andExpect(jsonPath("$.imagens[0].ambienteNome").value("Sala de estar"))
+                .andExpect(jsonPath("$.imagens[0].categoria").value("VISAO_GERAL"))
+                .andExpect(jsonPath("$.imagens[0].protocoloItem").value("SALA_VISAO_GERAL"))
                 .andExpect(jsonPath("$.imagens[0].dataUpload").exists())
                 .andExpect(jsonPath("$.imagens[0].conteudoUrl")
                         .value("/api/vistorias/10/imagens/20/conteudo"))
                 .andExpect(jsonPath("$.imagens[0].storagePath").doesNotExist());
+
+        ArgumentCaptor<RegistrarEvidenciaCommand> command =
+                ArgumentCaptor.forClass(RegistrarEvidenciaCommand.class);
+        verify(vistoriaService).uploadImagem(eq(10L), eq(cliente), command.capture(), eq(file));
+        assertThat(command.getValue().ambienteId()).isEqualTo(11L);
+        assertThat(command.getValue().categoria()).isEqualTo("VISAO_GERAL");
     }
 
     @Test
@@ -280,16 +301,32 @@ class VistoriaControllerTest {
     void shouldReturnProblemDetailForInvalidEvidence() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "fraude.png", "image/png", "texto".getBytes());
         doThrow(new InvalidEvidenceException("O conteúdo não corresponde ao tipo informado."))
-                .when(vistoriaService).uploadImagem(eq(10L), any(), eq("SALA_PAREDES_REVESTIMENTOS"), any());
+                .when(vistoriaService).uploadImagem(eq(10L), any(), any(RegistrarEvidenciaCommand.class), any());
 
         mockMvc.perform(multipart("/api/vistorias/10/imagens")
                         .file(file)
-                        .param("protocoloItem", "SALA_PAREDES_REVESTIMENTOS"))
+                        .param("ambienteId", "11")
+                        .param("categoria", "VISAO_GERAL"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.title").value("Evidência inválida"))
                 .andExpect(jsonPath("$.detail").value("O conteúdo não corresponde ao tipo informado."))
                 .andExpect(jsonPath("$.instance").value("/api/vistorias/10/imagens"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnMissingEnvironmentsWhenSubmissionIsIncomplete() throws Exception {
+        when(vistoriaService.submeterVistoria(10L, cliente))
+                .thenThrow(new IncompleteInspectionException(List.of("Quarto", "Varanda")));
+
+        mockMvc.perform(post("/api/vistorias/10/submeter"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:incomplete-inspection"))
+                .andExpect(jsonPath("$.title").value("Vistoria incompleta"))
+                .andExpect(jsonPath("$.ambientesAusentes[0]").value("Quarto"))
+                .andExpect(jsonPath("$.ambientesAusentes[1]").value("Varanda"));
     }
 
     @Test

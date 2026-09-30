@@ -124,10 +124,10 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Upload inválido falha antes de gravar arquivo.
-- [ ] Upload válido persiste ambiente e `VISAO_GERAL` ou `DETALHE`.
-- [ ] Envio incompleto retorna `422` com nomes ausentes; completo inicia a IA.
-- [ ] Gate full passa com todos os testes anteriores e ao menos 8 novos cenários.
+- [x] Upload inválido falha antes de gravar arquivo.
+- [x] Upload válido persiste ambiente e `VISAO_GERAL` ou `DETALHE`.
+- [x] Envio incompleto retorna `422` com nomes ausentes; completo inicia a IA.
+- [x] Gate full passa com todos os testes anteriores e ao menos 8 novos cenários.
 
 **Tests**: unit + MockMvc
 **Gate**: full

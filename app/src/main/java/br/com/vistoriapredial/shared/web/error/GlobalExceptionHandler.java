@@ -3,6 +3,7 @@ package br.com.vistoriapredial.shared.web.error;
 import br.com.vistoriapredial.storage.StorageException;
 import br.com.vistoriapredial.storage.StorageFileNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
+import br.com.vistoriapredial.vistoria.application.exception.IncompleteInspectionException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
@@ -226,6 +227,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 exception.getMessage(),
                 URI.create(request.getRequestURI())
         );
+    }
+
+    @ExceptionHandler(IncompleteInspectionException.class)
+    public ResponseEntity<ProblemDetail> handleIncompleteInspection(
+            IncompleteInspectionException exception,
+            HttpServletRequest request) {
+        ProblemDetail problem = createProblem(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ProblemTypes.INCOMPLETE_INSPECTION,
+                "Vistoria incompleta",
+                exception.getMessage(),
+                URI.create(request.getRequestURI()));
+        problem.setProperty("ambientesAusentes", exception.getAmbientesAusentes());
+        return ResponseEntity.unprocessableEntity()
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(problem);
     }
 
     @ExceptionHandler(RoteiroVistoriaInvalidoException.class)

@@ -29,10 +29,10 @@
 ## Handoff
 
 - **feature**: `interface-lente-operacional`
-- **phase**: Implementação da rota estruturada
-- **completed**: T1 — domínio e persistência do roteiro; T2 — criação e edição atômica com migrations V8/V9
-- **in_progress**: T3 — upload estruturado e regra de completude
-- **next_step**: Associar upload a ambiente/categoria e exigir uma visão geral por ambiente antes do envio
+- **phase**: Fundação visual e contratos do frontend
+- **completed**: T1 — domínio e persistência do roteiro; T2 — criação e edição atômica com migrations V8/V9; T3 — captura estruturada e regra de completude
+- **in_progress**: T4 — fundações visuais e contratos adaptativos do frontend
+- **next_step**: Aplicar tokens da identidade Lente Operacional, marca sem moldura e tipos de API compatíveis com o roteiro persistido
 - **blockers**: Nenhum
 - **uncommitted_files**: `.impeccable/build/`, `.impeccable/review/`, `assets/`, `app/frontend/src/components/brand/`
 - **branch**: `codex/especifica-interface-ia-first`

@@ -171,7 +171,7 @@ O MVP atual combina uma interface genérica com um protocolo fixo de 12 itens t�
 | ROTEIRO-01 | P1: Configurar roteiro | Implementation | In Progress |
 | ROTEIRO-02 | P1: Editar roteiro | Implementation | In Progress |
 | CAPTURA-01 | P1: Captura estruturada | Implementation | In Progress |
-| ENVIO-01 | P1: Coleta completa | Implementation | Planned |
+| ENVIO-01 | P1: Coleta completa | Implementation | In Progress |
 | RELATORIO-01 | P1: Revisão e relatório | Implementation | Planned |
 | UI-01 | P2: Interface acessível | Implementation | Planned |
 

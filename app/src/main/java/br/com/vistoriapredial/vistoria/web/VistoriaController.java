@@ -4,6 +4,7 @@ import br.com.vistoriapredial.usuario.domain.Usuario;
 import br.com.vistoriapredial.usuario.persistence.UsuarioRepository;
 import br.com.vistoriapredial.vistoria.application.VistoriaService;
 import br.com.vistoriapredial.vistoria.application.EvidenceContent;
+import br.com.vistoriapredial.vistoria.application.command.RegistrarEvidenciaCommand;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -94,11 +95,16 @@ public class VistoriaController {
     @PreAuthorize("hasRole('CLIENTE')")
     public ResponseEntity<VistoriaResponseDto> uploadImagem(
             @PathVariable Long id,
-            @RequestParam("protocoloItem") String protocoloItem,
+            @RequestParam(value = "ambienteId", required = false) Long ambienteId,
+            @RequestParam(value = "categoria", required = false) String categoria,
             @RequestParam("file") MultipartFile file,
         Authentication auth) {
         Usuario cliente = getUsuario(auth);
-        Vistoria vistoria = vistoriaService.uploadImagem(id, cliente, protocoloItem, file);
+        Vistoria vistoria = vistoriaService.uploadImagem(
+                id,
+                cliente,
+                new RegistrarEvidenciaCommand(ambienteId, categoria),
+                file);
         return ResponseEntity.ok(responseMapper.toResponse(vistoria));
     }
 

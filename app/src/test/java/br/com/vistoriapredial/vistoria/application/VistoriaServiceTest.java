@@ -10,8 +10,6 @@ import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 import br.com.vistoriapredial.vistoria.persistence.VistoriaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.ArgumentCaptor;
@@ -29,6 +27,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
+import br.com.vistoriapredial.vistoria.application.exception.IncompleteInspectionException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
@@ -53,6 +52,9 @@ import br.com.vistoriapredial.vistoria.application.review.RevisaoAchadoStore;
 import br.com.vistoriapredial.vistoria.application.review.RevisarAchadoCommand;
 import br.com.vistoriapredial.vistoria.application.command.AmbienteRoteiroCommand;
 import br.com.vistoriapredial.vistoria.application.command.CriarVistoriaCommand;
+import br.com.vistoriapredial.vistoria.application.command.RegistrarEvidenciaCommand;
+import br.com.vistoriapredial.vistoria.domain.AmbienteVistoria;
+import br.com.vistoriapredial.vistoria.domain.CategoriaEvidencia;
 import br.com.vistoriapredial.vistoria.domain.TipoAmbiente;
 import br.com.vistoriapredial.vistoria.domain.TipoImovel;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -201,10 +203,8 @@ class VistoriaServiceTest {
 
     @Test
     void shouldUploadImagem() {
-        Vistoria v = new Vistoria();
-        v.setId(10L);
-        v.setCliente(cliente);
-        v.setStatus(VistoriaStatus.EM_RASCUNHO);
+        Vistoria v = inspectionWithRoute("Sala");
+        AmbienteVistoria sala = v.getAmbientes().getFirst();
 
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(v));
         MockMultipartFile file = new MockMultipartFile("file", "nome-do-cliente.jpg", "image/jpeg", "test data".getBytes());
@@ -213,12 +213,15 @@ class VistoriaServiceTest {
         when(storageService.store(eq(file), anyString())).thenReturn("uploads/a.jpg");
         when(vistoriaRepository.saveAndFlush(any())).thenAnswer(i -> i.getArguments()[0]);
 
-        Vistoria result = vistoriaService.uploadImagem(10L, cliente, "SALA_PAREDES_REVESTIMENTOS", file);
+        Vistoria result = vistoriaService.uploadImagem(
+                10L, cliente, new RegistrarEvidenciaCommand(11L, "VISAO_GERAL"), file);
 
         assertThat(result).isSameAs(v);
         assertEquals(1, v.getImagens().size());
         assertThat(v.getImagens().getFirst().getUrl()).isEqualTo("uploads/a.jpg");
-        assertThat(v.getImagens().getFirst().getProtocoloItem()).isEqualTo("SALA_PAREDES_REVESTIMENTOS");
+        assertThat(v.getImagens().getFirst().getAmbiente()).isSameAs(sala);
+        assertThat(v.getImagens().getFirst().getCategoria()).isEqualTo(CategoriaEvidencia.VISAO_GERAL);
+        assertThat(v.getImagens().getFirst().getProtocoloItem()).isEqualTo("SALA_VISAO_GERAL");
 
         ArgumentCaptor<String> fileName = ArgumentCaptor.forClass(String.class);
         verify(storageService).store(eq(file), fileName.capture());
@@ -229,7 +232,7 @@ class VistoriaServiceTest {
 
     @Test
     void shouldDeleteStoredFileWhenEvidencePersistenceFails() {
-        Vistoria vistoria = editableInspection();
+        Vistoria vistoria = inspectionWithRoute("Sala");
         MockMultipartFile file = new MockMultipartFile(
                 "file", "evidencia.png", MediaType.IMAGE_PNG_VALUE, new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47});
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
@@ -239,7 +242,8 @@ class VistoriaServiceTest {
         when(vistoriaRepository.saveAndFlush(any()))
                 .thenThrow(new IllegalStateException("Falha ao persistir evidência"));
 
-        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, cliente, "SALA_PAREDES_REVESTIMENTOS", file))
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(
+                10L, cliente, new RegistrarEvidenciaCommand(11L, "VISAO_GERAL"), file))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Falha ao persistir evidência");
 
@@ -247,17 +251,33 @@ class VistoriaServiceTest {
         assertThat(vistoria.getImagens()).isEmpty();
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"SALA", "TELHADO", ""})
-    void shouldRejectUnknownProtocolItem(String protocoloItem) {
-        Vistoria vistoria = editableInspection();
+    @Test
+    void shouldRejectEnvironmentFromAnotherInspectionBeforeValidatingFile() {
+        Vistoria vistoria = inspectionWithRoute("Sala");
         MockMultipartFile file = new MockMultipartFile(
                 "file", "foto.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
 
-        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, cliente, protocoloItem, file))
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(
+                10L, cliente, new RegistrarEvidenciaCommand(999L, "VISAO_GERAL"), file))
                 .isInstanceOf(InvalidEvidenceException.class)
-                .hasMessageContaining("protocolo");
+                .hasMessageContaining("ambiente");
+
+        verifyNoInteractions(evidenceFileValidator, storageService);
+        assertThat(vistoria.getImagens()).isEmpty();
+    }
+
+    @Test
+    void shouldRejectUnknownEvidenceCategoryBeforeValidatingFile() {
+        Vistoria vistoria = inspectionWithRoute("Sala");
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "foto.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(
+                10L, cliente, new RegistrarEvidenciaCommand(11L, "PANORAMA"), file))
+                .isInstanceOf(InvalidEvidenceException.class)
+                .hasMessageContaining("categoria");
 
         verifyNoInteractions(evidenceFileValidator, storageService);
         assertThat(vistoria.getImagens()).isEmpty();
@@ -265,7 +285,7 @@ class VistoriaServiceTest {
 
     @Test
     void shouldPreserveExistingEvidenceWhenNewFileIsInvalid() {
-        Vistoria vistoria = editableInspection();
+        Vistoria vistoria = inspectionWithRoute("Sala");
         ImagemVistoria existing = evidence("uploads/anterior.jpg");
         vistoria.getImagens().add(existing);
         MockMultipartFile invalid = new MockMultipartFile(
@@ -274,7 +294,8 @@ class VistoriaServiceTest {
         when(evidenceFileValidator.validate(invalid))
                 .thenThrow(new InvalidEvidenceException("O conteúdo não corresponde ao tipo informado."));
 
-        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, cliente, "SALA_PAREDES_REVESTIMENTOS", invalid))
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(
+                10L, cliente, new RegistrarEvidenciaCommand(11L, "DETALHE"), invalid))
                 .isInstanceOf(InvalidEvidenceException.class);
 
         assertThat(vistoria.getImagens()).containsExactly(existing);
@@ -286,7 +307,8 @@ class VistoriaServiceTest {
     void shouldThrowVistoriaNotFoundWhenInspectionDoesNotExist() {
         when(vistoriaRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> vistoriaService.uploadImagem(999L, cliente, "SALA_PAREDES_REVESTIMENTOS", null))
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(
+                999L, cliente, new RegistrarEvidenciaCommand(11L, "VISAO_GERAL"), null))
                 .isInstanceOf(VistoriaNotFoundException.class);
     }
 
@@ -297,7 +319,8 @@ class VistoriaServiceTest {
         ReflectionTestUtils.setField(outroCliente, "id", 55L);
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
 
-        assertThatThrownBy(() -> vistoriaService.uploadImagem(10L, outroCliente, "SALA_PAREDES_REVESTIMENTOS", null))
+        assertThatThrownBy(() -> vistoriaService.uploadImagem(
+                10L, outroCliente, new RegistrarEvidenciaCommand(11L, "VISAO_GERAL"), null))
                 .isInstanceOf(VistoriaAccessDeniedException.class);
     }
 
@@ -319,6 +342,47 @@ class VistoriaServiceTest {
                 .hasMessageContaining("ao menos uma evidência");
 
         verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void shouldReportEveryEnvironmentMissingAnOverviewBeforeSubmission() {
+        Vistoria vistoria = inspectionWithRoute("Sala", "Quarto");
+        addStructuredEvidence(vistoria, vistoria.getAmbientes().getFirst(), CategoriaEvidencia.VISAO_GERAL);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThatThrownBy(() -> vistoriaService.submeterVistoria(10L, cliente))
+                .isInstanceOfSatisfying(IncompleteInspectionException.class, exception ->
+                        assertThat(exception.getAmbientesAusentes()).containsExactly("Quarto"));
+
+        assertThat(vistoria.getStatus()).isEqualTo(VistoriaStatus.EM_RASCUNHO);
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void shouldNotTreatDetailEvidenceAsEnvironmentOverview() {
+        Vistoria vistoria = inspectionWithRoute("Sala");
+        addStructuredEvidence(vistoria, vistoria.getAmbientes().getFirst(), CategoriaEvidencia.DETALHE);
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+
+        assertThatThrownBy(() -> vistoriaService.submeterVistoria(10L, cliente))
+                .isInstanceOfSatisfying(IncompleteInspectionException.class, exception ->
+                        assertThat(exception.getAmbientesAusentes()).containsExactly("Sala"));
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void shouldSubmitRoutedInspectionWhenEveryEnvironmentHasOverview() {
+        Vistoria vistoria = inspectionWithRoute("Sala", "Quarto");
+        vistoria.getAmbientes().forEach(ambiente ->
+                addStructuredEvidence(vistoria, ambiente, CategoriaEvidencia.VISAO_GERAL));
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
+        when(vistoriaRepository.saveAndFlush(vistoria)).thenReturn(vistoria);
+
+        Vistoria submetida = vistoriaService.submeterVistoria(10L, cliente);
+
+        assertThat(submetida.getStatus()).isEqualTo(VistoriaStatus.AGUARDANDO_IA);
+        verify(eventPublisher).publishEvent(new VistoriaSubmetidaEvent(10L));
     }
 
     @Test
@@ -637,6 +701,33 @@ class VistoriaServiceTest {
         Vistoria vistoria = inspectionWithEvidence(VistoriaStatus.REVISAO_PENDENTE);
         vistoria.setPreLaudoIa(analysis);
         return vistoria;
+    }
+
+    private Vistoria inspectionWithRoute(String... environmentNames) {
+        Vistoria vistoria = editableInspection();
+        List<AmbienteVistoria> ambientes = java.util.stream.IntStream.range(0, environmentNames.length)
+                .mapToObj(index -> AmbienteVistoria.criar(
+                        index == 0 ? TipoAmbiente.SALA : TipoAmbiente.QUARTO,
+                        environmentNames[index],
+                        index))
+                .toList();
+        vistoria.configurarRoteiro(TipoImovel.APARTAMENTO, ambientes);
+        for (int index = 0; index < ambientes.size(); index++) {
+            ReflectionTestUtils.setField(ambientes.get(index), "id", 11L + index);
+        }
+        return vistoria;
+    }
+
+    private void addStructuredEvidence(
+            Vistoria vistoria,
+            AmbienteVistoria ambiente,
+            CategoriaEvidencia categoria) {
+        vistoria.getImagens().add(new ImagemVistoria(
+                vistoria,
+                ambiente,
+                categoria,
+                "uploads/" + ambiente.getId() + "-" + categoria.name() + ".jpg",
+                java.time.LocalDateTime.of(2026, 9, 30, 9, 0)));
     }
 
     private String validAnalysisWithTwoFindings() {

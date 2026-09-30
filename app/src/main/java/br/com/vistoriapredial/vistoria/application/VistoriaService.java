@@ -6,12 +6,15 @@ import br.com.vistoriapredial.usuario.domain.PerfilEnum;
 import br.com.vistoriapredial.usuario.domain.Usuario;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
 import br.com.vistoriapredial.vistoria.domain.AmbienteVistoria;
+import br.com.vistoriapredial.vistoria.domain.CategoriaEvidencia;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 import br.com.vistoriapredial.vistoria.application.command.AtualizarRoteiroCommand;
 import br.com.vistoriapredial.vistoria.application.command.CriarVistoriaCommand;
+import br.com.vistoriapredial.vistoria.application.command.RegistrarEvidenciaCommand;
 import br.com.vistoriapredial.vistoria.persistence.VistoriaRepository;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
+import br.com.vistoriapredial.vistoria.application.exception.IncompleteInspectionException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.StaleInspectionException;
@@ -30,6 +33,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -121,25 +125,30 @@ public class VistoriaService {
     }
 
     @Transactional
-    public Vistoria uploadImagem(Long vistoriaId, Usuario cliente, String protocoloItem, MultipartFile file) {
+    public Vistoria uploadImagem(
+            Long vistoriaId,
+            Usuario cliente,
+            RegistrarEvidenciaCommand command,
+            MultipartFile file) {
         Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
         
         if (vistoria.getStatus() != VistoriaStatus.EM_RASCUNHO && vistoria.getStatus() != VistoriaStatus.DEVOLVIDA_CLIENTE) {
             throw new StaleInspectionException();
         }
 
-        if (protocoloItem == null || !ProtocoloVistoria.ITEMS.contains(protocoloItem)) {
-            throw new InvalidEvidenceException("O item de protocolo informado é inválido.");
-        }
+        AmbienteVistoria ambiente = validarAmbiente(vistoria, command);
+        CategoriaEvidencia categoria = validarCategoria(command);
 
         ValidatedEvidence validated = evidenceFileValidator.validate(file);
         String fileName = vistoriaId + "_" + UUID.randomUUID() + validated.extension();
         String storedPath = storageService.store(file, fileName);
         
-        ImagemVistoria img = new ImagemVistoria();
-        img.setUrl(storedPath);
-        img.setProtocoloItem(protocoloItem);
-        img.setVistoria(vistoria);
+        ImagemVistoria img = new ImagemVistoria(
+                vistoria,
+                ambiente,
+                categoria,
+                storedPath,
+                LocalDateTime.now(clock));
         
         vistoria.getImagens().add(img);
         try {
@@ -158,6 +167,32 @@ public class VistoriaService {
         }
     }
 
+    private AmbienteVistoria validarAmbiente(
+            Vistoria vistoria,
+            RegistrarEvidenciaCommand command) {
+        if (command == null || command.ambienteId() == null || command.ambienteId() <= 0) {
+            throw new InvalidEvidenceException("Informe um ambiente válido para a evidência.");
+        }
+        return vistoria.getAmbientes().stream()
+                .filter(ambiente -> Objects.equals(ambiente.getId(), command.ambienteId()))
+                .findFirst()
+                .orElseThrow(() -> new InvalidEvidenceException(
+                        "O ambiente informado não pertence a esta vistoria."));
+    }
+
+    private CategoriaEvidencia validarCategoria(RegistrarEvidenciaCommand command) {
+        String categoria = command == null ? null : command.categoria();
+        if (categoria == null || categoria.isBlank()) {
+            throw new InvalidEvidenceException("Informe a categoria da evidência.");
+        }
+        try {
+            return CategoriaEvidencia.valueOf(categoria.strip().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidEvidenceException(
+                    "A categoria da evidência deve ser VISAO_GERAL ou DETALHE.");
+        }
+    }
+
     @Transactional
     public Vistoria submeterVistoria(Long vistoriaId, Usuario cliente) {
         Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
@@ -168,9 +203,13 @@ public class VistoriaService {
                 && vistoria.getStatus() != VistoriaStatus.FALHA_IA) {
             throw new StaleInspectionException();
         }
-        if (vistoria.getImagens().isEmpty()) {
+        if (vistoria.getAmbientes().isEmpty() && vistoria.getImagens().isEmpty()) {
             throw new InvalidEvidenceException(
                     "Adicione ao menos uma evidência antes de enviar a vistoria.");
+        }
+        List<String> ambientesAusentes = vistoria.ambientesSemVisaoGeral();
+        if (!ambientesAusentes.isEmpty()) {
+            throw new IncompleteInspectionException(ambientesAusentes);
         }
         vistoria.iniciarAnalise();
         Vistoria saved = salvarComControleConcorrencia(vistoria);

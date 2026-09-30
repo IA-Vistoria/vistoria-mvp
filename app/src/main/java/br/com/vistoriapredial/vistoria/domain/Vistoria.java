@@ -296,6 +296,27 @@ public class Vistoria {
         });
     }
 
+    public List<String> ambientesSemVisaoGeral() {
+        return ambientes.stream()
+                .filter(ambiente -> imagens.stream().noneMatch(imagem ->
+                        imagem.getCategoria() == CategoriaEvidencia.VISAO_GERAL
+                                && pertenceAoAmbiente(imagem, ambiente)))
+                .map(AmbienteVistoria::getNome)
+                .toList();
+    }
+
+    private boolean pertenceAoAmbiente(
+            ImagemVistoria imagem,
+            AmbienteVistoria ambiente) {
+        AmbienteVistoria ambienteDaImagem = imagem.getAmbiente();
+        if (ambienteDaImagem == ambiente) {
+            return true;
+        }
+        return ambienteDaImagem != null
+                && ambienteDaImagem.getId() != null
+                && Objects.equals(ambienteDaImagem.getId(), ambiente.getId());
+    }
+
     private record AtualizacaoAmbiente(
             AmbienteVistoria existente,
             AmbienteVistoria dados
