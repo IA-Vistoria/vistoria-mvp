@@ -1,8 +1,9 @@
 # Vistor.IA — handoff do design IA-first
 
-**Status:** em execução
+**Status:** direção visual e protótipo local concluídos; Figma parcialmente bloqueado por cota
 **Arquivo Figma:** [Vistor.IA · MVP IA-first](https://www.figma.com/design/QG8jmgybfdkdQJakAfigSX)
 **File key:** `QG8jmgybfdkdQJakAfigSX`
+**Protótipo local editável:** [`docs/design/prototype/index.html`](prototype/index.html)
 **Especificação aprovada:**
 [`docs/superpowers/specs/2026-09-30-interface-ia-first-design.md`](../superpowers/specs/2026-09-30-interface-ia-first-design.md)
 
@@ -13,7 +14,27 @@ IA-first do Vistor.IA. A experiência termina no **Relatório de vistoria por
 IA**, revisado pelo próprio usuário, e não inclui engenheiro, parecer técnico ou
 homologação profissional no fluxo principal.
 
-## Estrutura planejada
+## Limitação operacional do Figma
+
+O arquivo foi criado e recebeu cinco coleções com 78 variáveis vinculáveis:
+`Primitives` (17), `Color` (19), `Spacing` (13), `Radius` (7) e
+`Typography` (22). Depois disso, o plugin atingiu a cota de chamadas do plano
+Starter e bloqueou novas operações.
+
+O design não foi declarado concluído no Figma. Para preservar o trabalho e não
+paralisar a entrega, as telas foram materializadas em um protótipo HTML/CSS/JS
+local, sem dependências de runtime, usando exatamente a mesma direção visual.
+Ele é a fonte executável temporária para as especificações TLC e poderá ser
+transferido para os tokens já criados quando a cota estiver disponível.
+
+O plano Starter também restringiu o arquivo a três páginas. Na retomada, os
+oito módulos originais serão seções dentro destas páginas:
+
+1. `00 · Sistema visual`
+2. `01 · Produto e componentes`
+3. `02 · Estados, protótipo e handoff`
+
+## Estrutura lógica planejada
 
 1. `00 · Capa e princípios`
 2. `01 · Fundações`
@@ -108,9 +129,22 @@ identidade não correspondem ao produto definido.
 | Etapa | Estado | Evidência |
 | --- | --- | --- |
 | Arquivo e inventário | Concluído | Design `QG8jmgybfdkdQJakAfigSX`; sem páginas ou frames duplicados |
-| Fundações | Pendente | — |
-| Componentes | Pendente | — |
-| Fluxo mobile | Pendente | — |
-| Revisão e relatório | Pendente | — |
-| Responsividade e estados | Pendente | — |
-| Protótipo e handoff | Pendente | — |
+| Fundações | Parcial no Figma | 5 coleções e 78 variáveis; estilos e documentação aguardam cota |
+| Componentes | Concluído no protótipo local | primitivas, navegação, câmera, achado, progresso e relatório em HTML/CSS |
+| Fluxo mobile | Concluído no protótipo local | cadastro, captura e análise em 390 px |
+| Revisão e relatório | Concluído no protótipo local | vínculo `IMG-014 → achado 02 → contexto → relatório` |
+| Responsividade e estados | Parcial | composições em 390, 768 e desktop; matriz completa segue para a implementação |
+| Protótipo e handoff | Concluído localmente | seis telas navegáveis, sem etapa de engenheiro |
+
+## Validação local
+
+- revisão visual em navegador nas composições desktop e mobile;
+- ausência de overflow horizontal nas telas críticas verificadas;
+- imagens carregadas e alvos de toque da revisão mobile com pelo menos 44 px;
+- captura com obturador de 70 px e alternativa equivalente pela galeria;
+- busca textual do relatório sem engenheiro, homologação ou parecer;
+- bloco de limitações presente e nome oficial preservado;
+- correção aplicada ao contraste do botão de retorno no modo câmera.
+
+O relatório da revisão está em
+[`docs/design/prototype/audit.md`](prototype/audit.md).

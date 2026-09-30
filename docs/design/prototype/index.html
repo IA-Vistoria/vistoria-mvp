@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Vistor.IA · Protótipo IA-first</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --canvas: #f6f8fc;
+      --surface: #ffffff;
+      --surface-subtle: #eef2f8;
+      --ink: #172033;
+      --muted: #596579;
+      --primary: #2f5bea;
+      --primary-strong: #1d3fbb;
+      --evidence: #08705f;
+      --attention: #b86700;
+      --danger: #b83b4b;
+      --border: #d8dfea;
+      --line: #afbdd2;
+      --camera: #0b1019;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --shadow-soft: 0 18px 54px rgba(23, 32, 51, .10);
+      --shadow-float: 0 20px 70px rgba(5, 12, 27, .22);
+      --ease: cubic-bezier(.22, 1, .36, 1);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: #101725; }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 75% 5%, rgba(47, 91, 234, .17), transparent 28rem),
+        linear-gradient(150deg, #111827 0%, #090f1a 100%);
+      font-family: "Instrument Sans", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    button:focus-visible,
+    input:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid rgba(47, 91, 234, .4);
+      outline-offset: 3px;
+    }
+
+    .icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .mono { font-family: "IBM Plex Mono", monospace; font-size: .72rem; letter-spacing: -.02em; }
+
+    .prototype-shell {
+      min-height: 100dvh;
+      display: grid;
+      grid-template-columns: 276px minmax(0, 1fr);
+    }
+
+    .prototype-sidebar {
+      position: sticky;
+      top: 0;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: 26px 22px;
+      overflow: auto;
+      border-right: 1px solid rgba(255, 255, 255, .09);
+      background: rgba(7, 12, 21, .66);
+      color: #f9fbff;
+      backdrop-filter: blur(24px);
+    }
+
+    .prototype-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
+    .brand-mark { position: relative; width: 34px; height: 34px; flex: 0 0 34px; border: 1px solid rgba(255,255,255,.28); border-radius: 10px; }
+    .brand-mark::before,
+    .brand-mark::after { content: ""; position: absolute; background: #7392ff; border-radius: 50%; }
+    .brand-mark::before { width: 7px; height: 7px; left: 7px; top: 7px; box-shadow: 13px 13px 0 #37b49d; }
+    .brand-mark::after { width: 1px; height: 19px; left: 16px; top: 7px; border-radius: 1px; background: rgba(255,255,255,.46); transform: rotate(-45deg); }
+    .prototype-brand strong { display: block; font-size: 1.02rem; letter-spacing: -.04em; }
+    .prototype-brand span { color: #8995a8; font-size: .7rem; }
+
+    .prototype-kicker { margin: 0 0 8px; color: #728096; font-size: .68rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+    .screen-list { display: grid; gap: 4px; }
+    .screen-link {
+      width: 100%; min-height: 46px; display: flex; align-items: center; gap: 11px;
+      padding: 0 12px; border: 0; border-radius: 10px; background: transparent;
+      color: #9ba7b9; text-align: left; cursor: pointer; transition: 180ms var(--ease);
+    }
+    .screen-link span { width: 23px; color: #65728a; font-family: "IBM Plex Mono", monospace; font-size: .66rem; }
+    .screen-link:hover { color: #fff; background: rgba(255,255,255,.055); }
+    .screen-link.is-active { color: #fff; background: rgba(47,91,234,.18); box-shadow: inset 3px 0 0 #7392ff; }
+    .screen-link.is-active span { color: #9eb2ff; }
+
+    .prototype-note {
+      margin-top: auto; padding: 14px; border: 1px solid rgba(255,255,255,.09); border-radius: 12px;
+      color: #8e9aaf; background: rgba(255,255,255,.035); font-size: .72rem; line-height: 1.55;
+    }
+    .prototype-note strong { display: block; margin-bottom: 4px; color: #dce4f2; font-size: .76rem; }
+
+    .prototype-main { min-width: 0; padding: 24px clamp(18px, 4vw, 56px) 56px; }
+    .prototype-toolbar {
+      min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 18px;
+      margin: 0 auto 24px; color: #c7d0df; max-width: 1500px;
+    }
+    .prototype-toolbar__context strong { display: block; color: #fff; font-size: .88rem; font-weight: 600; }
+    .prototype-toolbar__context span { display: block; margin-top: 3px; color: #79869a; font-size: .72rem; }
+    .device-switcher { display: flex; gap: 4px; padding: 4px; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: rgba(255,255,255,.04); }
+    .device-button { min-width: 42px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #75839a; cursor: pointer; }
+    .device-button:hover { color: #fff; }
+    .device-button.is-active { color: #fff; background: rgba(255,255,255,.1); }
+
+    .preview-stage { min-width: 0; display: grid; place-items: start center; }
+    .app-viewport {
+      --app-width: 100%;
+      width: var(--app-width); max-width: 1460px; min-height: 860px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,.18); border-radius: 18px;
+      background: var(--canvas); box-shadow: var(--shadow-float);
+      transition: width 420ms var(--ease), border-radius 420ms var(--ease);
+    }
+    .app-viewport[data-device="mobile"] { --app-width: 390px; min-height: 844px; border-radius: 34px; }
+    .app-viewport[data-device="tablet"] { --app-width: 768px; min-height: 920px; border-radius: 22px; }
+
+    .app { min-height: inherit; background: var(--canvas); }
+    .app-screen { display: none; min-height: inherit; animation: screen-in 300ms var(--ease); }
+    .app-screen.is-active { display: block; }
+    @keyframes screen-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+
+    .app-topbar {
+      height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      padding: 0 clamp(20px, 3vw, 42px); border-bottom: 1px solid var(--border); background: rgba(255,255,255,.92);
+    }
+    .app-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.04em; }
+    .app-brand .brand-mark { width: 30px; height: 30px; flex-basis: 30px; border-color: var(--border); }
+    .app-brand .brand-mark::after { background: var(--line); }
+    .app-brand .brand-mark::before { background: var(--primary); box-shadow: 13px 13px 0 var(--evidence); }
+    .top-actions { display: flex; align-items: center; gap: 9px; }
+    .connection { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: .75rem; }
+    .connection::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--evidence); box-shadow: 0 0 0 4px rgba(8,112,95,.1); }
+    .avatar { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: #eef2ff; color: var(--primary-strong); font-size: .72rem; font-weight: 700; }
+
+    .app-layout { min-height: calc(860px - 68px); display: grid; grid-template-columns: 216px minmax(0, 1fr); }
+    .app-sidebar { padding: 24px 16px; border-right: 1px solid var(--border); background: var(--surface); }
+    .app-nav { display: grid; gap: 5px; }
+    .app-nav button { min-height: 44px; display: flex; align-items: center; gap: 11px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); text-align: left; cursor: pointer; }
+    .app-nav button.is-active { color: var(--primary-strong); background: #edf1ff; font-weight: 650; }
+    .app-sidebar__help { margin: 34px 8px 0; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .72rem; line-height: 1.5; }
+    .app-content { min-width: 0; padding: clamp(26px, 4vw, 58px); }
+
+    .eyebrow { margin: 0 0 8px; color: var(--primary-strong); font-size: .7rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+    .page-title { margin: 0; max-width: 760px; color: var(--ink); font-size: clamp(2.1rem, 4.8vw, 4.2rem); font-weight: 650; letter-spacing: -.062em; line-height: .98; }
+    .page-lead { max-width: 650px; margin: 18px 0 0; color: var(--muted); font-size: .98rem; line-height: 1.65; }
+
+    .button { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 0 18px; border: 1px solid transparent; border-radius: 10px; font-weight: 650; cursor: pointer; transition: 180ms var(--ease); }
+    .button:hover { transform: translateY(-1px); }
+    .button--primary { color: #fff; background: var(--primary); box-shadow: 0 8px 22px rgba(47,91,234,.22); }
+    .button--primary:hover { background: var(--primary-strong); }
+    .button--secondary { border-color: var(--border); background: var(--surface); color: var(--ink); }
+    .button--ghost { border-color: transparent; background: transparent; color: var(--primary-strong); }
+    .icon-button { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); cursor: pointer; }
+
+    .home-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(270px, .65fr); gap: 22px; margin-top: 40px; }
+    .active-inspection { position: relative; min-height: 305px; overflow: hidden; padding: clamp(24px, 4vw, 40px); border-radius: var(--radius-lg); background: var(--ink); color: #fff; }
+    .active-inspection::after { content: ""; position: absolute; width: 350px; height: 350px; right: -150px; bottom: -190px; border: 1px solid rgba(116,147,255,.34); border-radius: 50%; box-shadow: 0 0 0 46px rgba(47,91,234,.08), 0 0 0 92px rgba(47,91,234,.045); }
+    .active-inspection .eyebrow { color: #9fb1ff; }
+    .active-inspection h2 { max-width: 520px; margin: 0; font-size: clamp(1.55rem, 3vw, 2.65rem); letter-spacing: -.045em; line-height: 1.05; }
+    .active-inspection p { max-width: 490px; margin: 14px 0 28px; color: #aab4c5; line-height: 1.55; }
+    .progress-row { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; color: #d9e1ee; font-size: .78rem; }
+    .progress-track { width: min(260px, 60%); height: 5px; overflow: hidden; border-radius: 10px; background: rgba(255,255,255,.13); }
+    .progress-track span { display: block; width: 42%; height: 100%; border-radius: inherit; background: #7392ff; }
+    .quick-card { min-height: 142px; padding: 22px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+    .quick-card + .quick-card { margin-top: 18px; }
+    .quick-card__icon { width: 38px; height: 38px; display: grid; place-items: center; margin-bottom: 18px; border-radius: 10px; color: var(--primary-strong); background: #edf1ff; }
+    .quick-card h3 { margin: 0; font-size: 1rem; letter-spacing: -.02em; }
+    .quick-card p { margin: 8px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
+    .recent-section { margin-top: 42px; }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .section-heading h2 { margin: 0; font-size: 1.15rem; letter-spacing: -.03em; }
+    .section-heading a { color: var(--primary-strong); font-size: .78rem; font-weight: 650; }
+    .report-row { display: grid; grid-template-columns: 42px minmax(0,1fr) auto auto; align-items: center; gap: 14px; padding: 15px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .report-row + .report-row { margin-top: 8px; }
+    .report-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 9px; background: var(--surface-subtle); color: var(--primary-strong); }
+    .report-row strong { display: block; font-size: .86rem; }
+    .report-row small { display: block; margin-top: 3px; color: var(--muted); }
+    .status { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 99px; font-size: .67rem; font-weight: 700; }
+    .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .status--success { color: var(--evidence); background: #e8f5f1; }
+    .status--attention { color: var(--attention); background: #fff3e3; }
+
+    .wizard { max-width: 980px; margin: 0 auto; }
+    .wizard-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 30px; }
+    .wizard-back { display: inline-flex; align-items: center; gap: 8px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+    .wizard-progress { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .75rem; }
+    .wizard-progress span { width: 46px; height: 4px; border-radius: 4px; background: var(--border); }
+    .wizard-progress span.is-complete { background: var(--primary); }
+    .form-shell { display: grid; grid-template-columns: minmax(0, .75fr) minmax(380px, 1.25fr); overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-soft); }
+    .form-story { position: relative; min-height: 590px; padding: 40px; overflow: hidden; color: #fff; background: var(--ink); }
+    .form-story::before { content: ""; position: absolute; width: 400px; height: 400px; left: -210px; bottom: -220px; border: 1px solid rgba(115,146,255,.55); border-radius: 50%; box-shadow: 0 0 0 52px rgba(47,91,234,.12), 0 0 0 104px rgba(47,91,234,.06); }
+    .form-story .eyebrow { color: #9fb1ff; }
+    .form-story h1 { margin: 0; font-size: 2.35rem; letter-spacing: -.055em; line-height: 1.04; }
+    .form-story p { margin: 16px 0 0; color: #aeb8c8; line-height: 1.58; }
+    .story-steps { display: grid; gap: 22px; margin-top: 52px; }
+    .story-step { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 12px; color: #7f8ca0; }
+    .story-step span { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid #45526a; border-radius: 50%; font: 500 .65rem "IBM Plex Mono", monospace; }
+    .story-step strong { display: block; color: #dfe6f2; font-size: .84rem; }
+    .story-step small { display: block; margin-top: 3px; line-height: 1.4; }
+    .story-step.is-active span { border-color: #7392ff; color: #fff; background: var(--primary); box-shadow: 0 0 0 6px rgba(47,91,234,.18); }
+    .form-panel { padding: clamp(30px, 5vw, 58px); }
+    .form-panel h2 { margin: 0; font-size: 1.75rem; letter-spacing: -.04em; }
+    .form-panel > p { margin: 10px 0 30px; color: var(--muted); line-height: 1.5; }
+    .field { display: grid; gap: 8px; margin-bottom: 20px; }
+    .field label { font-size: .78rem; font-weight: 650; }
+    .field input { width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: #fff; }
+    .field small { color: var(--muted); font-size: .69rem; }
+    .room-selector { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
+    .room-option { min-height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border: 1px solid var(--border); border-radius: 9px; background: #fff; cursor: pointer; }
+    .room-option.is-selected { border-color: #91a7f4; color: var(--primary-strong); background: #f1f4ff; }
+    .room-option span:last-child { width: 23px; height: 23px; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; font-size: .8rem; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
+
+    .capture-screen { position: relative; min-height: inherit; overflow: hidden; color: #fff; background: var(--camera); }
+    .capture-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .68; }
+    .capture-screen::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,8,14,.86), transparent 28%, transparent 58%, rgba(4,8,14,.92)); pointer-events: none; }
+    .capture-ui { position: relative; z-index: 1; min-height: inherit; display: grid; grid-template-rows: auto 1fr auto; padding: 20px clamp(18px, 3vw, 34px) 28px; }
+    .capture-top { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+    .capture-top .icon-button { border-color: rgba(255,255,255,.22); color: #fff; background: rgba(7,12,20,.5); backdrop-filter: blur(10px); }
+    .capture-context strong { display: block; font-size: .92rem; }
+    .capture-context span { display: block; margin-top: 4px; color: #b5c0cf; font-size: .72rem; }
+    .capture-progress { min-width: 104px; text-align: right; }
+    .capture-progress strong { font: 500 .72rem "IBM Plex Mono", monospace; }
+    .capture-progress div { height: 3px; margin-top: 8px; overflow: hidden; border-radius: 4px; background: rgba(255,255,255,.22); }
+    .capture-progress span { display: block; width: 66%; height: 100%; background: #9db0ff; }
+    .camera-frame { align-self: center; position: relative; width: min(76%, 760px); aspect-ratio: 4 / 3; margin: 20px auto; border: 1px solid rgba(255,255,255,.34); border-radius: 13px; }
+    .camera-frame::before,
+    .camera-frame::after { content: ""; position: absolute; inset: 22px; border-top: 2px solid #fff; border-left: 2px solid #fff; border-radius: 4px 0 0; width: 42px; height: 42px; }
+    .camera-frame::after { inset: auto 22px 22px auto; border: 0; border-right: 2px solid #fff; border-bottom: 2px solid #fff; border-radius: 0 0 4px; }
+    .camera-hint { position: absolute; left: 50%; bottom: 24px; width: min(88%, 470px); padding: 12px 16px; border: 1px solid rgba(255,255,255,.16); border-radius: 10px; color: #dbe2ec; background: rgba(7,12,20,.72); text-align: center; font-size: .78rem; line-height: 1.45; transform: translateX(-50%); backdrop-filter: blur(14px); }
+    .capture-bottom { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 18px; }
+    .capture-alt { justify-self: start; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: #e9edf5; font-size: .76rem; cursor: pointer; }
+    .shutter { width: 70px; height: 70px; display: grid; place-items: center; padding: 0; border: 3px solid #fff; border-radius: 50%; background: rgba(255,255,255,.15); cursor: pointer; }
+    .shutter::after { content: ""; width: 52px; height: 52px; border-radius: 50%; background: #fff; transition: 160ms var(--ease); }
+    .shutter:hover::after { transform: scale(.92); }
+    .capture-quality { justify-self: end; text-align: right; }
+    .capture-quality strong { display: inline-flex; align-items: center; gap: 6px; color: #8ce1ce; font-size: .74rem; }
+    .capture-quality span { display: block; margin-top: 3px; color: #9faaba; font-size: .67rem; }
+
+    .analysis-page { min-height: inherit; display: grid; place-items: center; padding: 32px; }
+    .analysis-card { width: min(730px, 100%); padding: clamp(28px, 5vw, 50px); border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-soft); }
+    .analysis-symbol { position: relative; width: 78px; height: 78px; display: grid; place-items: center; margin-bottom: 28px; border-radius: 22px; color: var(--primary); background: #edf1ff; }
+    .analysis-symbol::after { content: ""; position: absolute; inset: -9px; border: 1px solid #ccd6fa; border-radius: 28px; animation: pulse 2s infinite; }
+    @keyframes pulse { 50% { opacity: .2; transform: scale(1.05); } }
+    .analysis-card h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.15rem); letter-spacing: -.055em; line-height: 1.03; }
+    .analysis-card > p { max-width: 560px; margin: 14px 0 28px; color: var(--muted); line-height: 1.6; }
+    .analysis-summary { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 26px; border: 1px solid var(--border); border-radius: 12px; }
+    .analysis-summary div { padding: 16px; }
+    .analysis-summary div + div { border-left: 1px solid var(--border); }
+    .analysis-summary strong { display: block; font-size: 1.15rem; }
+    .analysis-summary span { color: var(--muted); font-size: .69rem; }
+    .analysis-list { display: grid; gap: 8px; }
+    .analysis-item { display: grid; grid-template-columns: 38px minmax(0,1fr) auto; align-items: center; gap: 12px; min-height: 62px; padding: 9px 14px 9px 9px; border-radius: 10px; background: var(--surface-subtle); }
+    .analysis-thumb { width: 38px; height: 44px; border-radius: 7px; object-fit: cover; }
+    .analysis-item strong { display: block; font-size: .8rem; }
+    .analysis-item small { color: var(--muted); font-size: .67rem; }
+    .analysis-item > span { color: var(--evidence); font-size: .7rem; font-weight: 700; }
+    .analysis-item.is-running > span { color: var(--primary-strong); }
+    .analysis-item.is-running .analysis-thumb { opacity: .68; }
+    .analysis-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 26px; }
+    .analysis-actions small { max-width: 330px; color: var(--muted); line-height: 1.4; }
+
+    .review-layout { min-height: inherit; display: grid; grid-template-columns: 220px minmax(0, 1.2fr) minmax(330px, .8fr); background: #edf1f7; }
+    .review-rail { min-width: 0; padding: 20px 14px; border-right: 1px solid var(--border); background: var(--surface); }
+    .review-brand { margin: 0 8px 24px; }
+    .review-brand .app-brand { margin-bottom: 6px; }
+    .review-brand small { color: var(--muted); }
+    .finding-progress { margin: 0 8px 18px; }
+    .finding-progress div { display: flex; justify-content: space-between; color: var(--muted); font-size: .7rem; }
+    .finding-progress .progress-track { width: 100%; margin-top: 8px; background: var(--surface-subtle); }
+    .finding-progress .progress-track span { width: 33%; background: var(--primary); }
+    .finding-list { display: grid; gap: 5px; }
+    .finding-item { width: 100%; display: grid; grid-template-columns: 27px minmax(0,1fr); gap: 9px; padding: 11px 9px; border: 0; border-radius: 9px; background: transparent; text-align: left; cursor: pointer; }
+    .finding-item:hover { background: var(--surface-subtle); }
+    .finding-item.is-active { background: #edf1ff; box-shadow: inset 3px 0 0 var(--primary); }
+    .finding-item > span { width: 25px; height: 25px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font: 500 .64rem "IBM Plex Mono", monospace; }
+    .finding-item.is-done > span { color: var(--evidence); border-color: #abd3c9; background: #e8f5f1; }
+    .finding-item.is-active > span { color: #fff; border-color: var(--primary); background: var(--primary); }
+    .finding-item strong { display: block; overflow: hidden; font-size: .73rem; text-overflow: ellipsis; white-space: nowrap; }
+    .finding-item small { color: var(--muted); font-size: .64rem; }
+    .review-evidence { min-width: 0; padding: 24px; border-right: 1px solid var(--border); }
+    .review-evidence__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+    .review-evidence__head strong { font-size: .88rem; }
+    .review-evidence__head span { color: var(--muted); }
+    .evidence-photo { position: relative; overflow: hidden; border-radius: 14px; background: #111; box-shadow: var(--shadow-soft); }
+    .evidence-photo img { display: block; width: 100%; min-height: 430px; max-height: 610px; object-fit: cover; }
+    .evidence-marker { position: absolute; left: 59%; top: 31%; width: 36px; height: 36px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 50%; color: #fff; background: var(--primary); box-shadow: 0 8px 18px rgba(8,15,30,.32); font: 600 .75rem "IBM Plex Mono", monospace; }
+    .evidence-caption { position: absolute; right: 14px; bottom: 14px; left: 14px; display: flex; justify-content: space-between; gap: 14px; padding: 11px 13px; border: 1px solid rgba(255,255,255,.14); border-radius: 9px; color: #fff; background: rgba(9,14,23,.77); backdrop-filter: blur(12px); }
+    .evidence-caption span { color: #c5cfdd; }
+    .evidence-strip { display: flex; gap: 8px; margin-top: 12px; overflow: auto; }
+    .evidence-strip button { width: 92px; height: 66px; flex: 0 0 auto; overflow: hidden; padding: 0; border: 2px solid transparent; border-radius: 9px; background: transparent; cursor: pointer; }
+    .evidence-strip button.is-active { border-color: var(--primary); }
+    .evidence-strip img { width: 100%; height: 100%; object-fit: cover; }
+    .review-panel { min-width: 0; padding: clamp(26px, 3vw, 42px); background: var(--surface); }
+    .review-panel .eyebrow { margin-top: 12px; }
+    .review-panel h1 { margin: 0; font-size: clamp(1.65rem, 2.6vw, 2.45rem); letter-spacing: -.045em; line-height: 1.08; }
+    .observation { margin: 18px 0 0; padding: 16px 0 16px 18px; border-left: 3px solid var(--primary); color: var(--muted); line-height: 1.58; }
+    .confidence-note { display: flex; align-items: center; gap: 9px; margin: 16px 0 28px; color: var(--muted); font-size: .72rem; }
+    .question-card { padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--canvas); }
+    .question-card > strong { display: block; font-size: .9rem; line-height: 1.45; }
+    .answer-list { display: grid; gap: 8px; margin-top: 15px; }
+    .answer { min-height: 48px; display: flex; align-items: center; gap: 11px; padding: 0 13px; border: 1px solid var(--border); border-radius: 9px; background: #fff; text-align: left; cursor: pointer; }
+    .answer::before { content: ""; width: 17px; height: 17px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 50%; }
+    .answer.is-selected { color: var(--primary-strong); border-color: #91a7f4; background: #f0f3ff; }
+    .answer.is-selected::before { border: 5px solid var(--primary); background: #fff; }
+    .trace { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 5px; margin: 28px 0; padding-top: 17px; border-top: 1px solid var(--border); }
+    .trace-step { position: relative; min-width: 0; color: var(--muted); font-size: .6rem; }
+    .trace-step::before { content: ""; position: absolute; width: 7px; height: 7px; top: -21px; left: 0; border-radius: 50%; background: var(--border); }
+    .trace-step.is-complete { color: var(--evidence); }
+    .trace-step.is-complete::before { background: var(--evidence); box-shadow: 0 0 0 3px #e0f1ed; }
+    .review-actions { display: grid; grid-template-columns: 1fr auto; gap: 9px; }
+    .review-actions .button:first-child { grid-column: 1 / -1; }
+
+    .report-page { min-height: inherit; background: #e9edf4; }
+    .report-toolbar { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 clamp(18px, 3vw, 38px); border-bottom: 1px solid var(--border); background: rgba(255,255,255,.95); }
+    .report-toolbar__left { display: flex; align-items: center; gap: 14px; }
+    .report-toolbar__left div strong { display: block; font-size: .86rem; }
+    .report-toolbar__left div span { display: block; margin-top: 3px; color: var(--muted); font-size: .68rem; }
+    .report-toolbar__actions { display: flex; gap: 8px; }
+    .report-workspace { display: grid; grid-template-columns: 220px minmax(0, 860px); justify-content: center; gap: 30px; padding: 34px; }
+    .report-index { position: sticky; top: 20px; align-self: start; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.78); }
+    .report-index > strong { display: block; margin-bottom: 14px; font-size: .75rem; }
+    .report-index ol { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; counter-reset: report; }
+    .report-index li { color: var(--muted); font-size: .7rem; counter-increment: report; }
+    .report-index li::before { content: "0" counter(report); display: inline-block; width: 26px; color: #94a0b2; font-family: "IBM Plex Mono", monospace; font-size: .62rem; }
+    .report-index li.is-active { color: var(--primary-strong); font-weight: 700; }
+    .report-document { padding: clamp(34px, 6vw, 72px); border-radius: 3px; background: #fff; box-shadow: 0 18px 46px rgba(23,32,51,.13); }
+    .document-head { display: grid; grid-template-columns: 1fr auto; gap: 26px; padding-bottom: 26px; border-bottom: 1px solid var(--ink); }
+    .document-head .app-brand { margin-bottom: 28px; }
+    .document-head h1 { margin: 0; max-width: 520px; font-size: clamp(2.2rem, 4.6vw, 4.6rem); font-weight: 600; letter-spacing: -.065em; line-height: .94; }
+    .document-head__meta { align-self: end; display: grid; gap: 7px; color: var(--muted); text-align: right; }
+    .document-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; padding: 30px 0; border-bottom: 1px solid var(--border); }
+    .document-intro h2,
+    .document-section h2 { margin: 0; font-size: 1rem; letter-spacing: -.025em; }
+    .document-intro p { margin: 10px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.58; }
+    .document-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .document-facts span { color: var(--muted); font-size: .64rem; }
+    .document-facts strong { display: block; margin-top: 4px; font-size: .78rem; }
+    .document-section { padding-top: 30px; }
+    .document-section__head { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 15px; }
+    .document-section__head span { color: var(--muted); }
+    .document-finding { display: grid; grid-template-columns: minmax(180px, .8fr) minmax(0,1.2fr); overflow: hidden; border: 1px solid var(--border); border-radius: 12px; }
+    .document-finding__media { position: relative; min-height: 240px; }
+    .document-finding__media img { width: 100%; height: 100%; object-fit: cover; }
+    .document-finding__media span { position: absolute; top: 14px; left: 14px; width: 30px; height: 30px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; color: #fff; background: var(--primary); font: 500 .7rem "IBM Plex Mono", monospace; }
+    .document-finding__body { padding: 24px; }
+    .document-finding__body .status { margin-bottom: 14px; }
+    .document-finding__body h3 { margin: 0; font-size: 1.25rem; letter-spacing: -.035em; }
+    .document-finding__body p { margin: 11px 0 18px; color: var(--muted); font-size: .79rem; line-height: 1.6; }
+    .report-trace { display: grid; gap: 7px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .report-trace div { display: grid; grid-template-columns: 90px minmax(0,1fr); gap: 12px; font-size: .67rem; }
+    .report-trace span { color: var(--muted); }
+    .report-trace strong { font-weight: 600; }
+    .limitations { display: flex; gap: 13px; margin-top: 24px; padding: 18px; border-radius: 10px; color: #624420; background: #fff5e7; }
+    .limitations p { margin: 3px 0 0; font-size: .72rem; line-height: 1.5; }
+
+    .mobile-nav { display: none; }
+
+    .app-viewport[data-device="tablet"] .app-layout { grid-template-columns: 86px minmax(0,1fr); }
+    .app-viewport[data-device="tablet"] .app-sidebar { padding-inline: 12px; }
+    .app-viewport[data-device="tablet"] .app-nav button { justify-content: center; padding: 0; }
+    .app-viewport[data-device="tablet"] .app-nav button span,
+    .app-viewport[data-device="tablet"] .app-sidebar__help { display: none; }
+    .app-viewport[data-device="tablet"] .home-grid { grid-template-columns: 1fr; }
+    .app-viewport[data-device="tablet"] .quick-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .app-viewport[data-device="tablet"] .quick-card + .quick-card { margin-top: 0; }
+    .app-viewport[data-device="tablet"] .form-shell { grid-template-columns: 1fr; }
+    .app-viewport[data-device="tablet"] .form-story { min-height: 280px; }
+    .app-viewport[data-device="tablet"] .story-steps { grid-template-columns: repeat(3,1fr); margin-top: 30px; }
+    .app-viewport[data-device="tablet"] .review-layout { grid-template-columns: 84px minmax(0,1fr); }
+    .app-viewport[data-device="tablet"] .review-panel { grid-column: 1 / -1; border-top: 1px solid var(--border); }
+    .app-viewport[data-device="tablet"] .review-brand small,
+    .app-viewport[data-device="tablet"] .finding-progress,
+    .app-viewport[data-device="tablet"] .finding-item div { display: none; }
+    .app-viewport[data-device="tablet"] .review-rail { padding-inline: 10px; }
+    .app-viewport[data-device="tablet"] .finding-item { display: grid; place-items: center; grid-template-columns: 1fr; }
+    .app-viewport[data-device="tablet"] .review-evidence { border-right: 0; }
+    .app-viewport[data-device="tablet"] .report-workspace { grid-template-columns: 1fr; padding: 24px; }
+    .app-viewport[data-device="tablet"] .report-index { display: none; }
+
+    .app-viewport[data-device="mobile"] .app-topbar { height: 58px; padding: 0 16px; }
+    .app-viewport[data-device="mobile"] .connection { display: none; }
+    .app-viewport[data-device="mobile"] .app-brand { font-size: .9rem; }
+    .app-viewport[data-device="mobile"] .app-layout { min-height: calc(844px - 58px); display: block; }
+    .app-viewport[data-device="mobile"] .app-sidebar { display: none; }
+    .app-viewport[data-device="mobile"] .app-content { padding: 28px 18px 94px; }
+    .app-viewport[data-device="mobile"] .page-title { font-size: 2.55rem; }
+    .app-viewport[data-device="mobile"] .page-lead { font-size: .88rem; }
+    .app-viewport[data-device="mobile"] .home-grid { grid-template-columns: 1fr; margin-top: 28px; }
+    .app-viewport[data-device="mobile"] .active-inspection { min-height: 330px; padding: 24px; }
+    .app-viewport[data-device="mobile"] .active-inspection h2 { font-size: 1.8rem; }
+    .app-viewport[data-device="mobile"] .quick-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .app-viewport[data-device="mobile"] .quick-card { min-height: 154px; padding: 16px; }
+    .app-viewport[data-device="mobile"] .quick-card + .quick-card { margin-top: 0; }
+    .app-viewport[data-device="mobile"] .report-row { grid-template-columns: 38px minmax(0,1fr) auto; }
+    .app-viewport[data-device="mobile"] .report-row > .mono { display: none; }
+    .app-viewport[data-device="mobile"] .mobile-nav { position: absolute; z-index: 5; right: 0; bottom: 0; left: 0; height: 72px; display: grid; grid-template-columns: repeat(4,1fr); border-top: 1px solid var(--border); background: rgba(255,255,255,.96); backdrop-filter: blur(16px); }
+    .app-viewport[data-device="mobile"] .mobile-nav button { display: grid; place-items: center; align-content: center; gap: 4px; border: 0; background: transparent; color: var(--muted); font-size: .6rem; }
+    .app-viewport[data-device="mobile"] .mobile-nav button.is-active { color: var(--primary-strong); }
+    .app-viewport[data-device="mobile"] .app-screen[data-screen="home"] { position: relative; }
+    .app-viewport[data-device="mobile"] .wizard { min-height: 844px; padding: 16px; }
+    .app-viewport[data-device="mobile"] .wizard-head { margin-bottom: 16px; }
+    .app-viewport[data-device="mobile"] .wizard-progress { font-size: 0; }
+    .app-viewport[data-device="mobile"] .wizard-progress span { width: 34px; }
+    .app-viewport[data-device="mobile"] .form-shell { display: block; border: 0; box-shadow: none; }
+    .app-viewport[data-device="mobile"] .form-story { min-height: auto; padding: 26px 22px; }
+    .app-viewport[data-device="mobile"] .form-story h1 { font-size: 1.85rem; }
+    .app-viewport[data-device="mobile"] .form-story p { font-size: .8rem; }
+    .app-viewport[data-device="mobile"] .story-steps { display: none; }
+    .app-viewport[data-device="mobile"] .form-panel { padding: 26px 22px 30px; }
+    .app-viewport[data-device="mobile"] .room-selector { grid-template-columns: 1fr; }
+    .app-viewport[data-device="mobile"] .form-actions { display: grid; grid-template-columns: 1fr; }
+    .app-viewport[data-device="mobile"] .form-actions .button { width: 100%; }
+    .app-viewport[data-device="mobile"] .capture-ui { padding: 18px 16px 26px; }
+    .app-viewport[data-device="mobile"] .camera-frame { width: 100%; aspect-ratio: 3 / 4; }
+    .app-viewport[data-device="mobile"] .camera-hint { bottom: 22px; }
+    .app-viewport[data-device="mobile"] .capture-alt { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; font-size: 0; }
+    .app-viewport[data-device="mobile"] .capture-quality span { display: none; }
+    .app-viewport[data-device="mobile"] .analysis-page { min-height: 844px; padding: 16px; }
+    .app-viewport[data-device="mobile"] .analysis-card { padding: 26px 20px; }
+    .app-viewport[data-device="mobile"] .analysis-card h1 { font-size: 2rem; }
+    .app-viewport[data-device="mobile"] .analysis-summary div { padding: 12px 9px; }
+    .app-viewport[data-device="mobile"] .analysis-actions { align-items: stretch; flex-direction: column; }
+    .app-viewport[data-device="mobile"] .analysis-actions .button { width: 100%; }
+    .app-viewport[data-device="mobile"] .review-layout { min-height: 844px; display: block; padding-bottom: 94px; }
+    .app-viewport[data-device="mobile"] .review-rail { display: none; }
+    .app-viewport[data-device="mobile"] .review-evidence { padding: 0; border: 0; }
+    .app-viewport[data-device="mobile"] .review-evidence__head { padding: 16px; margin: 0; background: var(--surface); }
+    .app-viewport[data-device="mobile"] .evidence-photo { border-radius: 0; box-shadow: none; }
+    .app-viewport[data-device="mobile"] .evidence-photo img { min-height: 360px; max-height: 410px; }
+    .app-viewport[data-device="mobile"] .evidence-strip { padding: 0 14px; }
+    .app-viewport[data-device="mobile"] .review-panel { margin-top: 10px; padding: 24px 18px 28px; border-radius: 18px 18px 0 0; }
+    .app-viewport[data-device="mobile"] .review-panel h1 { font-size: 1.75rem; }
+    .app-viewport[data-device="mobile"] .review-actions { position: sticky; bottom: 0; margin: 24px -18px -28px; padding: 12px 18px; background: rgba(255,255,255,.96); backdrop-filter: blur(14px); }
+    .app-viewport[data-device="mobile"] .report-toolbar { min-height: 62px; padding: 0 14px; }
+    .app-viewport[data-device="mobile"] .report-toolbar__left div { display: none; }
+    .app-viewport[data-device="mobile"] .report-toolbar__actions .button--secondary { display: none; }
+    .app-viewport[data-device="mobile"] .report-toolbar__actions .button { min-height: 42px; padding-inline: 13px; }
+    .app-viewport[data-device="mobile"] .report-workspace { display: block; padding: 12px; }
+    .app-viewport[data-device="mobile"] .report-index { display: none; }
+    .app-viewport[data-device="mobile"] .report-document { padding: 30px 22px; }
+    .app-viewport[data-device="mobile"] .document-head { grid-template-columns: 1fr; }
+    .app-viewport[data-device="mobile"] .document-head h1 { font-size: 2.65rem; }
+    .app-viewport[data-device="mobile"] .document-head__meta { text-align: left; }
+    .app-viewport[data-device="mobile"] .document-intro { grid-template-columns: 1fr; }
+    .app-viewport[data-device="mobile"] .document-finding { grid-template-columns: 1fr; }
+    .app-viewport[data-device="mobile"] .document-finding__media { min-height: 210px; }
+
+    @media (max-width: 840px) {
+      .prototype-shell { display: block; }
+      .prototype-sidebar { position: static; width: 100%; height: auto; display: block; padding: 18px; }
+      .prototype-brand { margin-bottom: 16px; }
+      .screen-list { display: flex; gap: 4px; padding-bottom: 6px; overflow-x: auto; }
+      .screen-link { width: auto; flex: 0 0 auto; padding: 0 14px; }
+      .prototype-note, .prototype-kicker { display: none; }
+      .prototype-main { padding: 16px 8px 32px; }
+      .prototype-toolbar { padding-inline: 8px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4 16 7h4a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h4l1.5-3z"/><circle cx="12" cy="13" r="4"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M3 21h18M6 21V4h9v17M15 9h3v12M9 8h2M9 12h2M9 16h2"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3-1.1 3.4a2.4 2.4 0 0 1-1.5 1.5L6 9l3.4 1.1a2.4 2.4 0 0 1 1.5 1.5L12 15l1.1-3.4a2.4 2.4 0 0 1 1.5-1.5L18 9l-3.4-1.1a2.4 2.4 0 0 1-1.5-1.5zM19 16l-.6 1.8a1.3 1.3 0 0 1-.8.8L16 19l1.6.4a1.3 1.3 0 0 1 .8.8L19 22l.6-1.8a1.3 1.3 0 0 1 .8-.8L22 19l-1.6-.4a1.3 1.3 0 0 1-.8-.8z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+    <symbol id="i-mobile" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-desktop" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  </svg>
+
+  <div class="prototype-shell">
+    <aside class="prototype-sidebar">
+      <div class="prototype-brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div><strong>Vistor.IA</strong><span>Protótipo IA-first · v1</span></div>
+      </div>
+      <p class="prototype-kicker">Fluxo principal</p>
+      <nav class="screen-list" aria-label="Telas do protótipo">
+        <button class="screen-link is-active" data-target="home"><span>01</span>Início</button>
+        <button class="screen-link" data-target="property"><span>02</span>Imóvel</button>
+        <button class="screen-link" data-target="capture"><span>03</span>Captura</button>
+        <button class="screen-link" data-target="analysis"><span>04</span>Análise</button>
+        <button class="screen-link" data-target="review"><span>05</span>Revisão</button>
+        <button class="screen-link" data-target="report"><span>06</span>Relatório</button>
+      </nav>
+      <div class="prototype-note"><strong>Evidência Viva</strong>Foto, achado, contexto confirmado e trecho do relatório permanecem ligados do início ao fim.</div>
+    </aside>
+
+    <main class="prototype-main">
+      <header class="prototype-toolbar">
+        <div class="prototype-toolbar__context"><strong id="prototype-title">Início · próxima ação</strong><span>Interface funcional para validação de produto e direção visual</span></div>
+        <div class="device-switcher" aria-label="Tamanho da visualização">
+          <button class="device-button" data-device="mobile" aria-label="Visualizar no celular"><svg class="icon"><use href="#i-mobile"/></svg></button>
+          <button class="device-button" data-device="tablet" aria-label="Visualizar no tablet"><svg class="icon"><use href="#i-tablet"/></svg></button>
+          <button class="device-button is-active" data-device="desktop" aria-label="Visualizar no desktop"><svg class="icon"><use href="#i-desktop"/></svg></button>
+        </div>
+      </header>
+
+      <section class="preview-stage" aria-label="Prévia do produto">
+        <div class="app-viewport" data-device="desktop">
+          <div class="app">
+            <section class="app-screen is-active" data-screen="home">
+              <header class="app-topbar">
+                <div class="app-brand"><span class="brand-mark"></span>Vistor.IA</div>
+                <div class="top-actions"><span class="connection">Tudo salvo</span><span class="avatar">VO</span></div>
+              </header>
+              <div class="app-layout">
+                <aside class="app-sidebar">
+                  <nav class="app-nav">
+                    <button class="is-active"><svg class="icon"><use href="#i-home"/></svg><span>Início</span></button>
+                    <button data-go="capture"><svg class="icon"><use href="#i-camera"/></svg><span>Vistorias</span></button>
+                    <button data-go="report"><svg class="icon"><use href="#i-file"/></svg><span>Relatórios</span></button>
+                    <button><svg class="icon"><use href="#i-user"/></svg><span>Perfil</span></button>
+                  </nav>
+                  <p class="app-sidebar__help">Suas fotos permanecem organizadas por ambiente, mesmo quando a conexão oscila.</p>
+                </aside>
+                <div class="app-content">
+                  <p class="eyebrow">Terça-feira, 30 de setembro</p>
+                  <h1 class="page-title">Uma vistoria clara começa pela próxima foto.</h1>
+                  <p class="page-lead">A IA organiza as evidências e aponta indícios para você revisar antes de gerar o relatório.</p>
+                  <div class="home-grid">
+                    <article class="active-inspection">
+                      <p class="eyebrow">Em andamento</p>
+                      <h2>Apartamento · Rua das Acácias, 184</h2>
+                      <p>Continue pela sala. Faltam uma visão geral e dois detalhes para concluir este ambiente.</p>
+                      <div class="progress-row"><div class="progress-track"><span></span></div><strong>8 de 19 fotos</strong></div>
+                      <button class="button button--primary" data-go="capture">Continuar captura <svg class="icon"><use href="#i-chevron-right"/></svg></button>
+                    </article>
+                    <div class="quick-stack">
+                      <article class="quick-card"><span class="quick-card__icon"><svg class="icon"><use href="#i-plus"/></svg></span><h3>Nova vistoria</h3><p>Cadastre o imóvel e monte o roteiro em poucos passos.</p></article>
+                      <article class="quick-card"><span class="quick-card__icon"><svg class="icon"><use href="#i-file"/></svg></span><h3>2 relatórios</h3><p>Um disponível e outro aguardando sua revisão.</p></article>
+                    </div>
+                  </div>
+                  <section class="recent-section">
+                    <div class="section-heading"><h2>Relatórios recentes</h2><a>Ver todos</a></div>
+                    <article class="report-row"><span class="report-icon"><svg class="icon"><use href="#i-file"/></svg></span><div><strong>Apartamento 71 · Ed. Horizonte</strong><small>Atualizado hoje, 09:42</small></div><span class="status status--attention">Revisão pendente</span><span class="mono">VT-0028</span></article>
+                    <article class="report-row"><span class="report-icon"><svg class="icon"><use href="#i-file"/></svg></span><div><strong>Casa · Alameda Ipê, 42</strong><small>Gerado em 22 set. 2026</small></div><span class="status status--success">Disponível</span><span class="mono">VT-0024</span></article>
+                  </section>
+                </div>
+              </div>
+              <nav class="mobile-nav"><button class="is-active"><svg class="icon"><use href="#i-home"/></svg>Início</button><button data-go="capture"><svg class="icon"><use href="#i-camera"/></svg>Vistorias</button><button data-go="report"><svg class="icon"><use href="#i-file"/></svg>Relatórios</button><button><svg class="icon"><use href="#i-user"/></svg>Perfil</button></nav>
+            </section>
+
+            <section class="app-screen" data-screen="property">
+              <div class="wizard">
+                <header class="wizard-head"><button class="wizard-back" data-go="home"><svg class="icon"><use href="#i-arrow-left"/></svg>Voltar</button><div class="wizard-progress">Passo 2 de 3 <span class="is-complete"></span><span class="is-complete"></span><span></span></div></header>
+                <div class="form-shell">
+                  <aside class="form-story">
+                    <p class="eyebrow">Novo imóvel</p>
+                    <h1>Um roteiro sob medida, sem formulário infinito.</h1>
+                    <p>Usamos os ambientes somente para orientar as próximas fotos. Você pode ajustar tudo durante a vistoria.</p>
+                    <div class="story-steps">
+                      <div class="story-step"><span>01</span><div><strong>Identificação</strong><small>Nome e endereço do imóvel</small></div></div>
+                      <div class="story-step is-active"><span>02</span><div><strong>Ambientes</strong><small>O que será fotografado</small></div></div>
+                      <div class="story-step"><span>03</span><div><strong>Roteiro</strong><small>Revisão antes de começar</small></div></div>
+                    </div>
+                  </aside>
+                  <form class="form-panel" onsubmit="return false">
+                    <h2>Quais ambientes serão vistoriados?</h2>
+                    <p>Já selecionamos uma base comum para apartamentos. Remova ou adicione quando precisar.</p>
+                    <div class="field"><label for="property-name">Como você identifica este imóvel?</label><input id="property-name" value="Apartamento 71 · Ed. Horizonte"><small>Esse nome aparecerá no histórico e no relatório.</small></div>
+                    <div class="field"><label>Ambientes</label><div class="room-selector">
+                      <button type="button" class="room-option is-selected"><span>Sala</span><span>✓</span></button>
+                      <button type="button" class="room-option is-selected"><span>Cozinha</span><span>✓</span></button>
+                      <button type="button" class="room-option is-selected"><span>Banheiro</span><span>✓</span></button>
+                      <button type="button" class="room-option is-selected"><span>Quarto 1</span><span>✓</span></button>
+                      <button type="button" class="room-option"><span>Quarto 2</span><span>+</span></button>
+                      <button type="button" class="room-option"><span>Área de serviço</span><span>+</span></button>
+                    </div></div>
+                    <div class="form-actions"><button type="button" class="button button--secondary">Salvar rascunho</button><button type="button" class="button button--primary" data-go="capture">Revisar roteiro <svg class="icon"><use href="#i-chevron-right"/></svg></button></div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <section class="app-screen capture-screen" data-screen="capture">
+              <img class="capture-image" src="assets/evidencia-sala-visao-geral.png" alt="Visão geral de uma sala vazia durante a captura">
+              <div class="capture-ui">
+                <header class="capture-top"><button class="icon-button" data-go="home" aria-label="Sair da captura"><svg class="icon"><use href="#i-arrow-left"/></svg></button><div class="capture-context"><strong>Sala · visão geral</strong><span>Mostre o encontro entre paredes, piso e teto</span></div><div class="capture-progress"><strong>02 / 03</strong><div><span></span></div></div></header>
+                <div class="camera-frame"><div class="camera-hint">Mantenha as paredes inteiras no quadro. A luz e a nitidez estão boas.</div></div>
+                <footer class="capture-bottom"><button class="capture-alt"><svg class="icon"><use href="#i-image"/></svg>Escolher da galeria</button><button class="shutter" data-go="analysis" aria-label="Capturar foto"></button><div class="capture-quality"><strong><svg class="icon"><use href="#i-check"/></svg> Enquadramento adequado</strong><span>Pronta para capturar</span></div></footer>
+              </div>
+            </section>
+
+            <section class="app-screen" data-screen="analysis">
+              <div class="analysis-page">
+                <article class="analysis-card">
+                  <span class="analysis-symbol"><svg class="icon" style="width:34px;height:34px"><use href="#i-sparkles"/></svg></span>
+                  <p class="eyebrow">Análise em andamento</p>
+                  <h1>A IA está organizando as evidências.</h1>
+                  <p>Você pode sair desta tela. As fotos continuam seguras e avisaremos quando os achados estiverem prontos para sua revisão.</p>
+                  <div class="analysis-summary"><div><strong>19</strong><span>fotos recebidas</span></div><div><strong>4</strong><span>ambientes</span></div><div><strong>68%</strong><span>processado</span></div></div>
+                  <div class="analysis-list">
+                    <div class="analysis-item"><img class="analysis-thumb" src="assets/evidencia-sala-visao-geral.png" alt=""><div><strong>Sala · visão geral</strong><small>Qualidade e contexto verificados</small></div><span>Concluída</span></div>
+                    <div class="analysis-item"><img class="analysis-thumb" src="assets/evidencia-fissura-umidade.png" alt=""><div><strong>Sala · parede leste</strong><small>2 indícios visuais encontrados</small></div><span>Concluída</span></div>
+                    <div class="analysis-item is-running"><img class="analysis-thumb" src="assets/evidencia-sala-visao-geral.png" alt=""><div><strong>Cozinha · bancada</strong><small>Relacionando imagens do ambiente</small></div><span>Em análise</span></div>
+                  </div>
+                  <div class="analysis-actions"><small>A análise visual não substitui avaliação técnica presencial.</small><button class="button button--secondary" data-go="review">Visualizar revisão pronta</button></div>
+                </article>
+              </div>
+            </section>
+
+            <section class="app-screen" data-screen="review">
+              <div class="review-layout">
+                <aside class="review-rail">
+                  <div class="review-brand"><div class="app-brand"><span class="brand-mark"></span>Vistor.IA</div><small>Revisão dos achados</small></div>
+                  <div class="finding-progress"><div><span>Progresso</span><strong>1 de 3</strong></div><div class="progress-track"><span></span></div></div>
+                  <div class="finding-list">
+                    <button class="finding-item is-done"><span>✓</span><div><strong>Revestimento íntegro</strong><small>Sala · visão geral</small></div></button>
+                    <button class="finding-item is-active"><span>02</span><div><strong>Fissura próxima ao pilar</strong><small>Sala · parede leste</small></div></button>
+                    <button class="finding-item"><span>03</span><div><strong>Sinal de umidade</strong><small>Sala · rodapé</small></div></button>
+                  </div>
+                </aside>
+                <section class="review-evidence">
+                  <header class="review-evidence__head"><strong>Evidência vinculada</strong><span class="mono">IMG-014 · 10:42</span></header>
+                  <figure class="evidence-photo"><img src="assets/evidencia-fissura-umidade.png" alt="Parede branca com fissura fina próxima a um pilar e leve mancha junto ao rodapé"><span class="evidence-marker">02</span><figcaption class="evidence-caption"><strong>Sala · parede leste</strong><span>Foto original</span></figcaption></figure>
+                  <div class="evidence-strip"><button class="is-active"><img src="assets/evidencia-fissura-umidade.png" alt="Miniatura da evidência atual"></button><button><img src="assets/evidencia-sala-visao-geral.png" alt="Visão geral relacionada"></button></div>
+                </section>
+                <aside class="review-panel">
+                  <p class="eyebrow">Achado 02 · revisar</p>
+                  <h1>Fissura fina próxima ao encontro com o pilar.</h1>
+                  <p class="observation">A imagem mostra uma linha vertical estreita e contínua. Pela foto, não é possível determinar profundidade, causa ou evolução.</p>
+                  <div class="confidence-note"><svg class="icon"><use href="#i-info"/></svg> Observação visual da IA · contexto ainda não confirmado</div>
+                  <div class="question-card"><strong>Você percebeu se a fissura já existia antes desta vistoria?</strong><div class="answer-list"><button class="answer is-selected">Não sei informar</button><button class="answer">Sim, já existia</button><button class="answer">Não, parece recente</button></div></div>
+                  <div class="trace"><span class="trace-step is-complete">Foto</span><span class="trace-step is-complete">Achado IA</span><span class="trace-step">Seu contexto</span><span class="trace-step">Relatório</span></div>
+                  <div class="review-actions"><button class="button button--primary" data-go="report">Confirmar contexto e continuar</button><button class="button button--secondary">Corrigir achado</button><button class="button button--ghost">Não se aplica</button></div>
+                </aside>
+              </div>
+            </section>
+
+            <section class="app-screen report-page" data-screen="report">
+              <header class="report-toolbar"><div class="report-toolbar__left"><button class="icon-button" data-go="review" aria-label="Voltar para revisão"><svg class="icon"><use href="#i-arrow-left"/></svg></button><div><strong>Relatório de vistoria por IA</strong><span>Todos os 3 achados foram revisados</span></div></div><div class="report-toolbar__actions"><button class="button button--secondary"><svg class="icon"><use href="#i-share"/></svg>Compartilhar</button><button class="button button--primary"><svg class="icon"><use href="#i-download"/></svg>Baixar PDF</button></div></header>
+              <div class="report-workspace">
+                <aside class="report-index"><strong>Neste relatório</strong><ol><li class="is-active">Resumo</li><li>Imóvel e vistoria</li><li>Achados revisados</li><li>Evidências</li><li>Limitações</li></ol></aside>
+                <article class="report-document">
+                  <header class="document-head"><div><div class="app-brand"><span class="brand-mark"></span>Vistor.IA</div><p class="eyebrow">Documento gerado após sua revisão</p><h1>Relatório de vistoria por IA</h1></div><div class="document-head__meta mono"><span>VT-0028</span><span>30 SET 2026</span><span>VERSÃO 1.0</span></div></header>
+                  <section class="document-intro"><div><h2>Sobre este documento</h2><p>Registro organizado de evidências fotográficas e indícios visuais apontados pela IA, com o contexto informado por você.</p></div><div class="document-facts"><div><span>Imóvel</span><strong>Apartamento 71 · Ed. Horizonte</strong></div><div><span>Ambientes</span><strong>4 vistoriados</strong></div><div><span>Evidências</span><strong>19 fotografias</strong></div><div><span>Achados</span><strong>3 revisados</strong></div></div></section>
+                  <section class="document-section"><div class="document-section__head"><h2>Achados revisados</h2><span class="mono">01 / 03</span></div><article class="document-finding"><div class="document-finding__media"><img src="assets/evidencia-fissura-umidade.png" alt="Evidência da fissura próxima ao pilar"><span>02</span></div><div class="document-finding__body"><span class="status status--attention">Acompanhar</span><h3>Fissura fina próxima ao pilar</h3><p>Foi observado um indício visual linear e estreito na parede leste da sala. A fotografia não permite determinar causa, profundidade ou evolução.</p><div class="report-trace"><div><span>Evidência</span><strong>IMG-014 · Sala · parede leste</strong></div><div><span>Seu contexto</span><strong>Não foi possível informar se já existia</strong></div><div><span>Registro</span><strong>Contexto confirmado em 30 set. 2026, 10:51</strong></div></div></div></article></section>
+                  <aside class="limitations"><svg class="icon"><use href="#i-info"/></svg><div><strong>Limites da análise</strong><p>Este relatório registra indícios visuais presentes nas imagens. Não constitui laudo técnico, diagnóstico estrutural ou certificação de conformidade.</p></div></aside>
+                </article>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const titles = {
+      home: "Início · próxima ação",
+      property: "Cadastro do imóvel · ambientes",
+      capture: "Captura guiada · modo de campo",
+      analysis: "Análise assíncrona · progresso real",
+      review: "Revisão · evidência e contexto",
+      report: "Relatório · rastreabilidade completa"
+    };
+
+    const screens = [...document.querySelectorAll(".app-screen")];
+    const links = [...document.querySelectorAll(".screen-link")];
+    const viewport = document.querySelector(".app-viewport");
+    const title = document.querySelector("#prototype-title");
+
+    function showScreen(name) {
+      screens.forEach((screen) => screen.classList.toggle("is-active", screen.dataset.screen === name));
+      links.forEach((link) => classListToggle(link, "is-active", link.dataset.target === name));
+      title.textContent = titles[name];
+      window.location.hash = name;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function classListToggle(element, className, force) {
+      element.classList.toggle(className, force);
+    }
+
+    links.forEach((link) => link.addEventListener("click", () => showScreen(link.dataset.target)));
+    document.querySelectorAll("[data-go]").forEach((control) => control.addEventListener("click", () => showScreen(control.dataset.go)));
+    document.querySelectorAll(".device-button").forEach((button) => button.addEventListener("click", () => {
+      document.querySelectorAll(".device-button").forEach((item) => item.classList.toggle("is-active", item === button));
+      viewport.dataset.device = button.dataset.device;
+    }));
+    document.querySelectorAll(".room-option").forEach((button) => button.addEventListener("click", () => {
+      button.classList.toggle("is-selected");
+      button.lastElementChild.textContent = button.classList.contains("is-selected") ? "✓" : "+";
+    }));
+    document.querySelectorAll(".answer").forEach((button) => button.addEventListener("click", () => {
+      document.querySelectorAll(".answer").forEach((item) => item.classList.toggle("is-selected", item === button));
+    }));
+
+    const initial = window.location.hash.slice(1);
+    if (titles[initial]) showScreen(initial);
+  </script>
+</body>
+</html>
