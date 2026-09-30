@@ -9,6 +9,7 @@ import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -32,8 +33,15 @@ public class PreLaudoParser {
     private final ResultadoAnaliseCalculator resultadoCalculator;
 
     public PreLaudoParser(ObjectMapper objectMapper) {
+        this(objectMapper, new ResultadoAnaliseCalculator());
+    }
+
+    @Autowired
+    public PreLaudoParser(
+            ObjectMapper objectMapper,
+            ResultadoAnaliseCalculator resultadoCalculator) {
         this.objectMapper = objectMapper;
-        this.resultadoCalculator = new ResultadoAnaliseCalculator();
+        this.resultadoCalculator = resultadoCalculator;
     }
 
     public AnaliseVistoria parse(Vistoria vistoria, String raw) {

@@ -218,7 +218,7 @@ associar IDs conhecidos e manter compatibilidade de leitura v1.
 
 ### T5: Serializar a resposta canônica auditável
 
-**Status**: Pending  
+**Status**: Complete  
 **What**: Criar o montador que combina observações válidas, identidades locais,
 metadados da execução e resultados calculados em JSON v2.  
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/application/analysis/AnaliseVistoriaDocumentFactory.java`  

@@ -1,10 +1,13 @@
 package br.com.vistoriapredial.vistoria.application.analysis;
 
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Component
 public class ResultadoAnaliseCalculator {
 
     public ResultadoCalculado calcular(List<AnaliseVistoria.ImagemAnalise> imagens) {
