@@ -228,33 +228,69 @@ describe("NewInspectionForm", () => {
 
     await user.click(screen.getByRole("radio", { name: "Apartamento" }));
 
-    const roomNames = screen.getAllByLabelText(/Nome do ambiente/i) as HTMLInputElement[];
-    expect(roomNames.some((input) => input.value === "Área de serviço")).toBe(true);
-    expect(roomNames.some((input) => input.value === "Área externa")).toBe(false);
+    expect(screen.getByRole("button", { name: "Aumentar quantidade de Quarto" })).toBeDefined();
+    expect(screen.getAllByText("Área de serviço").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Aumentar quantidade de Área externa" })).toBeNull();
+    expect(screen.queryByLabelText(/Nome do ambiente 1/i)).toBeNull();
     expect(screen.getAllByText(/sugestão inicial/i).length).toBeGreaterThan(0);
   });
 
-  it("permite adicionar, renomear, remover e reordenar ambientes", async () => {
+  it("define quantidades sem duplicar campos e envia ambientes individualizados", async () => {
+    vi.mocked(createInspection).mockResolvedValue(draftInspection);
     const user = userEvent.setup();
     render(<NewInspectionForm />);
 
-    await user.click(screen.getByRole("button", { name: "Adicionar ambiente" }));
-    const names = screen.getAllByLabelText(/Nome do ambiente/i) as HTMLInputElement[];
-    await user.clear(names.at(-1)!);
-    await user.type(names.at(-1)!, "Biblioteca");
-    await user.click(screen.getByRole("button", { name: "Mover Biblioteca para cima" }));
-    await user.click(screen.getByRole("button", { name: "Remover Entrada e fachada" }));
+    await user.type(screen.getByLabelText("Endereço do imóvel"), "Rua das Obras, 10");
+    await user.click(screen.getByRole("button", { name: "Aumentar quantidade de Banheiro" }));
 
-    expect(screen.getByDisplayValue("Biblioteca")).toBeDefined();
-    expect(screen.queryByDisplayValue("Entrada e fachada")).toBeNull();
+    expect(screen.getByText("Banheiro 1 · Banheiro 2")).toBeDefined();
+    expect(screen.getByText("8 ambientes")).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: "Começar a registrar fotos" }));
+
+    await waitFor(() => expect(createInspection).toHaveBeenCalled());
+    expect(createInspection).toHaveBeenCalledWith(expect.objectContaining({
+      ambientes: expect.arrayContaining([
+        expect.objectContaining({ tipo: "BANHEIRO", nome: "Banheiro 1" }),
+        expect.objectContaining({ tipo: "BANHEIRO", nome: "Banheiro 2" }),
+      ]),
+    }));
+  });
+
+  it("revela nomes somente quando o usuário decide personalizar", async () => {
+    const user = userEvent.setup();
+    render(<NewInspectionForm />);
+
+    expect(screen.queryByLabelText("Nome de Sala")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Personalizar nomes de Sala" }));
+
+    const name = screen.getByLabelText("Nome de Sala") as HTMLInputElement;
+    expect(name.value).toBe("Sala");
+    await user.clear(name);
+    await user.type(name, "Sala íntima");
+    expect(screen.getByText("Sala íntima")).toBeDefined();
+  });
+
+  it("preserva o nome personalizado ao aumentar a quantidade", async () => {
+    const user = userEvent.setup();
+    render(<NewInspectionForm />);
+
+    await user.click(screen.getByRole("button", { name: "Personalizar nomes de Sala" }));
+    const name = screen.getByLabelText("Nome de Sala");
+    await user.clear(name);
+    await user.type(name, "Sala íntima");
+    await user.click(screen.getByRole("button", { name: "Aumentar quantidade de Sala" }));
+
+    expect(screen.getByText("Sala íntima · Sala 2")).toBeDefined();
   });
 
   it("mostra validação acessível para nomes duplicados", async () => {
     const user = userEvent.setup();
     render(<NewInspectionForm />);
-    const names = screen.getAllByLabelText(/Nome do ambiente/i) as HTMLInputElement[];
-    await user.clear(names[1]);
-    await user.type(names[1], names[0].value.toUpperCase());
+    await user.click(screen.getByRole("button", { name: "Personalizar nomes de Sala" }));
+    const name = screen.getByLabelText("Nome de Sala") as HTMLInputElement;
+    await user.clear(name);
+    await user.type(name, "ENTRADA E FACHADA");
     await user.type(screen.getByLabelText("Endereço do imóvel"), "Rua das Obras, 10");
 
     await user.click(screen.getByRole("button", { name: "Começar a registrar fotos" }));
@@ -262,9 +298,8 @@ describe("NewInspectionForm", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("nomes diferentes");
     expect(alert.id).not.toBe("");
-    expect(names[0].getAttribute("aria-invalid")).toBe("true");
-    expect(names[0].getAttribute("aria-describedby")).toBe(alert.id);
-    expect(document.activeElement).toBe(names[0]);
+    expect(name.getAttribute("aria-invalid")).toBe("true");
+    expect(name.getAttribute("aria-describedby")).toBe(alert.id);
     expect(createInspection).not.toHaveBeenCalled();
   });
 

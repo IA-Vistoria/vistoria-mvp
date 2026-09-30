@@ -9,7 +9,7 @@ import { ApiError } from "@/lib/api";
 import { createInspection } from "../api";
 import type { PropertyType } from "../types";
 import {
-  EnvironmentRouteEditor,
+  EnvironmentQuantityPlanner,
   createSuggestedEnvironments,
   validateEnvironmentDrafts,
 } from "./route-builder";
@@ -37,7 +37,7 @@ export function NewInspectionForm() {
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
   const addressRef = useRef<HTMLInputElement>(null);
-  const firstEnvironmentRef = useRef<HTMLInputElement>(null);
+  const routeRef = useRef<HTMLFieldSetElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export function NewInspectionForm() {
     const routeError = validateEnvironmentDrafts(environments);
     if (routeError) {
       setError({ message: routeError, target: "route" });
-      firstEnvironmentRef.current?.focus();
+      routeRef.current?.focus();
       return;
     }
 
@@ -86,14 +86,14 @@ export function NewInspectionForm() {
         <section className="new-inspection-copy">
           <p className="eyebrow">Nova vistoria · configure antes de fotografar</p>
           <h1>O roteiro acompanha o imóvel real.</h1>
-          <p>Escolha uma base e ajuste os ambientes. Você não precisa registrar cômodos que não existem.</p>
+          <p>Escolha uma base, informe quantos ambientes existem e ajuste apenas o que for necessário.</p>
           <div className="route-rule-card">
             <Camera size={22} />
             <span><strong>Uma visão geral por ambiente.</strong> Essa é a única regra mínima. Fotos de detalhe são opcionais e podem ser adicionadas quando houver algo a destacar.</span>
           </div>
           <ul className="route-benefits">
             <li><CheckCircle2 size={17} />O tipo do imóvel só cria uma sugestão inicial.</li>
-            <li><CheckCircle2 size={17} />Edite nomes, tipos e ordem livremente.</li>
+            <li><CheckCircle2 size={17} />Cada quantidade vira uma etapa própria de fotos.</li>
             <li><CheckCircle2 size={17} />Nada é enviado à IA nesta etapa.</li>
           </ul>
         </section>
@@ -146,7 +146,7 @@ export function NewInspectionForm() {
           </fieldset>
 
           <p className="route-suggestion-note"><strong>Sugestão inicial:</strong> você pode adaptar tudo antes de continuar.</p>
-          <EnvironmentRouteEditor
+          <EnvironmentQuantityPlanner
             environments={environments}
             onChange={(updated) => {
               setEnvironments(updated);
@@ -155,7 +155,7 @@ export function NewInspectionForm() {
             disabled={busy}
             errorId={FORM_ERROR_ID}
             invalid={error?.target === "route"}
-            firstNameRef={firstEnvironmentRef}
+            containerRef={routeRef}
           />
 
           <button className="button button--primary" disabled={busy} type="submit">

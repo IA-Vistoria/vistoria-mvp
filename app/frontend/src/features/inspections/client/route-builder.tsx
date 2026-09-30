@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowDown, ArrowUp, LockKeyhole, Plus, Trash2 } from "lucide-react";
-import type { Ref } from "react";
+import { ArrowDown, ArrowUp, LockKeyhole, Minus, Plus, Trash2 } from "lucide-react";
+import { useState, type Ref } from "react";
 
 import type {
   EnvironmentType,
@@ -24,6 +24,21 @@ interface EnvironmentRouteEditorProps {
   errorId?: string;
   invalid?: boolean;
   firstNameRef?: Ref<HTMLInputElement>;
+}
+
+interface EnvironmentQuantityPlannerProps {
+  environments: EnvironmentDraft[];
+  onChange: (environments: EnvironmentDraft[]) => void;
+  disabled?: boolean;
+  errorId?: string;
+  invalid?: boolean;
+  containerRef?: Ref<HTMLFieldSetElement>;
+}
+
+interface EnvironmentGroup {
+  key: string;
+  tipo: EnvironmentType;
+  environments: EnvironmentDraft[];
 }
 
 const SUGGESTIONS: Record<PropertyType, Array<Omit<EnvironmentDraft, "key">>> = {
@@ -70,6 +85,10 @@ export const ENVIRONMENT_TYPE_OPTIONS: Array<{ value: EnvironmentType; label: st
   { value: "OUTRO", label: "Outro" },
 ];
 
+const ENVIRONMENT_TYPE_LABELS = new Map(
+  ENVIRONMENT_TYPE_OPTIONS.map(({ value, label }) => [value, label]),
+);
+
 let nextDraftId = 0;
 
 export function createSuggestedEnvironments(type: PropertyType): EnvironmentDraft[] {
@@ -100,6 +119,283 @@ export function validateEnvironmentDrafts(environments: EnvironmentDraft[]): str
     return "Use nomes diferentes para identificar cada ambiente.";
   }
   return null;
+}
+
+function groupEnvironmentDrafts(environments: EnvironmentDraft[]): EnvironmentGroup[] {
+  const groups: EnvironmentGroup[] = [];
+  const knownGroups = new Map<EnvironmentType, EnvironmentGroup>();
+
+  environments.forEach((environment) => {
+    if (environment.tipo === "OUTRO") {
+      groups.push({
+        key: `custom:${environment.key}`,
+        tipo: environment.tipo,
+        environments: [environment],
+      });
+      return;
+    }
+
+    const existing = knownGroups.get(environment.tipo);
+    if (existing) {
+      existing.environments.push(environment);
+      return;
+    }
+
+    const group = {
+      key: `type:${environment.tipo}`,
+      tipo: environment.tipo,
+      environments: [environment],
+    };
+    knownGroups.set(environment.tipo, group);
+    groups.push(group);
+  });
+
+  return groups;
+}
+
+function replaceEnvironmentGroup(
+  environments: EnvironmentDraft[],
+  groupKey: string,
+  replacement: EnvironmentDraft[],
+): EnvironmentDraft[] {
+  return groupEnvironmentDrafts(environments).flatMap((group) => (
+    group.key === groupKey ? replacement : group.environments
+  ));
+}
+
+function environmentTypeLabel(type: EnvironmentType): string {
+  return ENVIRONMENT_TYPE_LABELS.get(type) ?? "Ambiente";
+}
+
+function groupTitle(group: EnvironmentGroup): string {
+  if (group.tipo !== "OUTRO") return environmentTypeLabel(group.tipo);
+  return group.environments[0]?.nome.trim() || "Ambiente personalizado";
+}
+
+function automaticGroupBase(group: EnvironmentGroup): string {
+  const typeLabel = environmentTypeLabel(group.tipo);
+  const firstName = group.environments[0]?.nome.replace(/\s+\d+$/, "").trim();
+  if (!firstName) return typeLabel;
+
+  const normalizedFirstName = normalizeEnvironmentName(firstName);
+  const automaticNames = group.tipo === "ENTRADA"
+    ? ["entrada", "entrada e fachada", "entrada / fachada"]
+    : [normalizeEnvironmentName(typeLabel)];
+  return automaticNames.includes(normalizedFirstName) ? firstName : typeLabel;
+}
+
+function resizeEnvironmentGroup(group: EnvironmentGroup, nextQuantity: number): EnvironmentDraft[] {
+  const current = group.environments;
+  const baseName = automaticGroupBase(group);
+
+  if (nextQuantity > current.length) {
+    const numbered = current.map((environment, index) => ({
+      ...environment,
+      nome: current.length === 1
+        && normalizeEnvironmentName(environment.nome) === normalizeEnvironmentName(baseName)
+        ? `${baseName} ${index + 1}`
+        : environment.nome,
+    }));
+    return [
+      ...numbered,
+      ...Array.from({ length: nextQuantity - current.length }, (_, offset) => ({
+        key: `quantity-${nextDraftId++}`,
+        tipo: group.tipo,
+        nome: `${baseName} ${current.length + offset + 1}`,
+      })),
+    ];
+  }
+
+  const reduced = current.slice(0, nextQuantity);
+  if (reduced.length === 1 && reduced[0].nome === `${baseName} 1`) {
+    return [{ ...reduced[0], nome: baseName }];
+  }
+  return reduced;
+}
+
+export function EnvironmentQuantityPlanner({
+  environments,
+  onChange,
+  disabled = false,
+  errorId,
+  invalid = false,
+  containerRef,
+}: EnvironmentQuantityPlannerProps) {
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
+  const [typeToAdd, setTypeToAdd] = useState<EnvironmentType | "">("");
+  const groups = groupEnvironmentDrafts(environments);
+  const selectedKnownTypes = new Set(
+    groups.filter(({ tipo }) => tipo !== "OUTRO").map(({ tipo }) => tipo),
+  );
+  const availableTypes = ENVIRONMENT_TYPE_OPTIONS.filter(({ value }) => (
+    value === "OUTRO" || !selectedKnownTypes.has(value)
+  ));
+
+  function changeQuantity(group: EnvironmentGroup, offset: number) {
+    const nextQuantity = group.environments.length + offset;
+    if (nextQuantity < 1 || environments.length + offset > 30) return;
+    onChange(replaceEnvironmentGroup(
+      environments,
+      group.key,
+      resizeEnvironmentGroup(group, nextQuantity),
+    ));
+  }
+
+  function updateName(key: string, name: string) {
+    onChange(environments.map((environment) => (
+      environment.key === key ? { ...environment, nome: name } : environment
+    )));
+  }
+
+  function moveGroup(index: number, offset: number) {
+    const target = index + offset;
+    if (target < 0 || target >= groups.length) return;
+    const reordered = [...groups];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    onChange(reordered.flatMap(({ environments: grouped }) => grouped));
+  }
+
+  function removeGroup(group: EnvironmentGroup) {
+    const keys = new Set(group.environments.map(({ key }) => key));
+    onChange(environments.filter(({ key }) => !keys.has(key)));
+  }
+
+  function addType() {
+    if (!typeToAdd || environments.length >= 30) return;
+    const label = typeToAdd === "OUTRO" ? "Novo ambiente" : environmentTypeLabel(typeToAdd);
+    onChange([
+      ...environments,
+      { key: `custom-${nextDraftId++}`, tipo: typeToAdd, nome: label },
+    ]);
+    setTypeToAdd("");
+  }
+
+  function toggleNames(groupKey: string) {
+    setExpandedGroups((current) => {
+      const next = new Set(current);
+      if (next.has(groupKey)) next.delete(groupKey);
+      else next.add(groupKey);
+      return next;
+    });
+  }
+
+  return (
+    <fieldset
+      className="route-editor route-planner"
+      disabled={disabled}
+      aria-describedby={invalid ? errorId : undefined}
+      aria-invalid={invalid || undefined}
+      ref={containerRef}
+      tabIndex={-1}
+    >
+      <legend>Ambientes do imóvel</legend>
+      <div className="route-editor__heading">
+        <div>
+          <strong>Defina os ambientes e as quantidades</strong>
+          <p>A quantidade cria um registro separado para cada ambiente. Personalize os nomes somente quando precisar diferenciá-los.</p>
+        </div>
+        <span aria-live="polite">{environments.length} {environments.length === 1 ? "ambiente" : "ambientes"}</span>
+      </div>
+
+      <ol className="route-editor__list route-planner__list">
+        {groups.map((group, groupIndex) => {
+          const title = groupTitle(group);
+          const custom = group.tipo === "OUTRO";
+          const showNames = custom || expandedGroups.has(group.key);
+          return (
+            <li className={`route-planner__row${custom ? " route-planner__row--custom" : ""}`} key={group.key}>
+              <span className="route-editor__order" aria-hidden="true">{String(groupIndex + 1).padStart(2, "0")}</span>
+              <div className="route-planner__summary">
+                <strong>{custom ? "Ambiente personalizado" : title}</strong>
+                <span>{group.environments.map(({ nome }) => nome).join(" · ")}</span>
+              </div>
+
+              {!custom ? (
+                <div className="route-planner__quantity" role="group" aria-label={`Quantidade de ${title}`}>
+                  <span>Quantidade</span>
+                  <div>
+                    <button
+                      type="button"
+                      disabled={group.environments.length === 1}
+                      onClick={() => changeQuantity(group, -1)}
+                      aria-label={`Diminuir quantidade de ${title}`}
+                    ><Minus size={16} /></button>
+                    <output aria-live="polite">{group.environments.length}</output>
+                    <button
+                      type="button"
+                      disabled={environments.length >= 30}
+                      onClick={() => changeQuantity(group, 1)}
+                      aria-label={`Aumentar quantidade de ${title}`}
+                    ><Plus size={16} /></button>
+                  </div>
+                </div>
+              ) : null}
+
+              {!custom ? (
+                <button
+                  className="route-planner__customize"
+                  type="button"
+                  aria-expanded={showNames}
+                  onClick={() => toggleNames(group.key)}
+                  aria-label={`Personalizar nomes de ${title}`}
+                >{showNames ? "Ocultar nomes" : "Personalizar nomes"}</button>
+              ) : null}
+
+              <div className="route-editor__actions route-planner__order-actions">
+                <button type="button" disabled={groupIndex === 0} onClick={() => moveGroup(groupIndex, -1)} aria-label={`Mover ${title} para cima`}><ArrowUp size={17} /></button>
+                <button type="button" disabled={groupIndex === groups.length - 1} onClick={() => moveGroup(groupIndex, 1)} aria-label={`Mover ${title} para baixo`}><ArrowDown size={17} /></button>
+                <button type="button" onClick={() => removeGroup(group)} aria-label={`Remover ${title} do roteiro`}><Trash2 size={17} /></button>
+              </div>
+
+              {showNames ? (
+                <div className="route-planner__names">
+                  {group.environments.map((environment, environmentIndex) => {
+                    const inputLabel = custom
+                      ? "Nome do ambiente personalizado"
+                      : group.environments.length === 1
+                        ? `Nome de ${title}`
+                        : `Nome de ${title} ${environmentIndex + 1}`;
+                    return (
+                      <label key={environment.key}>
+                        <span>{inputLabel}</span>
+                        <input
+                          aria-label={inputLabel}
+                          aria-invalid={invalid || undefined}
+                          aria-describedby={invalid ? errorId : undefined}
+                          maxLength={60}
+                          value={environment.nome}
+                          onChange={(event) => updateName(environment.key, event.target.value)}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="route-planner__add">
+        <label htmlFor="route-add-type">Adicionar outro tipo de ambiente</label>
+        <div>
+          <select
+            id="route-add-type"
+            value={typeToAdd}
+            onChange={(event) => setTypeToAdd(event.target.value as EnvironmentType | "")}
+          >
+            <option value="">Selecione um tipo</option>
+            {availableTypes.map(({ value, label }) => (
+              <option value={value} key={value}>{value === "OUTRO" ? "Ambiente personalizado" : label}</option>
+            ))}
+          </select>
+          <button type="button" disabled={!typeToAdd || environments.length >= 30} onClick={addType}>
+            <Plus size={18} />Adicionar ao roteiro
+          </button>
+        </div>
+      </div>
+    </fieldset>
+  );
 }
 
 export function EnvironmentRouteEditor({
