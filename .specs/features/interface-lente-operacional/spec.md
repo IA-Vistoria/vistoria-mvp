@@ -1,24 +1,25 @@
-# Interface Lente Operacional Specification
+# Interface e roteiro adaptativo Specification
 
 ## Problem Statement
 
-O frontend funcional atual apresenta uma aparência genérica e um defeito de composição no cadastro da vistoria: o título invade a área do formulário em larguras de desktop. A interface também não traduz com força a proposta do MVP — capturar evidências, receber uma análise de IA revisável e gerar um relatório — nem mantém uma identidade coerente entre acesso, navegação, coleta, revisão e documento final.
+O MVP atual combina uma interface genérica com um protocolo fixo de 12 itens técnicos. Esse protocolo não representa imóveis reais: ambientes variam entre casas, apartamentos e imóveis comerciais. O cliente precisa saber o que registrar, mas também precisa adaptar o roteiro sem perder estrutura, rastreabilidade ou qualidade mínima para a análise da IA.
 
 ## Goals
 
-- [ ] Recriar a jornada do cliente com a direção visual Lente Operacional aprovada, sem alterar os contratos do backend.
-- [ ] Eliminar sobreposição, corte e rolagem horizontal em 390, 768 e 1440 px.
-- [ ] Tornar IA, evidência e relatório reconhecíveis na marca, na navegação e nos estados do fluxo.
-- [ ] Preservar comportamento, recuperação de erro, acessibilidade e testes existentes.
+- [ ] Criar e persistir um roteiro próprio para cada vistoria, com 1 a 30 ambientes ordenados.
+- [ ] Exigir uma visão geral por ambiente e permitir detalhes adicionais associados ao mesmo contexto.
+- [ ] Redesenhar toda a jornada IA-first com a identidade Lente Operacional revisada.
+- [ ] Eliminar protocolo fixo, sobreposição, corte e rolagem horizontal em 390, 768 e 1440 px.
+- [ ] Preservar autenticação, ownership, estados da análise, revisão e relatório existentes.
 
 ## Out of Scope
 
 | Feature | Reason |
 | --- | --- |
-| Alterar API, banco ou estados de domínio | O redesign consome contratos já implementados. |
-| Remover as rotas legadas de engenharia | Compatibilidade técnica não é o objetivo desta entrega. |
-| Criar laudo técnico, assinatura ou conformidade normativa | Contraria os limites confirmados do MVP. |
-| Adicionar biblioteca visual ou de ícones | A stack existente já contém os recursos necessários e dependências exigem decisão separada. |
+| Remover rotas legadas de engenharia | Compatibilidade histórica não faz parte da jornada principal. |
+| Laudo técnico, assinatura ou conformidade normativa | O produto entrega relatório fotográfico por IA, não laudo profissional. |
+| Alterar o contrato do provedor VLM externo | Não existe documentação confirmada para novos campos nesse serviço. |
+| Excluir evidências ou ambientes que já possuam fotos | Preservação de dados exige um fluxo próprio de exclusão. |
 | Deploy em produção | A entrega autorizada é local, em branch de trabalho. |
 
 ---
@@ -27,11 +28,13 @@ O frontend funcional atual apresenta uma aparência genérica e um defeito de co
 
 | Assumption / decision | Chosen default | Rationale | Confirmed? |
 | --- | --- | --- | --- |
-| Autoridade visual | Usar o conceito aprovado `exec-1be9f796-2054-4264-8c51-a7bfd4861639.png` | O usuário aprovou essa versão após refinar símbolo e cores. | y |
-| Jornada principal | Priorizar cliente e relatório por IA; manter engenharia fora da navegação principal | O usuário corrigiu explicitamente o foco do MVP. | y |
-| Fotografias antes da primeira captura | Usar imagens autorais como demonstração identificada, nunca como evidência do usuário | Mantém fidelidade visual sem fabricar dados. | y |
-| Ícones | Reutilizar Lucide | Já está instalado, mantém consistência e evita nova dependência. | y |
-| Tema | Dark-first na aplicação; relatório mantém superfície clara de documento | Preserva a direção escolhida e a legibilidade de impressão. | y |
+| Quantidade de ambientes | Entre 1 e 30 por vistoria | Mantém flexibilidade com payload e UI limitados. | y |
+| Estrutura mínima | Uma foto `VISAO_GERAL` por ambiente | Dá contexto mínimo verificável para a IA. | y |
+| Fotos adicionais | Categoria `DETALHE`, sem limite funcional novo | Mantém a coleta flexível e reutiliza limites de upload existentes. | y |
+| Tipo do imóvel | `CASA`, `APARTAMENTO`, `COMERCIAL` ou `OUTRO`; usado somente para sugestão | A sugestão acelera o fluxo sem impor ambientes. | y |
+| Edição do roteiro | Permitida somente em rascunho; ambiente com evidência não pode ser removido | Evita perda silenciosa de dados. | y |
+| Identidade | Grafite-petróleo, mineral, verdigris e âmbar funcional; logo sem moldura externa | Reflete o refinamento visual mais recente. | y |
+| Legado | Evidências antigas continuam legíveis por `protocoloItem` | Evita apagar ou invalidar dados existentes. | y |
 
 **Open questions:** none - all resolved or logged above.
 
@@ -39,85 +42,125 @@ O frontend funcional atual apresenta uma aparência genérica e um defeito de co
 
 ## User Stories
 
-### P1: Iniciar uma vistoria sem colisão visual ⭐ MVP
+### P1: Configurar um roteiro compatível com o imóvel ⭐ MVP
 
-**User Story**: As a responsável pelo imóvel, I want identificar o imóvel em uma interface clara so that eu inicie a captura com confiança.
+**User Story**: As a responsável pelo imóvel, I want escolher os ambientes existentes so that eu receba um roteiro claro sem registrar cômodos inexistentes.
 
-**Why P1**: É a entrada do fluxo principal e contém o defeito visual relatado pelo usuário.
+**Why P1**: O roteiro define a coleta e corrige o principal engessamento do produto.
 
 **Acceptance Criteria**:
 
-1. WHEN o usuário abre `/client/vistorias/nova` em 1440 px THEN system SHALL exibir fotografia contextual, progresso, título e formulário sem sobreposição ou texto cortado.
-2. WHEN a largura varia entre 390, 768 e 1440 px THEN system SHALL reorganizar conteúdo sem rolagem horizontal e sem quebra artificial por `<br>`.
-3. WHEN o endereço está vazio e o usuário envia o formulário THEN system SHALL anunciar o erro junto ao campo e preservar foco recuperável.
-4. WHILE a criação do rascunho está em andamento system SHALL impedir submissões duplicadas e comunicar o estado ocupado.
-5. The system SHALL indicar que a imagem contextual é ilustrativa e que nenhuma foto foi enviada à IA nessa etapa.
+1. WHEN o usuário escolhe um tipo de imóvel THEN the system SHALL sugerir ambientes sem marcar a sugestão como obrigatória.
+2. WHEN o usuário cria uma vistoria THEN the system SHALL persistir endereço, tipo do imóvel e de 1 a 30 ambientes na ordem enviada.
+3. WHEN o usuário adiciona um ambiente personalizado THEN the system SHALL aceitar nome de 2 a 60 caracteres e um tipo conhecido ou `OUTRO`.
+4. IF o roteiro contém nomes duplicados sem diferenciar maiúsculas de minúsculas THEN the system SHALL responder `422 Unprocessable Content` com erro associado a `ambientes`.
+5. IF a criação contém zero ou mais de 30 ambientes THEN the system SHALL responder `422 Unprocessable Content` sem criar a vistoria.
+6. The system SHALL tratar o roteiro persistido na vistoria como fonte de verdade do progresso.
 
-**Independent Test**: Abrir a rota nos três breakpoints, submeter vazio e criar um rascunho válido.
+**Independent Test**: Criar casa, apartamento e imóvel comercial com listas diferentes e consultar cada roteiro persistido.
 
 ---
 
-### P1: Reconhecer e navegar pelo produto IA-first ⭐ MVP
+### P1: Editar o roteiro sem perder evidências ⭐ MVP
 
-**User Story**: As a usuário do MVP, I want reconhecer rapidamente marca, próxima ação e estágio da vistoria so that eu não confunda o produto com um painel genérico ou uma fila profissional.
+**User Story**: As a responsável em campo, I want ajustar os ambientes durante a vistoria so that o roteiro continue representando o imóvel real.
 
-**Why P1**: A identidade e a hierarquia orientam toda a jornada.
+**Why P1**: Ambientes podem ser descobertos ou nomeados de outra forma durante a coleta.
 
 **Acceptance Criteria**:
 
-1. WHEN uma tela autenticada do cliente é exibida THEN system SHALL mostrar a marca Vistor.IA aprovada e navegação para Início, Nova vistoria e Relatórios.
-2. WHEN a rota ativa muda THEN system SHALL identificar o destino atual por texto, ícone e estado visual, sem depender apenas de cor.
-3. WHEN a tela é usada por teclado THEN system SHALL manter foco visível e não oculto por navegação fixa.
-4. WHERE o usuário utiliza celular, the system SHALL oferecer navegação inferior com alvos de toque mínimos de 44 px e safe area.
-5. The system SHALL manter engenharia, homologação e parecer profissional fora da jornada principal do cliente.
+1. WHILE a vistoria está `EM_RASCUNHO`, the system SHALL permitir adicionar, renomear e reordenar ambientes.
+2. WHEN um ambiente sem evidências é omitido da atualização THEN the system SHALL removê-lo do roteiro.
+3. IF um ambiente com evidências é omitido da atualização THEN the system SHALL responder `409 Conflict` e preservar o roteiro anterior.
+4. IF duas atualizações concorrentes alteram a mesma vistoria THEN the system SHALL rejeitar a atualização obsoleta com `409 Conflict`.
+5. WHILE a vistoria não está `EM_RASCUNHO`, the system SHALL rejeitar alterações do roteiro com `409 Conflict`.
 
-**Independent Test**: Navegar pelo shell do cliente em desktop e celular e verificar foco, estado ativo e rótulos.
+**Independent Test**: Adicionar e remover ambiente vazio, tentar remover ambiente com foto e tentar alterar vistoria fora de rascunho.
 
 ---
 
-### P1: Concluir coleta, revisão e relatório no mesmo sistema visual ⭐ MVP
+### P1: Capturar evidências estruturadas por ambiente ⭐ MVP
 
-**User Story**: As a usuário em vistoria, I want percorrer captura, análise, revisão e relatório com continuidade so that eu compreenda a origem e o estado de cada informação.
+**User Story**: As a responsável pelo imóvel, I want receber instruções objetivas para cada ambiente so that eu envie fotos úteis sem seguir uma lista técnica rígida.
 
-**Why P1**: É o valor central do produto.
+**Why P1**: A análise da IA depende de contexto mínimo e associação correta.
 
 **Acceptance Criteria**:
 
-1. WHEN o usuário abre uma vistoria em rascunho THEN system SHALL apresentar roteiro, evidência ativa, progresso real e ações de câmera/galeria com hierarquia operacional.
-2. WHILE a IA processa as fotos system SHALL comunicar que as evidências estão salvas, evitar porcentagem fabricada e permitir retorno ao início.
-3. WHEN a revisão está pendente THEN system SHALL manter a foto dominante, a observação da IA e as decisões humanas relacionadas no mesmo contexto visual.
-4. WHEN todas as revisões são persistidas THEN system SHALL oferecer a geração do Relatório de vistoria por IA.
-5. WHEN o relatório está disponível THEN system SHALL apresentar documento legível, rastreável e imprimível sem perder a identidade do produto.
-6. IF upload, análise, carregamento ou compartilhamento falha THEN system SHALL preservar o último estado confirmado e mostrar recuperação no contexto da ação.
+1. WHEN o usuário abre uma vistoria em rascunho THEN the system SHALL exibir somente os ambientes persistidos e o progresso real desse roteiro.
+2. WHEN uma foto é enviada THEN the system SHALL associá-la a um `ambienteId` pertencente à vistoria e à categoria `VISAO_GERAL` ou `DETALHE`.
+3. IF o `ambienteId` não pertence à vistoria THEN the system SHALL responder `422 Unprocessable Content` e não armazenar o arquivo.
+4. IF a categoria não é suportada THEN the system SHALL responder `422 Unprocessable Content` e não armazenar o arquivo.
+5. WHILE o upload está em andamento, the system SHALL impedir submissão duplicada no mesmo controle e comunicar o estado ocupado.
+6. WHEN o usuário escolhe “Pular por agora” THEN the system SHALL navegar sem marcar o ambiente como concluído.
+7. WHEN a tela não possui foto real THEN the system SHALL mostrar um estado explícito sem simular evidência do usuário.
 
-**Independent Test**: Executar o happy path coberto pelos mocks existentes do rascunho até o relatório e inspecionar os estados de falha.
+**Independent Test**: Percorrer roteiros de tamanhos diferentes, enviar visão geral e detalhe e validar os erros de associação.
 
 ---
 
-### P2: Usar uma interface acessível e resiliente
+### P1: Enviar somente uma coleta minimamente completa ⭐ MVP
 
-**User Story**: As a pessoa com diferentes capacidades e dispositivos, I want operar o fluxo com teclado, leitor de tela ou toque so that eu consiga concluir a vistoria sem barreiras evitáveis.
+**User Story**: As a cliente, I want saber exatamente o que falta so that eu envie uma vistoria compreensível para a IA.
 
-**Why P2**: A vistoria pode ocorrer em condições físicas e ambientais variadas.
+**Why P1**: Flexibilidade sem regra produziria relatórios inconsistentes.
 
 **Acceptance Criteria**:
 
-1. The system SHALL manter contraste WCAG 2.2 AA nos pares de texto, ação e estado utilizados.
-2. WHEN `prefers-reduced-motion` está ativo THEN system SHALL remover movimento não essencial sem ocultar conteúdo.
-3. WHEN um controle iconográfico não possui texto visível THEN system SHALL fornecer nome acessível.
-4. WHEN um erro de formulário ocorre THEN system SHALL anunciá-lo por `role="alert"` e associá-lo ao campo relevante.
+1. WHEN todos os ambientes possuem ao menos uma `VISAO_GERAL` THEN the system SHALL permitir o envio para análise.
+2. IF um ou mais ambientes não possuem `VISAO_GERAL` THEN the system SHALL responder `422 Unprocessable Content` e informar os nomes ausentes.
+3. WHEN a vistoria é enviada THEN the system SHALL preservar ambiente, categoria e ordem junto de cada evidência para revisão e relatório.
+4. WHILE a IA processa as fotos, the system SHALL informar que as evidências estão salvas sem fabricar porcentagem de progresso.
+5. IF a análise falha THEN the system SHALL preservar roteiro e evidências e oferecer nova tentativa.
 
-**Independent Test**: Verificar a semântica com Testing Library e os pares/estados durante a inspeção visual.
+**Independent Test**: Tentar enviar roteiro incompleto, completar as visões gerais e percorrer processamento, falha e retry.
+
+---
+
+### P1: Revisar e gerar relatório com contexto ⭐ MVP
+
+**User Story**: As a responsável pelo imóvel, I want revisar observações da IA no contexto do ambiente so that o relatório preserve a origem de cada conclusão.
+
+**Why P1**: Revisão e relatório são a entrega central do MVP.
+
+**Acceptance Criteria**:
+
+1. WHEN a revisão está pendente THEN the system SHALL mostrar foto, ambiente, observação da IA e decisão humana no mesmo contexto.
+2. WHEN todas as observações são revisadas THEN the system SHALL permitir gerar o Relatório de vistoria por IA.
+3. WHEN o relatório está disponível THEN the system SHALL agrupar evidências por ambiente e distinguir observação da IA de decisão do responsável.
+4. The system SHALL declarar que o relatório fotográfico por IA não substitui laudo técnico profissional.
+5. WHEN o relatório é impresso THEN the system SHALL ocultar controles e manter uma superfície clara legível.
+
+**Independent Test**: Revisar achados de dois ambientes, concluir o relatório e imprimir a visualização.
+
+---
+
+### P2: Operar uma interface clara, responsiva e acessível
+
+**User Story**: As a pessoa usando celular ou teclado, I want entender intenção, estado e próxima ação so that eu conclua a vistoria sem barreiras evitáveis.
+
+**Why P2**: A coleta ocorre em campo e em dispositivos variados.
+
+**Acceptance Criteria**:
+
+1. WHEN uma tela autenticada é exibida THEN the system SHALL mostrar a marca sem moldura externa e navegação para Início, Nova vistoria e Relatórios.
+2. WHEN a largura é 390, 768 ou 1440 px THEN the system SHALL reorganizar conteúdo sem rolagem horizontal, sobreposição ou texto cortado.
+3. WHERE a navegação móvel é exibida, the system SHALL usar alvos de toque de pelo menos 44 px e respeitar safe area.
+4. WHEN um erro de formulário ocorre THEN the system SHALL anunciá-lo por `role="alert"` e associá-lo ao campo relevante.
+5. WHEN `prefers-reduced-motion` está ativo THEN the system SHALL remover movimento não essencial sem ocultar conteúdo.
+6. The system SHALL manter contraste WCAG 2.2 AA nos pares de texto, ação e estado utilizados.
+
+**Independent Test**: Navegar com teclado e verificar as telas nos três breakpoints.
 
 ---
 
 ## Edge Cases
 
-- IF um endereço ou rótulo é longo THEN system SHALL quebrá-lo dentro do próprio contêiner sem sobrepor controles.
-- IF uma foto real não está disponível THEN system SHALL mostrar um estado explícito, não um placeholder que simule evidência.
-- WHEN o zoom do navegador alcança 200% THEN system SHALL preservar leitura e acesso às ações principais.
-- IF JavaScript demora a hidratar THEN system SHALL evitar deslocamento estrutural causado por fontes ou imagens sem dimensão reservada.
-- WHEN o relatório é impresso THEN system SHALL ocultar controles e manter o documento em superfície clara.
+- IF o endereço ou nome do ambiente é longo THEN the system SHALL quebrar o texto dentro do contêiner sem sobrepor controles.
+- IF o upload falha após armazenamento e antes da persistência THEN the system SHALL remover o arquivo órfão e preservar o estado anterior.
+- IF uma atualização de roteiro contém um identificador de outro cliente THEN the system SHALL responder `404 Not Found` ou `403 Forbidden` conforme o contrato existente, sem revelar dados.
+- WHEN o zoom alcança 200% THEN the system SHALL preservar leitura e acesso às ações principais.
+- IF uma evidência legada não possui ambiente estruturado THEN the system SHALL continuar exibindo seu `protocoloItem` sem bloquear relatórios existentes.
 
 ---
 
@@ -125,19 +168,22 @@ O frontend funcional atual apresenta uma aparência genérica e um defeito de co
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| UI-01 | P1: Iniciar vistoria | Design | In Design |
-| UI-02 | P1: Navegar no produto | Design | In Design |
-| UI-03 | P1: Coleta e relatório | Design | In Design |
-| UI-04 | P2: Acessibilidade | Design | In Design |
+| ROTEIRO-01 | P1: Configurar roteiro | Design | In Design |
+| ROTEIRO-02 | P1: Editar roteiro | Design | In Design |
+| CAPTURA-01 | P1: Captura estruturada | Design | In Design |
+| ENVIO-01 | P1: Coleta completa | Design | In Design |
+| RELATORIO-01 | P1: Revisão e relatório | Design | In Design |
+| UI-01 | P2: Interface acessível | Design | In Design |
 
-**Coverage:** 4 total, 0 mapped to tasks, 4 unmapped.
+**Coverage:** 6 total, 0 mapped to tasks, 6 unmapped.
 
 ---
 
 ## Success Criteria
 
-- [ ] Os testes de frontend passam sem remoção ou skip.
-- [ ] Lint e build de produção passam.
-- [ ] As capturas em 390, 768 e 1440 px não apresentam colisão, corte ou rolagem horizontal.
-- [ ] A comparação visual da nova vistoria atende à composição aprovada e o `design-qa.md` termina com `final result: passed`.
-- [ ] Detector visual, revisão independente e validação TLC não deixam achado material aberto.
+- [ ] Casa, apartamento e imóvel comercial podem usar roteiros diferentes sem mudança de código.
+- [ ] Nenhuma vistoria nova depende do total fixo de 12 itens.
+- [ ] Backend e frontend rejeitam envio enquanto algum ambiente não possui visão geral.
+- [ ] Testes de backend e frontend, lint e builds passam sem remoção ou skip.
+- [ ] Capturas em 390, 768 e 1440 px não apresentam colisão, corte ou overflow horizontal.
+- [ ] `app/design-qa.md` termina com `final result: passed`.

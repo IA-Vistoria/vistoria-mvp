@@ -1,4 +1,4 @@
-# Interface Lente Operacional Design
+# Interface e roteiro adaptativo Design
 
 **Spec**: `.specs/features/interface-lente-operacional/spec.md`
 **Status**: Approved
@@ -7,20 +7,19 @@
 
 ## Architecture Overview
 
-O redesign permanece dentro do frontend Next.js existente. Uma fundação visual global define tokens e padrões; componentes de marca e navegação aplicam a identidade; as features atuais mantêm os contratos e a máquina de estados já testados. Não há mudança de API, persistência ou domínio.
+`Vistoria` permanece como raiz do agregado e passa a possuir uma lista ordenada de `AmbienteVistoria`. A evidência referencia um ambiente e uma categoria de captura. O frontend cria o rascunho somente depois que endereço e roteiro foram definidos, usa o roteiro retornado pela API como fonte de verdade e preserva a máquina de estados existente para IA, revisão e relatório.
 
 ```mermaid
 graph TD
-    A[Rotas App Router] --> B[AuthForm e DashboardShell]
-    B --> C[ClientDashboard]
-    B --> D[NewInspectionForm]
-    B --> E[InspectionWorkflow]
-    E --> F[Captura e processamento]
-    E --> G[InspectionReview]
-    E --> H[InspectionReport]
-    C --> I[API existente]
-    D --> I
-    E --> I
+    A[Endereço e tipo do imóvel] --> B[Configuração do roteiro]
+    B --> C[POST /api/vistorias]
+    C --> D[Vistoria + ambientes persistidos]
+    D --> E[Captura por ambiente]
+    E --> F[Imagem + ambiente + categoria]
+    F --> G[Validação de visão geral por ambiente]
+    G --> H[Análise da IA]
+    H --> I[Revisão do responsável]
+    I --> J[Relatório agrupado por ambiente]
 ```
 
 ---
@@ -31,77 +30,124 @@ graph TD
 
 | Component | Location | How to Use |
 | --- | --- | --- |
-| `DashboardShell` | `app/frontend/src/components/DashboardShell.tsx` | Manter roteamento e sessão, substituindo composição e marca. |
-| `AuthForm` | `app/frontend/src/features/auth/AuthForm.tsx` | Preservar autenticação e tratamento de erro; aplicar nova narrativa visual. |
-| `InspectionWorkflow` | `app/frontend/src/features/inspections/client/inspection-workflow.tsx` | Preservar polling, upload, protocolo e transições. |
-| `InspectionReview` | `app/frontend/src/features/inspections/client/inspection-review.tsx` | Preservar decisões e reconciliação; reforçar relação foto-contexto. |
-| `InspectionReport` | `app/frontend/src/features/inspections/client/inspection-report.tsx` | Preservar rastreabilidade e impressão; alinhar capa e ações à nova marca. |
-| Lucide | `app/frontend/package.json` | Usar o conjunto já instalado, sem adicionar dependência. |
+| `Vistoria` | `app/src/main/java/br/com/vistoriapredial/vistoria/domain/` | Continua como agregado e controla estado/concorrência. |
+| `ImagemVistoria` | `app/src/main/java/br/com/vistoriapredial/vistoria/domain/` | Mantém storage e passa a referenciar ambiente/categoria. |
+| `VistoriaService` | `app/src/main/java/br/com/vistoriapredial/vistoria/application/` | Orquestra criação, edição do roteiro, upload e envio. |
+| `EvidenceFileValidator` | `app/src/main/java/br/com/vistoriapredial/vistoria/application/` | Preserva validação de tipo, tamanho e conteúdo. |
+| `DashboardShell` | `app/frontend/src/components/` | Preserva sessão e rotas; recebe a nova identidade. |
+| `InspectionWorkflow` | `app/frontend/src/features/inspections/client/` | Preserva polling, retry e estados; troca protocolo fixo pelo roteiro da API. |
+| `InspectionReview` e `InspectionReport` | `app/frontend/src/features/inspections/client/` | Preservam revisão e impressão; exibem contexto do ambiente. |
 
 ### Integration Points
 
 | System | Integration Method |
 | --- | --- |
-| Autenticação | `auth-service.ts` e sessão local existentes, sem mudança de payload. |
-| Vistorias | `features/inspections/api.ts`, mantendo rotas, estados e `ProblemDetail`. |
-| Evidências | `EvidenceImage` continua responsável por carregar a imagem autenticada. |
-| Fontes | `next/font` no layout para evitar dependência externa em runtime. |
+| Banco | Migration V8 cria ambientes e adiciona tipo/categoria sem apagar colunas legadas. |
+| API | DTOs imutáveis para criação/roteiro; multipart recebe `ambienteId` e `categoria`. |
+| IA | O provedor continua recebendo imagens; ambiente e categoria permanecem no agregado e no relatório. |
+| Storage | Ordem atual de armazenar, persistir e compensar falha é mantida. |
 
 ---
 
 ## Components
 
+### AmbienteVistoria
+
+- **Purpose**: Representar um ambiente ordenado e pertencente a uma única vistoria.
+- **Location**: `app/src/main/java/br/com/vistoriapredial/vistoria/domain/`
+- **Interfaces**:
+  - `criar(tipo, nome, ordem)` valida nome e posição.
+  - `renomear(tipo, nome, ordem)` altera o roteiro somente via agregado.
+- **Dependencies**: `TipoAmbiente`, `Vistoria`.
+- **Reuses**: convenções JPA existentes, `@Version` no agregado pai.
+
+### RoteiroVistoriaService
+
+- **Purpose**: Criar e reconciliar a lista de ambientes sem perder evidências.
+- **Location**: métodos coesos em `VistoriaService`.
+- **Interfaces**:
+  - `criarVistoria(cliente, command)` persiste o agregado completo.
+  - `atualizarRoteiro(id, cliente, command)` adiciona, renomeia, reordena e remove somente ambientes vazios.
+- **Dependencies**: repositório, regras de ownership e status.
+- **Reuses**: `salvarComControleConcorrencia` e exceções RFC 9457.
+
+### RouteBuilder
+
+- **Purpose**: Coletar tipo do imóvel e ambientes antes de criar o rascunho.
+- **Location**: `app/frontend/src/features/inspections/client/new-inspection-form.tsx`.
+- **Interfaces**: envia `CreateInspectionRequest` com lista ordenada.
+- **Dependencies**: templates locais de sugestão e API existente.
+- **Reuses**: estados de erro e busy state do formulário atual.
+
+### AdaptiveCaptureWorkspace
+
+- **Purpose**: Navegar pelo roteiro persistido e enviar visão geral ou detalhe.
+- **Location**: `app/frontend/src/features/inspections/client/inspection-workflow.tsx`.
+- **Interfaces**: `uploadEvidence(inspectionId, ambienteId, categoria, file)`.
+- **Dependencies**: `Inspection.ambientes`, `Evidence.ambienteId`.
+- **Reuses**: upload, retry, polling, análise e `EvidenceImage` atuais.
+
 ### BrandMark
 
-- **Purpose**: Exibir a marca aprovada com símbolo que reúne imóvel, varredura e nós de IA.
-- **Location**: `app/frontend/src/components/brand/BrandMark.tsx`
-- **Interfaces**:
-  - `BrandMark({ compact, inverse })` - alterna assinatura completa e versão compacta.
-- **Dependencies**: ativo raster com transparência e `next/image`.
-- **Reuses**: semântica de link fornecida pelo componente consumidor.
-
-### DashboardShell
-
-- **Purpose**: Unificar navegação desktop e móvel ao redor da tarefa ativa.
-- **Location**: `app/frontend/src/components/DashboardShell.tsx`
-- **Interfaces**:
-  - `DashboardShell({ role, children })` - preserva proteção por papel e logout.
-- **Dependencies**: `BrandMark`, `usePathname`, sessão local e Lucide.
-- **Reuses**: rotas e comportamento de logout atuais.
-
-### InspectionStage
-
-- **Purpose**: Compor a entrada fotográfica da nova vistoria com imagem contextual honesta, progresso e formulário.
-- **Location**: `app/frontend/src/features/inspections/client/new-inspection-form.tsx`
-- **Interfaces**:
-  - submissão existente por `createInspection(address)`.
-- **Dependencies**: ativos autorais e API existente.
-- **Reuses**: bloqueio de duplicidade, `ProblemDetail` e redirecionamento atuais.
-
-### OperationalJourney
-
-- **Purpose**: Aplicar o mesmo sistema visual aos estados de captura, processamento, revisão e relatório.
-- **Location**: `app/frontend/src/features/inspections/client/`
-- **Interfaces**:
-  - estados continuam derivados de `InspectionStatus`.
-- **Dependencies**: componentes atuais, `EvidenceImage`, protocolo e API.
-- **Reuses**: toda a lógica de estado existente; o redesign altera apresentação e microcópia somente quando exigido pela especificação.
+- **Purpose**: Exibir a assinatura aprovada sem moldura externa.
+- **Location**: `app/frontend/src/components/brand/BrandMark.tsx`.
+- **Interfaces**: `BrandMark({ compact, inverse })`.
+- **Dependencies**: ativo raster transparente e `next/image`.
+- **Reuses**: `next/font` e Lucide já instalados.
 
 ---
 
 ## Data Models
 
-Nenhum modelo de domínio ou contrato HTTP é alterado. Os únicos novos dados são metadados estáticos de apresentação para as imagens demonstrativas:
+### Backend
 
-```typescript
-interface ShowcaseFrame {
-  src: string;
-  label: string;
-  alt: string;
+```java
+enum TipoImovel { CASA, APARTAMENTO, COMERCIAL, OUTRO }
+enum TipoAmbiente { ENTRADA, SALA, COZINHA, BANHEIRO, QUARTO, AREA_SERVICO, VARANDA, GARAGEM, AREA_EXTERNA, ESCRITORIO, OUTRO }
+enum CategoriaEvidencia { VISAO_GERAL, DETALHE }
+
+AmbienteVistoria {
+  Long id;
+  Vistoria vistoria;
+  TipoAmbiente tipo;
+  String nome;
+  int ordem;
 }
 ```
 
-**Relationships**: `ShowcaseFrame` existe somente na tela de nova vistoria e nunca é persistido ou enviado à API.
+`ImagemVistoria` recebe `AmbienteVistoria ambiente` e `CategoriaEvidencia categoria`. `protocoloItem` permanece somente para leitura legada e recebe um identificador derivado nas evidências novas.
+
+### API
+
+```json
+{
+  "endereco": "Rua das Acácias, 123",
+  "tipoImovel": "APARTAMENTO",
+  "ambientes": [
+    { "tipo": "SALA", "nome": "Sala" },
+    { "tipo": "QUARTO", "nome": "Quarto 1" }
+  ]
+}
+```
+
+```typescript
+interface InspectionRoom {
+  id: number;
+  tipo: RoomType;
+  nome: string;
+  ordem: number;
+}
+
+interface Evidence {
+  id: number;
+  ambienteId: number | null;
+  ambienteNome: string | null;
+  categoria: "VISAO_GERAL" | "DETALHE" | null;
+  protocoloItem: string;
+  dataUpload: string;
+  conteudoUrl: string;
+}
+```
 
 ---
 
@@ -109,12 +155,13 @@ interface ShowcaseFrame {
 
 | Error Scenario | Handling | User Impact |
 | --- | --- | --- |
-| Endereço vazio | Erro inline ligado ao input e anúncio por alerta | Usuário sabe o que corrigir sem perder conteúdo. |
-| Criação falha | `ProblemDetail` existente permanece visível no formulário | Endereço digitado é preservado. |
-| Upload falha | Item mantém evidência confirmada e ação de retry | Trabalho anterior não desaparece. |
-| IA falha | Estado operacional próprio com reenvio | Fotos permanecem salvas. |
-| Carregamento falha | `AsyncState` oferece recuperação | Não cria rascunho duplicado. |
-| Compartilhamento falha | Feedback contextual existente | Relatório continua consultável e imprimível. |
+| Roteiro vazio, grande ou duplicado | Bean Validation + regra de aplicação, `422` | Erro permanece associado à configuração. |
+| Ambiente não pertence à vistoria | `InvalidEvidenceException`, `422` antes do storage | Nenhum arquivo órfão. |
+| Remoção de ambiente com evidências | Exceção de conflito, `409` | Evidências e roteiro permanecem intactos. |
+| Envio incompleto | `422` com nomes ausentes | UI leva o usuário diretamente aos ambientes pendentes. |
+| Concorrência | `@Version` e `409` | Cliente recarrega o estado mais recente. |
+| Upload falha após storage | Compensação existente remove o arquivo | Estado confirmado é preservado. |
+| Evidência legada | Fallback por `protocoloItem` | Relatórios existentes continuam legíveis. |
 
 ---
 
@@ -122,11 +169,11 @@ interface ShowcaseFrame {
 
 | Concern | Location (file:line) | Impact | Mitigation |
 | --- | --- | --- | --- |
-| Folha global monolítica com 3.132 linhas | `app/frontend/src/app/globals.css:1` | Regras antigas podem competir com a nova identidade. | Separar fundações, shell, autenticação e jornada em folhas importadas com ownership explícito. |
-| Título da nova vistoria sem medida limitada | `app/frontend/src/features/inspections/client/new-inspection-form.tsx:38` | Colisão com formulário no desktop. | Grid com `minmax(0, ...)`, largura máxima em `ch`, `text-wrap: balance` e testes visuais. |
-| Conceito contém fotos antes do upload real | `app/frontend/src/features/inspections/client/new-inspection-form.tsx:35` | Pode parecer evidência do usuário. | Rotular como prévia ilustrativa do roteiro e nunca misturar com `Inspection.imagens`. |
-| Rota de relatórios é filtro em query-string | `app/frontend/src/components/DashboardShell.tsx:51` | Estado ativo pode não ser inferido apenas pelo pathname. | Incluir `useSearchParams` ou manter rótulo explícito; não criar rota nova. |
-| Fontes Google em build | `app/frontend/src/app/layout.tsx:2` | Build pode exigir rede quando cache ausente. | Manter `next/font` atual e registrar bloqueio real caso ocorra. |
+| Protocolo duplicado no frontend e backend | `shared/protocol.ts:1`, `ProtocoloVistoria.java:1` | Drift e lista fixa divergente | Substituir por roteiro persistido retornado pela API. |
+| Upload grava arquivo antes do banco | `VistoriaService.java:90` | Arquivo órfão em falha | Preservar compensação e validar ambiente antes do storage. |
+| IA externa recebe apenas imagem | `VlmIntegrationService.java:42` | Modelo não recebe o nome do ambiente | Não inventar contrato externo; manter metadados para revisão/relatório e registrar como futuro. |
+| Folha global monolítica | `app/frontend/src/app/globals.css:1` | Colisões e regressões visuais | Separar fundações e jornadas por responsabilidade. |
+| Evidências antigas não têm ambiente | `V2__create_vistoria_schema.sql:13` | Migração não pode tornar FK obrigatória | Nova FK permanece nula para legado; novos casos de uso exigem ambiente. |
 
 ---
 
@@ -134,8 +181,9 @@ interface ShowcaseFrame {
 
 | Decision | Choice | Rationale |
 | --- | --- | --- |
-| Organização de estilos | `globals.css` importa folhas por responsabilidade | Reduz acoplamento sem introduzir CSS-in-JS ou dependência. |
-| Marca | Ativo raster transparente produzido a partir do conceito aprovado | Evita desenho aproximado em CSS/SVG e preserva a assinatura escolhida. |
-| Paleta | Navy + mineral + turquesa; amarelo-lima funcional | Reflete a aprovação mais recente e separa marca de progresso. |
-| Relatório | Documento claro dentro de uma aplicação escura | Melhora leitura e impressão sem quebrar a identidade. |
-| Responsividade | CSS mobile-first com comp desktop como contrato visual | Atende uso de campo e corrige o defeito observado em desktop. |
+| Raiz do agregado | `Vistoria` controla ambientes e imagens | Ownership, status e concorrência já vivem ali. |
+| Criação | Endereço e roteiro são persistidos atomicamente | Evita rascunho sem estrutura. |
+| Flexibilidade | Tipos conhecidos + nome livre + `OUTRO` | Permite relatório consistente sem vocabulário fechado. |
+| Regra mínima | Uma visão geral por ambiente | Simples, explicável e verificável. |
+| Legado | Manter `protocolo_item` e FK de ambiente opcional no schema | Evita migração destrutiva. |
+| Paleta | Grafite-petróleo, mineral, verdigris e âmbar | Reduz competição cromática e mantém identidade profissional. |

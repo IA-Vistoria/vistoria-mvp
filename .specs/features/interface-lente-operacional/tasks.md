@@ -1,8 +1,8 @@
-# Interface Lente Operacional Tasks
+# Interface e roteiro adaptativo Tasks
 
 ## Execution Protocol (MANDATORY -- do not skip)
 
-Implement these tasks with the `tlc-spec-driven` skill: **activate it by name and follow its Execute flow and Critical Rules.** Do not search for skill files by filesystem path. The skill is the source of truth for the full flow (per-task cycle, adequacy review, Verifier, discrimination sensor).
+Implement these tasks with the `tlc-spec-driven` skill: **activate it by name and follow its Execute flow and Critical Rules.** Do not search for skill files by filesystem path. The skill is the source of truth for the full flow.
 
 **If the skill cannot be activated, STOP and tell the user - do not proceed without it.**
 
@@ -15,34 +15,36 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 ## Test Coverage Matrix
 
-| Layer | Required test | Coverage expectation |
-| --- | --- | --- |
-| Presentational React component | Unit with Testing Library | Accessible name, visible product meaning and variants used by consumers. |
-| Stateful React feature | Unit with Testing Library + user-event | Happy path, busy state and documented errors affected by the task. |
-| CSS/foundations and assets | Build + visual QA | Compilation, no missing assets, responsive captures and detector. |
-| Navigation shell | Unit with mocked Next navigation | Destinations, active state, logout and absence de engenharia no cliente. |
-| End-to-end visual journey | Existing integration-oriented component suite + browser inspection | Capture, review and report states remain operable. |
-| Documentation | none | Structural validation and read-back. |
+> Generated from `AGENTS.md`, existing JUnit/MockMvc/Testcontainers tests, Vitest/Testing Library suites, `app/pom.xml` and `app/frontend/package.json`.
+
+| Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
+| --- | --- | --- | --- | --- |
+| Domain/service | unit | Todas as regras e ramos dos ACs; todos os limites do roteiro | `app/src/test/java/**/*Test.java` | `.\mvnw.cmd test` |
+| Controller/contract | MockMvc | Rotas alteradas: happy path, validação, ownership e conflito | `app/src/test/java/**/*ControllerTest.java` | `.\mvnw.cmd test` |
+| Migration/persistence | integration PostgreSQL | Schema, FK, ordem e leitura legada | `app/src/test/java/**/*IntegrationTest.java` | `.\mvnw.cmd test` |
+| React stateful | unit + Testing Library | Happy path, busy, validação e erro documentado | `app/frontend/src/**/*.test.tsx` | `npm test` |
+| CSS/assets | build + visual QA | Sem ativo ausente, overflow, colisão ou contraste material | `app/design-qa.md` | `npm run lint && npm test && npm run build` |
 
 ## Gate Check Commands
 
 | Gate Level | When to Use | Command |
 | --- | --- | --- |
-| Quick | Component or feature unit change | `npm test -- <test-file>` |
-| Full | Cross-screen behavior change | `npm test` |
-| Build | Phase close or visual integration | `npm run lint`, then `npm test`, then `npm run build` |
+| Quick backend | Domínio ou caso de uso focado | `.\mvnw.cmd "-Dtest=<Teste>" test` em `app` |
+| Quick frontend | Componente ou feature focada | `npm test -- <teste>` em `app/frontend` |
+| Full | Contrato ou jornada transversal | `.\mvnw.cmd test` em `app`, depois `npm test` em `app/frontend` |
+| Build | Fechamento de fase | `.\mvnw.cmd test`; `npm run lint`; `npm test`; `npm run build` |
 
 ---
 
 ## Execution Plan
 
-### Phase 1: Foundation
+### Phase 1: Structured route
 
 ```text
 T1 → T2 → T3
 ```
 
-### Phase 2: Core Journey
+### Phase 2: Product interface
 
 ```text
 T3 → T4 → T5 → T6 → T7
@@ -58,109 +60,109 @@ T7 → T8
 
 ## Task Breakdown
 
-### T1: Criar fundações e marca
+### T1: Modelar roteiro persistido por ambiente
 
-**What**: Criar tokens, folhas de estilo modulares, ativos fotográficos e `BrandMark` reutilizável.
-**Where**: `app/frontend/src/components/brand/`
+**What**: Criar enums, agregado de ambiente, relacionamento de evidência e migration V8 compatível com dados legados.
+**Where**: `app/src/main/`
 **Depends on**: None
-**Reuses**: `next/image`, `next/font` e conceito visual aprovado.
-**Requirement**: UI-02, UI-04
+**Reuses**: `Vistoria`, `ImagemVistoria`, Flyway e Testcontainers existentes.
+**Requirement**: ROTEIRO-01, CAPTURA-01
 
 **Tools**:
 
-- Plugin: Product Design Image-to-Code
-- Skill: `imagegen`, `impeccable`, `ui-ux-pro-max`
+- Skill: `tlc-spec-driven`, `superpowers:test-driven-development`
 
 **Done when**:
 
-- [ ] A marca possui nome acessível e variantes completa/compacta.
-- [ ] Tokens cobrem cor, tipografia, espaço, raio, elevação, foco e movimento reduzido.
-- [ ] Imagens de demonstração estão no projeto, identificadas como ilustrativas e com proveniência.
-- [ ] Gate quick passa com ao menos 1 novo teste e nenhum teste removido.
+- [ ] O agregado aceita de 1 a 30 ambientes ordenados e rejeita nomes duplicados.
+- [ ] Imagem nova referencia ambiente e categoria; leitura legada continua possível.
+- [ ] Migration executa no PostgreSQL de integração sem editar migrations antigas.
+- [ ] Gate full passa com todos os testes anteriores e ao menos 6 novos cenários.
 
-**Tests**: unit
-**Gate**: quick
+**Tests**: unit + integration
+**Gate**: full
 
-**Commit**: `feat(identidade): cria fundações da lente operacional`
+**Commit**: `feat(dominio): modela roteiro adaptativo da vistoria`
 
-### T2: Reconstruir navegação do cliente
+### T2: Expor criação e edição do roteiro
 
-**What**: Transformar o shell lateral em cabeçalho operacional no desktop e navegação inferior no celular.
-**Where**: `app/frontend/src/components/DashboardShell.tsx`
+**What**: Alterar criação e adicionar atualização de roteiro com validação, ownership e conflito seguro.
+**Where**: `app/src/main/java/br/com/vistoriapredial/vistoria/`
 **Depends on**: T1
-**Reuses**: sessão, rotas e logout existentes.
-**Requirement**: UI-02, UI-04
+**Reuses**: `VistoriaService`, `VistoriaController`, `ProblemDetail` e `@Version`.
+**Requirement**: ROTEIRO-01, ROTEIRO-02
 
 **Tools**:
 
-- Skill: `product-design:image-to-code`, `ui-ux-pro-max`
+- Skill: `tlc-spec-driven`, `superpowers:test-driven-development`
 
 **Done when**:
 
-- [ ] Início, Nova vistoria e Relatórios têm ícone, texto e estado ativo.
-- [ ] A marca aprovada substitui o lockup genérico.
-- [ ] A navegação do cliente não exibe engenharia e os alvos móveis têm 44 px.
-- [ ] Gate quick passa com os testes do shell e nenhum teste removido.
+- [ ] `POST /api/vistorias` persiste tipo e ambientes atomicamente.
+- [ ] `PUT /api/vistorias/{id}/roteiro` adiciona, renomeia, reordena e remove somente ambientes sem evidência.
+- [ ] Validação retorna `422`; estado ou remoção insegura retorna `409`.
+- [ ] Gate full passa com todos os testes anteriores e ao menos 8 novos cenários.
 
-**Tests**: unit
-**Gate**: quick
+**Tests**: unit + MockMvc
+**Gate**: full
 
-**Commit**: `feat(navegacao): aplica shell operacional ao cliente`
+**Commit**: `feat(api): permite configurar o roteiro da vistoria`
 
-### T3: Redesenhar acesso
+### T3: Estruturar upload e regra de completude
 
-**What**: Aplicar a identidade fotográfica e a promessa IA-first às telas de login e cadastro.
-**Where**: `app/frontend/src/features/auth/`
+**What**: Associar upload a ambiente/categoria e impedir envio enquanto faltar visão geral.
+**Where**: `app/src/main/java/br/com/vistoriapredial/vistoria/`
 **Depends on**: T2
-**Reuses**: `AuthForm`, serviços e tratamento de sessão atuais.
-**Requirement**: UI-02, UI-04
+**Reuses**: validação de arquivo, compensação de storage e máquina de estados.
+**Requirement**: CAPTURA-01, ENVIO-01
 
 **Tools**:
 
-- Skill: `product-design:image-to-code`, `ui-ux-pro-max`
+- Skill: `tlc-spec-driven`, `superpowers:test-driven-development`
 
 **Done when**:
 
-- [ ] Login e cadastro comunicam captura, IA revisável e relatório sem engenharia.
-- [ ] Erros, labels, busy state e alternância de senha permanecem acessíveis.
-- [ ] Gate quick passa com a suíte de autenticação e nenhum teste removido.
+- [ ] Upload inválido falha antes de gravar arquivo.
+- [ ] Upload válido persiste ambiente e `VISAO_GERAL` ou `DETALHE`.
+- [ ] Envio incompleto retorna `422` com nomes ausentes; completo inicia a IA.
+- [ ] Gate full passa com todos os testes anteriores e ao menos 8 novos cenários.
 
-**Tests**: unit
-**Gate**: quick
+**Tests**: unit + MockMvc
+**Gate**: full
 
-**Commit**: `feat(auth): redesenha acesso com identidade operacional`
+**Commit**: `feat(captura): estrutura evidencias por ambiente`
 
-### T4: Corrigir e redesenhar nova vistoria
+### T4: Criar fundações visuais e contratos do frontend
 
-**What**: Implementar a composição fotográfica aprovada e eliminar a colisão do título com o formulário.
-**Where**: `app/frontend/src/features/inspections/client/new-inspection-form.tsx`
+**What**: Aplicar paleta revisada, marca sem moldura e tipos/API do roteiro adaptativo.
+**Where**: `app/frontend/src/`
 **Depends on**: T3
-**Reuses**: submissão, bloqueio de duplicidade e `ProblemDetail` existentes.
-**Requirement**: UI-01, UI-04
+**Reuses**: `next/image`, `next/font`, Lucide e cliente HTTP existente.
+**Requirement**: UI-01, ROTEIRO-01
 
 **Tools**:
 
-- Skill: `superpowers:test-driven-development`, `product-design:image-to-code`
+- Skill: `impeccable`, `product-design:image-to-code`, `ui-ux-pro-max`
 
 **Done when**:
 
-- [ ] Fotografia, progresso, título e formulário seguem o comp em 1440 px.
-- [ ] Endereço vazio produz erro anunciado e associado ao campo.
-- [ ] O texto informa que a prévia é ilustrativa e nada foi enviado à IA.
-- [ ] Gate quick passa com ao menos 2 novos cenários e nenhum teste removido.
+- [ ] `BrandMark` possui nome acessível e não contém moldura externa.
+- [ ] Tokens usam somente grafite-petróleo, mineral, verdigris, âmbar e cores semânticas.
+- [ ] Tipos e funções da API representam ambientes e categorias estruturados.
+- [ ] Gate quick passa com todos os testes anteriores e ao menos 4 novos cenários.
 
 **Tests**: unit
-**Gate**: quick
+**Gate**: quick frontend
 
-**Commit**: `fix(vistoria): corrige composição da etapa inicial`
+**Commit**: `feat(identidade): aplica a lente operacional revisada`
 
-### T5: Redesenhar início e estados compartilhados
+### T5: Redesenhar shell, acesso e início
 
-**What**: Tornar a próxima ação, relatórios e estados assíncronos coerentes com a Lente Operacional.
-**Where**: `app/frontend/src/features/inspections/client/client-dashboard.tsx`
+**What**: Aplicar a nova identidade à navegação, autenticação e dashboard IA-first.
+**Where**: `app/frontend/src/components/`
 **Depends on**: T4
-**Reuses**: ordenação, paginação, `AsyncState` e `StatusBadge` atuais.
-**Requirement**: UI-02, UI-03, UI-04
+**Reuses**: sessão, rotas, logout e listagem existentes.
+**Requirement**: UI-01
 
 **Tools**:
 
@@ -168,22 +170,23 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Próxima ação lidera a tela e estados reais permanecem legíveis sem depender só de cor.
-- [ ] Empty, loading e error conservam uma ação inequívoca.
-- [ ] Gate quick passa com a suíte do dashboard e nenhum teste removido.
+- [ ] Desktop usa cabeçalho e celular usa navegação inferior com alvos de 44 px.
+- [ ] Acesso explica captura, IA revisável e relatório sem engenharia.
+- [ ] Início prioriza próxima ação e estados reais.
+- [ ] Gate full passa com todos os testes anteriores e ao menos 5 novos cenários.
 
 **Tests**: unit
-**Gate**: quick
+**Gate**: full
 
-**Commit**: `feat(inicio): prioriza a proxima acao da vistoria`
+**Commit**: `feat(frontend): redesenha acesso e navegacao do cliente`
 
-### T6: Redesenhar captura e processamento
+### T6: Implementar configuração e captura flexível
 
-**What**: Aplicar o workspace fotográfico à captura guiada e aos estados de processamento/falha.
-**Where**: `app/frontend/src/features/inspections/client/inspection-workflow.tsx`
+**What**: Criar o construtor de roteiro e substituir o protocolo fixo pelo workspace adaptativo.
+**Where**: `app/frontend/src/features/inspections/client/`
 **Depends on**: T5
-**Reuses**: protocolo, upload, retry, polling e máquina de estados atuais.
-**Requirement**: UI-03, UI-04
+**Reuses**: create, upload, polling, retry e `EvidenceImage` existentes.
+**Requirement**: ROTEIRO-01, ROTEIRO-02, CAPTURA-01, ENVIO-01
 
 **Tools**:
 
@@ -191,22 +194,24 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Roteiro, evidência ativa, progresso e ações de captura formam um único workspace responsivo.
-- [ ] Estados ocupado, erro, retry e processamento preservam a semântica existente.
-- [ ] Gate full passa com toda a suíte de frontend e nenhum teste removido.
+- [ ] Tipo sugere ambientes sem impô-los; nome personalizado e validação são acessíveis.
+- [ ] A criação envia endereço e roteiro em uma operação.
+- [ ] Captura usa `x de y ambientes`, editar roteiro, visão geral, detalhe e pular por agora.
+- [ ] Envio incompleto leva aos ambientes ausentes.
+- [ ] Gate full passa com todos os testes anteriores e ao menos 10 novos cenários.
 
 **Tests**: unit
 **Gate**: full
 
-**Commit**: `feat(captura): aplica workspace fotografico ao roteiro`
+**Commit**: `feat(vistoria): cria roteiro flexivel de ambientes`
 
-### T7: Redesenhar revisão e relatório
+### T7: Contextualizar revisão e relatório
 
-**What**: Unificar a relação evidência-IA-contexto na revisão, resultado e documento final.
-**Where**: `app/frontend/src/features/inspections/client/inspection-review.tsx`
+**What**: Exibir ambiente e categoria na revisão, resultado e relatório imprimível.
+**Where**: `app/frontend/src/features/inspections/client/`
 **Depends on**: T6
-**Reuses**: decisões, reconciliação, impressão e compartilhamento atuais.
-**Requirement**: UI-03, UI-04
+**Reuses**: decisões, reconciliação, compartilhamento e impressão existentes.
+**Requirement**: RELATORIO-01, UI-01
 
 **Tools**:
 
@@ -214,22 +219,23 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Foto, observação da IA e decisão humana mantêm rastreabilidade visível.
-- [ ] Relatório permanece claro, imprimível e sem linguagem de laudo técnico.
-- [ ] Gate full passa com toda a suíte de frontend e nenhum teste removido.
+- [ ] Foto, ambiente, IA e decisão humana permanecem juntos.
+- [ ] Relatório agrupa evidências por ambiente e mantém ressalva de escopo.
+- [ ] Evidência legada usa fallback legível.
+- [ ] Gate full passa com todos os testes anteriores e ao menos 6 novos cenários.
 
 **Tests**: unit
 **Gate**: full
 
-**Commit**: `feat(relatorio): unifica evidencia e contexto revisado`
+**Commit**: `feat(relatorio): preserva contexto dos ambientes`
 
-### T8: Validar responsividade e acabamento
+### T8: Validar integração, responsividade e acabamento
 
-**What**: Executar lint, testes, build, detector, capturas, design QA e documentação final.
+**What**: Executar gates, detector, capturas, QA de fluxo e documentação final.
 **Where**: `app/design-qa.md`
 **Depends on**: T7
-**Reuses**: scripts e suíte existentes.
-**Requirement**: UI-01, UI-02, UI-03, UI-04
+**Reuses**: suítes existentes e conceitos aprovados.
+**Requirement**: ROTEIRO-01, ROTEIRO-02, CAPTURA-01, ENVIO-01, RELATORIO-01, UI-01
 
 **Tools**:
 
@@ -237,16 +243,16 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Lint, testes e build passam com contagem conferida.
-- [ ] Capturas válidas de 390, 768 e 1440 px não têm overflow ou colisão.
+- [ ] Backend, lint, frontend tests e build passam com contagem registrada.
+- [ ] Casa, apartamento e comercial completam fluxos com roteiros diferentes.
+- [ ] Capturas em 390, 768 e 1440 px não têm overflow ou colisão.
 - [ ] `app/design-qa.md` contém `final result: passed`.
-- [ ] Detector e revisores independentes não deixam P0, P1 ou P2 aberto.
-- [ ] Gate build passa sem arquivo temporário ou credencial no diff.
+- [ ] Verificador independente não deixa P0, P1 ou P2 aberto.
 
-**Tests**: none
+**Tests**: build + visual QA
 **Gate**: build
 
-**Commit**: `docs(design): registra validacao da lente operacional`
+**Commit**: `docs(design): registra validacao do roteiro adaptativo`
 
 ---
 
@@ -256,8 +262,8 @@ T7 → T8
 Phase 1 → Phase 2 → Phase 3
 
 Phase 1: T1 → T2 → T3
-Phase 2: T3 → T4 → T5 → T6 → T7
-Phase 3: T7 → T8
+Phase 2: T4 → T5 → T6 → T7
+Phase 3: T8
 ```
 
 Execution is strictly sequential - there is no intra-phase parallelism.
@@ -268,20 +274,18 @@ Execution is strictly sequential - there is no intra-phase parallelism.
 
 | Task | Scope | Status |
 | --- | --- | --- |
-| T1 | Fundações e um componente de marca | Granular |
-| T2 | Um shell de navegação | Granular |
-| T3 | Uma feature de autenticação | Granular |
-| T4 | Uma tela/formulário | Granular |
-| T5 | Uma tela de início | Granular |
-| T6 | Um workspace de captura | Granular |
-| T7 | Um fluxo documental coeso | Granular |
+| T1 | Um modelo de domínio coeso | Granular |
+| T2 | Um contrato de roteiro vertical | Granular |
+| T3 | Um fluxo de upload/submissão | Granular |
+| T4 | Uma fundação compartilhada | Granular |
+| T5 | Um shell de entrada | Granular |
+| T6 | Uma jornada de configuração/captura | Granular |
+| T7 | Uma saída documental | Granular |
 | T8 | Um gate de integração | Granular |
-
----
 
 ## Diagram-Definition Cross-Check
 
-| Task | Depends On (task body) | Diagram Shows | Status |
+| Task | Depends On | Diagram Shows | Status |
 | --- | --- | --- | --- |
 | T1 | None | None | Match |
 | T2 | T1 | T1 → T2 | Match |
@@ -292,17 +296,15 @@ Execution is strictly sequential - there is no intra-phase parallelism.
 | T7 | T6 | T6 → T7 | Match |
 | T8 | T7 | T7 → T8 | Match |
 
----
-
 ## Test Co-location Validation
 
-| Task | Code Layer Created/Modified | Matrix Requires | Task Says | Status |
+| Task | Code Layer | Matrix Requires | Task Says | Status |
 | --- | --- | --- | --- | --- |
-| T1 | Presentational component + assets | unit + visual | unit | OK |
-| T2 | Navigation shell | unit | unit | OK |
-| T3 | Stateful auth feature | unit | unit | OK |
-| T4 | Stateful form | unit | unit | OK |
-| T5 | Stateful dashboard | unit | unit | OK |
-| T6 | Stateful workflow | unit + journey | unit | OK |
-| T7 | Stateful review/report | unit + journey | unit | OK |
-| T8 | Documentation and integration gate | none + build | none | OK |
+| T1 | Domínio + schema | unit + integration | unit + integration | OK |
+| T2 | Serviço + controller | unit + MockMvc | unit + MockMvc | OK |
+| T3 | Serviço + controller | unit + MockMvc | unit + MockMvc | OK |
+| T4 | Contratos + componente | unit | unit | OK |
+| T5 | React stateful | unit | unit | OK |
+| T6 | React stateful | unit | unit | OK |
+| T7 | React stateful | unit | unit | OK |
+| T8 | Integração visual | build + visual QA | build + visual QA | OK |

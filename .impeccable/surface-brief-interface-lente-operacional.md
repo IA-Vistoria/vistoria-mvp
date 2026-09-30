@@ -1,10 +1,3 @@
----
-version: 1
-slug: "nspections-client-new-inspection-form-tsx-c298926f"
-primary_target: "app/frontend/src/features/inspections/client/new-inspection-form.tsx"
-related_targets: ["app/frontend/src/features/auth/AuthForm.tsx","app/frontend/src/components/DashboardShell.tsx","app/frontend/src/features/inspections/client/inspection-workflow.tsx","app/frontend/src/features/inspections/client/inspection-review.tsx","app/frontend/src/features/inspections/client/inspection-report.tsx"]
----
-
 # Interface do cliente
 
 **Scope:** acesso e jornada autenticada do cliente, com foco na nova vistoria.

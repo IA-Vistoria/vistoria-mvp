@@ -21,7 +21,7 @@ O produto mantém um rastro verificável entre foto, achado sugerido pela IA, de
 ## Operating Context
 
 - Captura móvel em ambientes internos e externos.
-- Upload de JPEG, PNG ou WebP para um roteiro de 12 itens.
+- Upload de JPEG, PNG ou WebP para um roteiro próprio de ambientes.
 - Processamento assíncrono com retomada posterior.
 - Revisão de achados um a um antes da geração do relatório.
 - Consulta, impressão e compartilhamento do documento final.
@@ -30,7 +30,7 @@ O produto mantém um rastro verificável entre foto, achado sugerido pela IA, de
 
 - O fluxo público cria somente usuários clientes.
 - A jornada principal contém início, nova vistoria, captura guiada, análise, revisão e relatório.
-- A interface consome os contratos existentes de `/api/auth` e `/api/vistorias` sem alterá-los neste redesign.
+- A jornada cria cada vistoria com endereço, tipo do imóvel e ambientes ordenados; novos uploads informam ambiente e categoria da evidência.
 - Estados legados de engenharia podem permanecer no código por compatibilidade, mas não orientam a jornada principal do MVP.
 - A IA aponta indícios visuais; o produto não promete diagnóstico, conformidade normativa, validade jurídica ou certificação profissional.
 - Fotos e progresso confirmados devem permanecer recuperáveis após falhas de upload ou análise.
@@ -40,13 +40,14 @@ O produto mantém um rastro verificável entre foto, achado sugerido pela IA, de
 - Nome: **Vistor.IA**.
 - Categoria comunicada pela marca: vistoria de imóveis assistida por inteligência artificial, culminando em relatório.
 - Direção visual aprovada: **Lente Operacional**, escura, fotográfica, precisa e voltada ao trabalho de campo.
-- Marca aprovada: estrutura de imóvel, enquadramento de varredura e nós de IA; branco mineral e turquesa como cores da assinatura.
-- Amarelo-lima é reservado ao progresso e à ação contextual, não ao logotipo.
+- Marca aprovada: estrutura de imóvel, enquadramento de varredura e nós de IA, sem moldura externa no lockup.
+- A paleta usa grafite-petróleo, branco mineral e verdigris; âmbar é reservado a progresso e atenção.
 - Linguagem direta, profissional e acessível, sem tom jurídico ou promessas técnicas indevidas.
 
 ## Evidence on Hand
 
-- Conceito visual aprovado: `C:/Users/vine/.codex/generated_images/01a0eff1-ef3a-74d0-8fd7-dd0494576084/exec-1be9f796-2054-4264-8c51-a7bfd4861639.png`.
+- Conceito visual aprovado: `.impeccable/mocks/approved-lente-operacional-v2.png`.
+- Fluxos visuais aprovados para implementação: `.impeccable/mocks/flows/`.
 - Protótipo navegável anterior: `prototipo/VistorIA-prototipo-navegavel.html`.
 - Especificação de produto: `docs/superpowers/specs/2026-09-30-interface-ia-first-design.md`.
 - Implementação funcional e testes em `app/frontend`.
