@@ -34,7 +34,7 @@
 - **Trade-off**: Necessidade de fluxo em duas etapas (análise preliminar vs homologação final).
 - **Scope**: Segurança, domínio de vistorias e frontend.
 - **Date**: 2026-09-18
-- **Status**: active
+- **Status**: superseded by AD-008 for the primary MVP flow; retained only as legacy compatibility
 
 ### AD-005
 - **Decision**: Decompor o monólito em entregas de valor vertical (features).
@@ -60,13 +60,21 @@
 - **Date**: 2026-09-19
 - **Status**: active
 
+### AD-008
+- **Decision**: Tornar a revisão de contexto pelo proprietário o Human-in-the-Loop do MVP e encerrar a jornada principal no Relatório de vistoria por IA, sem fila ou homologação de engenheiro.
+- **Reason**: O objetivo atual do produto, confirmado pelo usuário, é a IA organizar evidências e gerar um relatório revisável pelo próprio responsável pelo imóvel. A experiência anterior tratava o engenheiro como núcleo do produto e desviava desse valor.
+- **Trade-off**: O documento deixa de ter responsabilidade técnica profissional e precisa declarar explicitamente que registra apenas indícios visuais. Código, papéis, endpoints e colunas legadas de engenharia serão preservados temporariamente até uma migração destrutiva própria.
+- **Scope**: Jornada principal, contratos de vistoria, estados, frontend e linguagem de produto.
+- **Date**: 2026-09-30
+- **Status**: active
+
 ## Handoff
 
-- **Feature**: .specs/features/integracao-oci
-- **Phase / Task**: Specify — spec, design e tasks criados nesta revisão; nenhuma tarefa (T1–T7) iniciada
-- **Completed**: `.specs/features/gestao-vistorias` revalidada por completo (spec, design e tasks agora batem com o código); `.specs/features/autenticacao-e-acesso/spec.md` com a tabela de rastreabilidade sincronizada com `tasks.md`
-- **In-progress**: nenhuma tarefa de `integracao-oci` em andamento
-- **Next step**: T1 de `integracao-oci/tasks.md` — validar contra o ambiente real (scripts de `infra/scripts/smoke-tests/`) o modelo vigente e o formato de payload multimodal, antes de escrever `OciGenAiIntegrationService`
-- **Blockers**: Generative AI bloqueado por limite da conta trial da OCI (ver `infra/README.md`); não bloqueia T2/T3/T6, só a validação real de T4
+- **Feature**: `.specs/features/mvp-relatorio-ia`
+- **Phase / Task**: Design — requisitos e contexto fechados; desenho técnico em elaboração
+- **Completed**: direção visual IA-first aprovada; protótipo navegável local concluído; Figma criado com 78 variáveis antes do bloqueio de cota Starter
+- **In-progress**: reconciliação dos contratos de análise, revisão e relatório entre Spring Boot e Next.js
+- **Next step**: concluir `design.md`, gerar `tasks.md`, validar ambos e iniciar T1 com TDD
+- **Blockers**: somente a materialização adicional no Figma está bloqueada pela cota; especificação e implementação local não estão bloqueadas
 - **Uncommitted files**: ver `git status` no momento da leitura — este documento não substitui a checagem real
-- **Branch**: ver `git branch` no momento da leitura
+- **Branch**: `codex/especifica-interface-ia-first`
