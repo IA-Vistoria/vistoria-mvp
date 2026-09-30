@@ -146,6 +146,39 @@ public class Vistoria {
         this.dataConclusao = dataConclusao;
     }
 
+    public boolean iniciarAnalise() {
+        if (status == VistoriaStatus.AGUARDANDO_IA) {
+            return false;
+        }
+        if (status != VistoriaStatus.EM_RASCUNHO && status != VistoriaStatus.FALHA_IA) {
+            throw new IllegalStateException("A vistoria não pode ser submetida neste estado.");
+        }
+        preLaudoIa = null;
+        dataConclusao = null;
+        status = VistoriaStatus.AGUARDANDO_IA;
+        return true;
+    }
+
+    public void registrarAnalise(String analiseOriginal) {
+        exigirAnaliseEmAndamento();
+        preLaudoIa = analiseOriginal;
+        dataConclusao = null;
+        status = VistoriaStatus.REVISAO_PENDENTE;
+    }
+
+    public void falharAnalise() {
+        exigirAnaliseEmAndamento();
+        preLaudoIa = null;
+        dataConclusao = null;
+        status = VistoriaStatus.FALHA_IA;
+    }
+
+    private void exigirAnaliseEmAndamento() {
+        if (status != VistoriaStatus.AGUARDANDO_IA) {
+            throw new IllegalStateException("A vistoria não possui análise em andamento.");
+        }
+    }
+
     @PrePersist
     protected void onCreate() {
         this.dataCriacao = LocalDateTime.now();

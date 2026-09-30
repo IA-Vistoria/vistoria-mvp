@@ -409,6 +409,22 @@ class VistoriaControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldAcceptSubmissionBeforeAiProcessingFinishes() throws Exception {
+        Vistoria vistoria = new Vistoria();
+        vistoria.setCliente(cliente);
+        vistoria.setStatus(VistoriaStatus.AGUARDANDO_IA);
+        ReflectionTestUtils.setField(vistoria, "id", 10L);
+        when(vistoriaService.submeterVistoria(10L, cliente)).thenReturn(vistoria);
+
+        mockMvc.perform(post("/api/vistorias/10/submeter"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.status").value("AGUARDANDO_IA"))
+                .andExpect(jsonPath("$.analiseIa").doesNotExist());
+    }
+
+    @Test
     @WithMockUser(username = "eng@test.com", roles = "ENGENHEIRO")
     void shouldReturnConflictWhenEngineerCaseIsStale() throws Exception {
         when(vistoriaService.aprovarVistoria(eq(10L), any(), eq("Parecer")))

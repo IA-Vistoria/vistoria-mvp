@@ -98,7 +98,7 @@ public class VistoriaController {
             Authentication auth) {
         Usuario cliente = getUsuario(auth);
         Vistoria v = vistoriaService.submeterVistoria(id, cliente);
-        return ResponseEntity.ok(responseMapper.toResponse(v));
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(responseMapper.toResponse(v));
     }
 
     @GetMapping("/{vistoriaId}/imagens/{imagemId}/conteudo")

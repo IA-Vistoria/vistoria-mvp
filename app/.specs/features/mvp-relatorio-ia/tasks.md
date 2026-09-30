@@ -68,7 +68,7 @@ T1 -> T2 -> T3 -> T4 -> T5 -> T6 -> T7 -> T8
 
 ### T2: Tornar a submissão realmente assíncrona
 
-**Status:** Pending  
+**Status:** Complete  
 **Depends on:** T1  
 **Requirement:** AIR-02, AIR-05  
 **Where:** estado de `Vistoria`, evento/listener/processador e configuração assíncrona.

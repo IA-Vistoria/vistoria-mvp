@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.MediaType;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.core.io.ByteArrayResource;
 
@@ -43,9 +44,7 @@ import static org.mockito.Mockito.*;
 
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.transaction.support.SimpleTransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionTemplate;
+import br.com.vistoriapredial.vistoria.application.analysis.VistoriaSubmetidaEvent;
 
 class VistoriaServiceTest {
 
@@ -56,13 +55,10 @@ class VistoriaServiceTest {
     private StorageService storageService;
 
     @Mock
-    private IaIntegrationService iaIntegrationService;
-
-    @Mock
     private EvidenceFileValidator evidenceFileValidator;
 
     @Mock
-    private TransactionTemplate transactionTemplate;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private VistoriaService vistoriaService;
@@ -80,12 +76,6 @@ class VistoriaServiceTest {
         engenheiro = new Usuario("Eng", "eng@test.com", "pass", PerfilEnum.ROLE_ENGENHEIRO, "1234");
         ReflectionTestUtils.setField(engenheiro, "id", 2L);
 
-        // A submissão passou a rodar em duas transações curtas via TransactionTemplate;
-        // aqui simulamos a execução imediata do callback, como o Spring faria em runtime.
-        when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
-            TransactionCallback<?> callback = invocation.getArgument(0);
-            return callback.doInTransaction(new SimpleTransactionStatus());
-        });
     }
 
     @Test
@@ -301,11 +291,11 @@ class VistoriaServiceTest {
                 .isInstanceOf(InvalidEvidenceException.class)
                 .hasMessageContaining("ao menos uma evidência");
 
-        verify(iaIntegrationService, never()).analisarImagens(anyList());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
-    void shouldSubmeterVistoriaAndGeneratePreLaudo() {
+    void shouldSubmitInspectionAndPublishAnalysisEvent() {
         Vistoria v = new Vistoria();
         v.setId(10L);
         v.setCliente(cliente);
@@ -316,31 +306,30 @@ class VistoriaServiceTest {
 
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(v));
         when(vistoriaRepository.saveAndFlush(any())).thenAnswer(i -> i.getArguments()[0]);
-        when(iaIntegrationService.analisarImagens(any())).thenReturn("Laudo Mock");
 
         Vistoria submetida = vistoriaService.submeterVistoria(10L, cliente);
 
-        assertEquals(VistoriaStatus.CONCLUIDA, submetida.getStatus());
-        assertEquals("Laudo Mock", submetida.getPreLaudoIa());
-        assertThat(submetida.getDataConclusao()).isNotNull();
-        verify(iaIntegrationService).analisarImagens(List.of("uploads/a.jpg", "uploads/b.webp"));
+        assertThat(submetida).isSameAs(v);
+        assertThat(submetida.getStatus()).isEqualTo(VistoriaStatus.AGUARDANDO_IA);
+        assertThat(submetida.getPreLaudoIa()).isNull();
+        assertThat(submetida.getDataConclusao()).isNull();
+        ArgumentCaptor<VistoriaSubmetidaEvent> event = ArgumentCaptor.forClass(VistoriaSubmetidaEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getValue().vistoriaId()).isEqualTo(10L);
     }
 
     @Test
-    void shouldSetFalhaIaIfIaFails() {
-        Vistoria v = new Vistoria();
-        v.setId(10L);
-        v.setCliente(cliente);
-        v.setStatus(VistoriaStatus.EM_RASCUNHO);
-        v.getImagens().add(evidence("uploads/a.jpg"));
+    void shouldReturnCurrentStateWithoutPublishingDuplicateEventWhileAnalysisIsPending() {
+        Vistoria v = inspectionWithEvidence(VistoriaStatus.AGUARDANDO_IA);
 
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(v));
-        when(vistoriaRepository.saveAndFlush(any())).thenAnswer(i -> i.getArguments()[0]);
-        when(iaIntegrationService.analisarImagens(any())).thenThrow(new RuntimeException("API error"));
 
         Vistoria submetida = vistoriaService.submeterVistoria(10L, cliente);
 
-        assertEquals(VistoriaStatus.FALHA_IA, submetida.getStatus());
+        assertThat(submetida).isSameAs(v);
+        assertThat(submetida.getStatus()).isEqualTo(VistoriaStatus.AGUARDANDO_IA);
+        verify(vistoriaRepository, never()).saveAndFlush(any());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
