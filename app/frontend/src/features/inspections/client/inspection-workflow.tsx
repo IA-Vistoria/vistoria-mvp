@@ -29,6 +29,7 @@ import {
   validateEvidenceFile,
 } from "../shared/protocol";
 import type { Inspection, InspectionStatus, ProtocolItemCode } from "../types";
+import { InspectionReport } from "./inspection-report";
 import { InspectionReview } from "./inspection-review";
 import { InspectionResults } from "./inspection-results";
 
@@ -197,7 +198,16 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   }
   if (!inspection) return <AsyncState title="Carregando roteiro" description="Buscando as evidências já confirmadas para este imóvel." />;
 
-  if (inspection.status === "RELATORIO_DISPONIVEL" || inspection.status === "CONCLUIDA") {
+  if (inspection.status === "RELATORIO_DISPONIVEL") {
+    return (
+      <div className="workflow-page workflow-page--report">
+        <WorkflowBackHeader inspection={inspection} />
+        <InspectionReport inspection={inspection} />
+      </div>
+    );
+  }
+
+  if (inspection.status === "CONCLUIDA") {
     return (
       <div className="workflow-page">
         <WorkflowBackHeader inspection={inspection} />

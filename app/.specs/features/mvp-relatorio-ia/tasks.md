@@ -156,7 +156,7 @@ T1 -> T2 -> T3 -> T4 -> T5 -> T6 -> T7 -> T8
 
 ### T7: Entregar o Relatório de vistoria por IA
 
-**Status:** Pending  
+**Status:** Complete  
 **Depends on:** T6  
 **Requirement:** AIR-04, AIR-06  
 **Where:** `InspectionReport`, CSS de impressão, share/clipboard e documentação de entrada.

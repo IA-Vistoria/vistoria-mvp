@@ -14,12 +14,11 @@ No protótipo, o repositório sobe o programa e a IA juntos no mesmo `docker-com
 | --- | --- | --- |
 | `frontend` | 3000 | Next.js |
 | `backend` | 8080 | Spring Boot |
-| `inference` | 8001 | FastAPI + VLM (pré-laudo) |
+| `inference` | 8001 | FastAPI + VLM (análise visual) |
 
 ```mermaid
 flowchart LR
     Client["Cliente"] --> Web["Next.js 16"]
-    Engineer["Engenheiro civil"] --> Web
     Web -->|"REST + JWT"| API["Spring Boot 3.2.3"]
     API --> DB[("PostgreSQL ou H2")]
     API --> Storage["StorageService"]
@@ -30,7 +29,7 @@ flowchart LR
     Vlm -->|"VLM_URL rede Docker"| Inference["inference VLM :8001"]
 ```
 
-`IaIntegrationService` é a porta de pré-análise. Com `app.ia.provider=mock` usa `MockIaIntegrationService`; com `vlm` (default no compose) usa `VlmIntegrationService` contra o container `inference` (`VLM_URL=http://inference:8001` + `VLM_API_KEY`). O código da VLM fica em `inference/` neste repositório.
+`IaIntegrationService` é a porta de análise visual. Com `app.ia.provider=mock` usa `MockIaIntegrationService`; com `vlm` (default no compose) usa `VlmIntegrationService` contra o container `inference` (`VLM_URL=http://inference:8001` + `VLM_API_KEY`). O código da VLM fica em `inference/` neste repositório.
 
 ## 3. Fronteiras do backend
 
@@ -58,30 +57,30 @@ br.com.vistoriapredial/
 
 ## 4. Frontend
 
-O App Router separa rotas públicas de autenticação e áreas protegidas por perfil. A camada `features/inspections` contém os dois fluxos sem duplicar o contrato HTTP:
+O App Router separa autenticação e rotas protegidas. A camada `features/inspections` organiza a jornada pública do MVP e preserva a área antiga de forma isolada:
 
-- cliente: painel, criação, protocolo, upload, submissão e acompanhamento;
-- engenharia: fila, evidências, pré-laudo e decisão técnica;
+- cliente: painel, imóvel, captura guiada, análise assíncrona, revisão dos achados e relatório;
+- engenharia: fluxo legado mantido para compatibilidade, fora da navegação principal do MVP;
 - compartilhado: tipos, status, protocolo e carregamento autenticado de imagens.
 
 O cliente HTTP aceita JSON, `FormData` e blobs, traduz erros RFC 9457 e expira a sessão em respostas `401` autenticadas.
 
-## 5. Fluxo Human-in-the-Loop
+## 5. Fluxo principal do MVP
 
-1. O cliente se cadastra livremente; o engenheiro precisa do convite configurado no ambiente. Após o cadastro, ambos recebem um JWT.
+1. O usuário cria uma conta de cliente e recebe um JWT.
 2. O cliente cria uma vistoria em `EM_RASCUNHO` e envia evidências associadas aos 12 itens do protocolo.
-3. Ao submeter, o serviço exige ao menos uma evidência e executa a porta de IA.
-4. O mock gera um pré-laudo e a vistoria passa para `AGUARDANDO_ENGENHEIRO`.
-5. O engenheiro registra parecer e devolve (`DEVOLVIDA_CLIENTE`) ou aprova (`CONCLUIDA`).
-6. Uma devolução pode receber novas evidências e ser reenviada para a mesma vistoria.
+3. Ao submeter, o serviço exige ao menos uma evidência, responde `202 Accepted` e publica o processamento assíncrono.
+4. A porta de IA analisa as imagens. Sucesso conduz a `REVISAO_PENDENTE`; falha explícita conduz a `FALHA_IA`.
+5. O usuário confirma, corrige ou rejeita cada achado e registra o contexto observado. Cada decisão é persistida antes do avanço.
+6. Depois de todas as decisões, a conclusão conduz a `RELATORIO_DISPONIVEL` e apresenta o documento rastreável.
 
-Falhas de pré-análise permanecem explícitas em `FALHA_IA`; o sistema não fabrica sucesso após uma exceção.
+O Human-in-the-Loop do MVP é o contexto do próprio usuário sobre a evidência. O relatório não promete homologação de engenheiro, laudo técnico ou diagnóstico estrutural. Falhas de análise permanecem explícitas; o sistema não fabrica sucesso após uma exceção.
 
 ## 6. Consistência e segurança
 
 - JWT stateless e perfis negados por padrão na cadeia de segurança.
 - Segredo JWT obrigatório com no mínimo 32 bytes e sem fallback versionado.
-- Elevação para o perfil de engenheiro protegida por convite comparado em tempo constante.
+- O cadastro da interface pública envia apenas o perfil de cliente; recursos legados de engenharia continuam protegidos por papel e convite no backend.
 - `ProblemDetail` para validação, autenticação, autorização, ausência e conflito.
 - Validação de tamanho, MIME e assinatura antes de persistir imagens.
 - Nome físico gerado pelo servidor e caminho mantido fora do contrato HTTP.
@@ -97,7 +96,10 @@ As migrations atuais são:
 
 - `V1__create_initial_schema.sql`: usuários;
 - `V2__create_vistoria_schema.sql`: vistorias e imagens;
-- `V3__add_endereco_to_vistoria.sql`: endereço do imóvel.
-- `V4__add_version_to_vistoria.sql`: versão otimista para decisões concorrentes.
+- `V3__add_endereco_to_vistoria.sql`: endereço do imóvel;
+- `V4__add_version_to_vistoria.sql`: versão otimista para decisões concorrentes;
+- `V5__add_vistoria_indexes.sql`: índices de acesso a vistorias;
+- `V6__add_vistoria_pagination_indexes.sql`: índices das consultas paginadas;
+- `V7__add_user_review_to_vistoria.sql`: revisão rastreável dos achados.
 
 Os testes de integração executam as migrations em PostgreSQL real com Testcontainers. O schema não depende de geração automática do Hibernate (`ddl-auto=validate`).

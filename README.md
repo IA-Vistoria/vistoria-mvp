@@ -2,15 +2,17 @@
 
 ![Demonstração do protótipo navegável](prototipo/screenshots/onboarding-captura-checklist.png)
 
-**Vistor.IA** é um assistente que conduz a vistoria de imóvel cômodo por
-cômodo, usando IA para pré-analisar fotos e apontar defeitos antes da
-homologação humana.
+**Vistor.IA** conduz o registro de um imóvel ambiente por ambiente e transforma
+fotos em um **Relatório de vistoria por IA**. A análise sugere indícios, o
+usuário confirma o contexto e o sistema mantém cada constatação ligada à
+evidência original.
 
 🔗 **[Protótipo navegável](https://ia-vistoria.github.io/vistoria-mvp/prototipo/VistorIA-prototipo-navegavel.html)**
 
 ## Status atual do projeto
 
-- ✅ MVP navegável (protótipo) pronto e validado.
+- ✅ Jornada principal implementada em `app/`: acesso, imóvel, captura guiada, análise assíncrona, revisão e relatório.
+- ✅ Interface responsiva e relatório preparado para impressão ou PDF pelo navegador.
 - ✅ Uso da IA para avaliação de fotos validado localmente (prova de conceito técnica).
 - ✅ Infraestrutura de nuvem provisionada na Oracle (rede, banco de dados, armazenamento de imagens).
 - ⏳ Generative AI (IA/Vision) da Oracle: ainda em validação — pendência de cota da conta.
@@ -20,35 +22,33 @@ homologação humana.
 
 ```
 .
-├── prototipo/   # Visão de produto (discovery): protótipo navegável
-├── app/         # Prova de conceito técnica isolada: "a IA consegue avaliar por foto?"
+├── prototipo/   # Referência histórica do discovery
+├── app/         # MVP executável: frontend, backend, persistência e integração de IA
 └── infra/       # Terraform, Ansible e o ambiente real na OCI
 ```
 
-`prototipo/` é a experiência de produto desenhada no discovery. `app/` é
-uma prova de conceito técnica **separada**, feita em paralelo, só para
-testar se a IA consegue avaliar defeitos numa foto — a stack usada ali
-(Next.js, Spring Boot, PostgreSQL) não é a decisão de tecnologia do
-produto nem representa sua aparência final.
+`prototipo/` preserva o material de discovery. A fonte atual do produto é
+`app/`, com Next.js no frontend e Java/Spring Boot no backend. O fluxo antigo
+de engenharia continua isolado apenas para compatibilidade; ele não é o
+destino da jornada principal do MVP.
 
 ## 1. Descrição da solução
 
-Vistorias de imóveis hoje dependem só do olhar humano no momento da
-visita, sem um registro estruturado nem uma primeira leitura das
-evidências. O Vistor.IA usa um modelo multimodal para pré-analisar as
-fotos — apontando indícios de rachadura, mofo, infiltração, falta de
-acabamento — antes da homologação humana, que continua obrigatória e
-final (fluxo Human-in-the-Loop).
+Vistorias de imóveis frequentemente ficam dispersas entre fotos e anotações.
+O Vistor.IA organiza a captura em 12 itens, usa um modelo multimodal para
+sugerir indícios visuais e pede que o usuário confirme, corrija ou rejeite
+cada achado com contexto. O resultado é um registro rastreável; ele não é
+laudo técnico, diagnóstico estrutural ou certificação profissional.
 
 ## 2. Tecnologias, linguagens e frameworks utilizados
 
 | Camada | Tecnologia | Onde |
 | --- | --- | --- |
 | Protótipo de produto | HTML, CSS, JavaScript | `prototipo/` |
-| Backend (PoC de IA) | Java 21, Spring Boot, Spring Security, JPA, Flyway | `app/` |
-| Frontend (PoC de IA) | Next.js, React, TypeScript | `app/` |
-| IA (PoC de IA) | Python/FastAPI, VLM `Qwen/Qwen3-VL-2B-Instruct` self-hospedado | `app/` |
-| Banco (PoC de IA) | PostgreSQL / H2 | `app/` |
+| Backend do MVP | Java 21, Spring Boot, Spring Security, JPA, Flyway | `app/` |
+| Frontend do MVP | Next.js, React, TypeScript | `app/frontend/` |
+| Análise visual | Porta de IA com mock local ou VLM `Qwen/Qwen3-VL-2B-Instruct` | `app/` |
+| Persistência | PostgreSQL como alvo e H2 para desenvolvimento local | `app/` |
 | Infraestrutura real | Terraform (`oracle/oci`), Ansible | `infra/` |
 | Nuvem | OCI: Object Storage, Autonomous Database, Generative AI | `infra/` |
 
@@ -96,7 +96,7 @@ Detalhes: [`infra/README.md`](infra/README.md) · [`app/docs/architecture.md`](a
 
 ## 4. APIs, modelos de IA e bases de dados utilizadas
 
-| Camada | Na PoC técnica (`app/`) | Ambiente OCI (`infra/`) |
+| Camada | No MVP (`app/`) | Ambiente OCI (`infra/`) |
 | --- | --- | --- |
 | Modelo de IA | VLM `Qwen/Qwen3-VL-2B-Instruct` self-hospedado | **OCI Generative AI** (`meta.llama-4-scout-17b-16e-instruct`) |
 | Banco de dados | PostgreSQL / H2 | **Oracle Autonomous Database** (Always Free, 26ai) |
@@ -107,17 +107,15 @@ Detalhes da validação do modelo de IA e scripts de teste isolado:
 
 ## 5. Instruções para instalação ou execução
 
-> As instruções abaixo rodam a **prova de conceito técnica** (`app/`) —
-> como testar localmente se a IA consegue avaliar fotos. O protótipo de
-> produto não precisa de instalação: é só abrir o
+> As instruções abaixo executam o MVP local com análise simulada. O protótipo
+> histórico continua disponível no
 > [link navegável](https://ia-vistoria.github.io/vistoria-mvp/prototipo/VistorIA-prototipo-navegavel.html).
 
-**Sem Docker** (H2 em memória, pré-laudo mock):
+**Sem Docker** (H2 em memória e análise mock):
 
 ```powershell
 cd app
 $env:JWT_SECRET = "defina-um-segredo-local-com-pelo-menos-32-bytes"
-$env:ENGINEER_REGISTRATION_CODE = "defina-um-convite-para-engenheiros"
 .\mvnw.cmd spring-boot:run    # backend em :8080
 
 cd app/frontend
@@ -133,9 +131,10 @@ docker compose up --build -d
 curl http://127.0.0.1:8001/health
 ```
 
-Jornada de teste: cadastrar cliente → criar vistoria → enviar fotos →
-submeter → cadastrar engenheiro (`ENGINEER_REGISTRATION_CODE`) → abrir a
-fila e conferir o pré-laudo. Detalhes: [`app/inference/README.md`](app/inference/README.md).
+Jornada de teste: criar conta → cadastrar imóvel → enviar fotos pelo roteiro →
+submeter à IA → revisar cada achado → gerar, imprimir ou compartilhar o
+Relatório de vistoria por IA. Detalhes da integração visual:
+[`app/inference/README.md`](app/inference/README.md).
 
 **Infraestrutura na OCI:**
 
@@ -157,13 +156,13 @@ Passo a passo completo: [`infra/docs/spec-ambiente-dev.md`](infra/docs/spec-ambi
 
 ## 7. Limitações conhecidas e próximos passos
 
-- `app/` é uma prova de conceito isolada — não é o app final nem a stack decidida.
 - `infra/` e `app/` ainda não estão conectados.
 - VM ainda não criada (capacidade Ampere A1 indisponível na OCI no momento).
 - Generative AI: limite de conta trial resolvido após upgrade, revalidar antes de considerar pronto.
 - Modelo de IA sem fine-tuning ou dataset próprio de defeitos de vistoria.
 - PoC com IA local exige GPU NVIDIA.
-- Convite de engenharia é controle administrativo do teste, não validação de CREA.
+- A área de engenharia é um fluxo legado e não integra a jornada principal do MVP.
+- O relatório organiza evidências assistidas por IA e não substitui avaliação profissional quando ela for necessária.
 
-**Próximos passos:** destravar a VM, construir o backend do produto final
-sobre a infra já provisionada, migrar de PostgreSQL para o Autonomous DB.
+**Próximos passos:** conectar o MVP à infraestrutura provisionada, validar a
+integração de IA no ambiente-alvo e definir a estratégia de persistência na OCI.
