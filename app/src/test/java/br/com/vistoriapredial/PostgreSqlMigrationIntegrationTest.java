@@ -24,7 +24,7 @@ class PostgreSqlMigrationIntegrationTest {
             MigrateResult result = flyway.migrate();
 
             assertThat(result.success).isTrue();
-            assertThat(result.targetSchemaVersion).isEqualTo("9");
+            assertThat(result.targetSchemaVersion).isEqualTo("10");
 
             try (var connection = postgres.createConnection("");
                  var statement = connection.prepareStatement("""
@@ -123,11 +123,14 @@ class PostgreSqlMigrationIntegrationTest {
                         "idx_vistoria_cliente_id",
                         "idx_vistoria_status",
                         "idx_vistoria_cliente_criacao_id",
-                        "idx_vistoria_status_criacao_id");
+                        "idx_vistoria_status_criacao_id",
+                        "idx_vistoria_cliente_status_criacao_id");
                 assertThat(indexDefinitions.get("idx_vistoria_cliente_criacao_id"))
                         .contains("(cliente_id, data_criacao DESC, id DESC)");
                 assertThat(indexDefinitions.get("idx_vistoria_status_criacao_id"))
                         .contains("(status, data_criacao DESC, id DESC)");
+                assertThat(indexDefinitions.get("idx_vistoria_cliente_status_criacao_id"))
+                        .contains("(cliente_id, status, data_criacao DESC, id DESC)");
             }
         }
     }

@@ -146,6 +146,28 @@ class VistoriaRepositoryTest {
     }
 
     @Test
+    void shouldPaginateByClienteAndStatusTogether() {
+        Usuario cliente = usuarioRepository.saveAndFlush(new Usuario(
+                "Cliente", "cliente-relatorios@test.com", "hash", PerfilEnum.ROLE_CLIENTE, null));
+        Vistoria relatorio = new Vistoria();
+        relatorio.setCliente(cliente);
+        relatorio.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
+        vistoriaRepository.saveAndFlush(relatorio);
+        Vistoria rascunho = new Vistoria();
+        rascunho.setCliente(cliente);
+        rascunho.setStatus(VistoriaStatus.EM_RASCUNHO);
+        vistoriaRepository.saveAndFlush(rascunho);
+        entityManager.clear();
+
+        Page<Vistoria> pagina = vistoriaRepository.findByClienteAndStatus(
+                cliente, VistoriaStatus.RELATORIO_DISPONIVEL, PageRequest.of(0, 10));
+
+        assertThat(pagina.getContent()).singleElement()
+                .extracting(Vistoria::getStatus)
+                .isEqualTo(VistoriaStatus.RELATORIO_DISPONIVEL);
+    }
+
+    @Test
     void shouldLoadImagensEagerlyByIdIn() {
         Usuario cliente = usuarioRepository.saveAndFlush(new Usuario(
                 "Cliente", "cliente-idin@test.com", "hash", PerfilEnum.ROLE_CLIENTE, null));

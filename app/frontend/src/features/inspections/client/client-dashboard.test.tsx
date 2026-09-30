@@ -12,7 +12,9 @@ function page(content: Inspection[]): PageResponse<Inspection> {
   return { content, pagina: 0, tamanho: 10, totalElementos: content.length, totalPaginas: content.length === 0 ? 0 : 1 };
 }
 
-const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
+const { replace } = vi.hoisted(() => ({
+  replace: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace }),
@@ -131,6 +133,36 @@ describe("ClientDashboard", () => {
     expect(screen.getByText("Rua do Relatório, 7")).toBeDefined();
   });
 
+  it("abre a visão de relatórios e inclui o documento mais recente", async () => {
+    vi.mocked(listMyInspections).mockResolvedValue(page([
+      {
+        ...draftInspection,
+        id: 12,
+        status: "RELATORIO_DISPONIVEL",
+        endereco: "Relatório mais recente",
+        dataCriacao: "2026-09-20T10:00:00",
+        dataConclusao: "2026-09-21T10:00:00",
+      },
+      {
+        ...draftInspection,
+        id: 7,
+        status: "RELATORIO_DISPONIVEL",
+        endereco: "Relatório anterior",
+        dataCriacao: "2026-09-17T10:00:00",
+        dataConclusao: "2026-09-18T10:00:00",
+      },
+    ]));
+
+    render(<ClientDashboard view="reports" />);
+
+    expect(await screen.findByRole("heading", { name: "Seus relatórios" })).toBeDefined();
+    expect(screen.getByText("Relatório mais recente")).toBeDefined();
+    expect(screen.getByText("Relatório anterior")).toBeDefined();
+    expect(screen.getAllByRole("link", { name: "Ver relatório" })).toHaveLength(2);
+    expect(screen.queryByTestId("next-action")).toBeNull();
+    expect(listMyInspections).toHaveBeenCalledWith(0, 10, "RELATORIO_DISPONIVEL");
+  });
+
   it("oferece uma única ação quando a lista está vazia", async () => {
     vi.mocked(listMyInspections).mockResolvedValue(page([]));
 
@@ -207,8 +239,27 @@ describe("NewInspectionForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Começar a registrar fotos" }));
 
-    expect((await screen.findByRole("alert")).textContent).toContain("nomes diferentes");
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("nomes diferentes");
+    expect(alert.id).not.toBe("");
+    expect(names[0].getAttribute("aria-invalid")).toBe("true");
+    expect(names[0].getAttribute("aria-describedby")).toBe(alert.id);
+    expect(document.activeElement).toBe(names[0]);
     expect(createInspection).not.toHaveBeenCalled();
+  });
+
+  it("associa e leva o foco ao erro de endereço", async () => {
+    const user = userEvent.setup();
+    render(<NewInspectionForm />);
+
+    await user.click(screen.getByRole("button", { name: "Começar a registrar fotos" }));
+
+    const alert = await screen.findByRole("alert");
+    const address = screen.getByLabelText("Endereço do imóvel");
+    expect(alert.textContent).toContain("Informe o endereço");
+    expect(address.getAttribute("aria-invalid")).toBe("true");
+    expect(address.getAttribute("aria-describedby")).toBe(alert.id);
+    expect(document.activeElement).toBe(address);
   });
 
   it("cria endereço, tipo e roteiro em uma única operação sem submeter", async () => {

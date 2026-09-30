@@ -11,7 +11,7 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { ApiError } from "@/lib/api";
 import { completeReport, reviewFinding } from "../api";
@@ -48,6 +48,13 @@ const decisions: Array<{
   { value: "REJEITADO", label: "Rejeitar achado", help: "A interpretação não corresponde à evidência ou ao contexto.", icon: X },
 ];
 
+const REVIEW_ERROR_ID = "inspection-review-error";
+
+interface ReviewError {
+  message: string;
+  target: "decision" | "context" | "correctedType" | "form";
+}
+
 function flattenFindings(inspection: Inspection): FindingEntry[] {
   return (inspection.analiseIa?.imagens ?? []).flatMap((analysis) => {
     const evidence = inspection.imagens.find((item) => item.id === analysis.imagemId) ?? null;
@@ -81,13 +88,21 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
   const [decision, setDecision] = useState<ReviewDecision | "">(startingReview?.decisao ?? "");
   const [context, setContext] = useState(startingReview?.contexto ?? "");
   const [correctedType, setCorrectedType] = useState(startingReview?.tipoCorrigido ?? "");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ReviewError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
   const mutationLock = useRef(false);
   const lastSavedMutationKey = useRef<string | null>(null);
   const completionLock = useRef(false);
+  const firstDecisionRef = useRef<HTMLInputElement>(null);
+  const contextRef = useRef<HTMLTextAreaElement>(null);
+  const correctedTypeRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (error?.target === "form") errorRef.current?.focus();
+  }, [error]);
 
   const activeIndex = Math.min(currentIndex, Math.max(0, entries.length - 1));
   const current = entries[activeIndex] ?? null;
@@ -119,15 +134,18 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
     const mutationKey = `${current.analysis.imagemId}:${current.finding.indice}`;
     if (lastSavedMutationKey.current === mutationKey) return;
     if (!decision) {
-      setError("Escolha como este achado deve ser tratado.");
+      setError({ message: "Escolha como este achado deve ser tratado.", target: "decision" });
+      firstDecisionRef.current?.focus();
       return;
     }
     if (!context.trim()) {
-      setError("Descreva o contexto observado no imóvel.");
+      setError({ message: "Descreva o contexto observado no imóvel.", target: "context" });
+      contextRef.current?.focus();
       return;
     }
     if (decision === "CORRIGIDO" && !correctedType.trim()) {
-      setError("Informe o tipo corrigido para o relatório.");
+      setError({ message: "Informe o tipo corrigido para o relatório.", target: "correctedType" });
+      correctedTypeRef.current?.focus();
       return;
     }
 
@@ -154,12 +172,15 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
           const latest = await onRefresh();
           onChange(latest);
           openEntry(firstPendingIndex(latest, flattenFindings(latest)), latest);
-          setError("A vistoria mudou em outra sessão. Exibimos agora o estado mais recente.");
+          setError({ message: "A vistoria mudou em outra sessão. Exibimos agora o estado mais recente.", target: "form" });
         } catch {
-          setError(cause.problem.detail);
+          setError({ message: cause.problem.detail, target: "form" });
         }
       } else {
-        setError(cause instanceof ApiError ? cause.problem.detail : "Não foi possível salvar esta decisão.");
+        setError({
+          message: cause instanceof ApiError ? cause.problem.detail : "Não foi possível salvar esta decisão.",
+          target: "form",
+        });
       }
     } finally {
       mutationLock.current = false;
@@ -176,7 +197,10 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
       const updated = await completeReport(inspection.id);
       onChange(updated);
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.problem.detail : "Não foi possível gerar o relatório.");
+      setError({
+        message: cause instanceof ApiError ? cause.problem.detail : "Não foi possível gerar o relatório.",
+        target: "form",
+      });
       completionLock.current = false;
     } finally {
       setCompleting(false);
@@ -190,7 +214,7 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
         <p className="eyebrow">Análise concluída</p>
         <h1>Nenhum indício visual registrado</h1>
         <p>A análise não criou achados para revisar. As fotos continuam no conjunto de evidências do relatório.</p>
-        {error ? <p className="item-error" role="alert">{error}</p> : null}
+        {error ? <p className="item-error" id={REVIEW_ERROR_ID} ref={errorRef} role="alert" tabIndex={-1}>{error.message}</p> : null}
         <button className="button button--primary" disabled={completing} onClick={() => void generateReport()}>{completing ? "Gerando relatório..." : "Gerar relatório por IA"}<FileText size={18} /></button>
       </section>
     );
@@ -247,13 +271,13 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
           {current.finding.evidencia ? <blockquote>{current.finding.evidencia}</blockquote> : null}
 
           <p className="decision-owner-label">Decisão do responsável</p>
-          <fieldset className="decision-options">
+          <fieldset className="decision-options" aria-invalid={error?.target === "decision" || undefined} aria-describedby={error?.target === "decision" ? REVIEW_ERROR_ID : undefined}>
             <legend>Isso corresponde ao que você observou?</legend>
             {decisions.map((option) => {
               const Icon = option.icon;
               return (
                 <label className={decision === option.value ? "is-selected" : ""} key={option.value}>
-                  <input type="radio" name="decision" value={option.value} aria-label={option.label} checked={decision === option.value} onChange={() => chooseDecision(option.value)} />
+                  <input ref={option.value === "CONFIRMADO" ? firstDecisionRef : undefined} type="radio" name="decision" value={option.value} aria-label={option.label} aria-invalid={error?.target === "decision" || undefined} aria-describedby={error?.target === "decision" ? REVIEW_ERROR_ID : undefined} checked={decision === option.value} onChange={() => chooseDecision(option.value)} />
                   <Icon aria-hidden="true" size={19} />
                   <span><strong>{option.label}</strong><small>{option.help}</small></span>
                 </label>
@@ -262,12 +286,12 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
           </fieldset>
 
           {decision === "CORRIGIDO" ? (
-            <label className="review-field">Como deve aparecer no relatório<input maxLength={80} value={correctedType} onChange={(event) => { setCorrectedType(event.target.value); lastSavedMutationKey.current = null; }} /></label>
+            <label className="review-field">Como deve aparecer no relatório<input ref={correctedTypeRef} maxLength={80} value={correctedType} aria-invalid={error?.target === "correctedType" || undefined} aria-describedby={error?.target === "correctedType" ? REVIEW_ERROR_ID : undefined} onChange={(event) => { setCorrectedType(event.target.value); if (error?.target === "correctedType") setError(null); lastSavedMutationKey.current = null; }} /></label>
           ) : null}
-          <label className="review-field">Contexto observado<textarea rows={4} maxLength={1000} value={context} onChange={(event) => { setContext(event.target.value); lastSavedMutationKey.current = null; }} placeholder="Explique quando percebeu, se já existia ou por que a leitura precisa ser corrigida." /></label>
+          <label className="review-field">Contexto observado<textarea ref={contextRef} rows={4} maxLength={1000} value={context} aria-invalid={error?.target === "context" || undefined} aria-describedby={error?.target === "context" ? REVIEW_ERROR_ID : undefined} onChange={(event) => { setContext(event.target.value); if (error?.target === "context") setError(null); lastSavedMutationKey.current = null; }} placeholder="Explique quando percebeu, se já existia ou por que a leitura precisa ser corrigida." /></label>
           <div className="review-field__counter">{context.length}/1000</div>
 
-          {error ? <p className="item-error" role="alert">{error}</p> : null}
+          {error ? <p className="item-error" id={REVIEW_ERROR_ID} ref={errorRef} role="alert" tabIndex={error.target === "form" ? -1 : undefined}>{error.message}</p> : null}
           {notice ? <p className="review-notice" role="status">{notice}</p> : null}
 
           <div className="review-actions">

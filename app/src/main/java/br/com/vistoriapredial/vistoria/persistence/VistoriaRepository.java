@@ -27,6 +27,11 @@ public interface VistoriaRepository extends JpaRepository<Vistoria, Long> {
 
     Page<Vistoria> findByCliente(Usuario cliente, Pageable pageable);
 
+    Page<Vistoria> findByClienteAndStatus(
+            Usuario cliente,
+            VistoriaStatus status,
+            Pageable pageable);
+
     @EntityGraph(attributePaths = "imagens")
     List<Vistoria> findByIdIn(List<Long> ids);
 

@@ -2,6 +2,7 @@ import { apiFetch, fetchEvidenceBlob } from "@/lib/api";
 import type {
   CreateInspectionRequest,
   Inspection,
+  InspectionStatus,
   LegacyInspection,
   PageResponse,
   ReviewDecision,
@@ -17,8 +18,12 @@ export interface ReviewFindingRequest {
   tipoCorrigido: string | null;
 }
 
-export const listMyInspections = (page = 0, size = 10) =>
-  apiFetch<PageResponse<Inspection>>(`/vistorias/minhas?page=${page}&size=${size}`);
+export const listMyInspections = (page = 0, size = 10, status?: InspectionStatus) => {
+  const statusFilter = status ? `&status=${status}` : "";
+  return apiFetch<PageResponse<Inspection>>(
+    `/vistorias/minhas?page=${page}&size=${size}${statusFilter}`,
+  );
+};
 
 export const getMyInspection = (id: number, signal?: AbortSignal) =>
   apiFetch<Inspection>(`/vistorias/${id}`, { signal });

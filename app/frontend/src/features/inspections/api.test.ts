@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   createInspection,
+  listMyInspections,
   updateInspectionRoute,
   uploadEvidence,
 } from "./api";
@@ -73,5 +74,12 @@ describe("contratos do roteiro adaptativo", () => {
     expect(body.get("ambienteId")).toBe("21");
     expect(body.get("categoria")).toBe("DETALHE");
     expect(body.get("file")).toBe(file);
+  });
+
+  it("filtra relatórios no servidor sem carregar outras páginas no cliente", async () => {
+    await listMyInspections(2, 8, "RELATORIO_DISPONIVEL");
+
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/vistorias/minhas?page=2&size=8&status=RELATORIO_DISPONIVEL");
   });
 });

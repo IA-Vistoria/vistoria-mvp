@@ -145,13 +145,37 @@ describe("InspectionReview", () => {
 
     await user.click(screen.getByLabelText("Confirmar achado"));
     await user.click(screen.getByRole("button", { name: "Salvar e continuar" }));
-    expect((await screen.findByRole("alert")).textContent).toContain("Descreva o contexto");
+    const contextAlert = await screen.findByRole("alert");
+    const contextField = screen.getByLabelText("Contexto observado");
+    expect(contextAlert.textContent).toContain("Descreva o contexto");
+    expect(contextField.getAttribute("aria-invalid")).toBe("true");
+    expect(contextField.getAttribute("aria-describedby")).toBe(contextAlert.id);
+    expect(document.activeElement).toBe(contextField);
 
     await user.click(screen.getByLabelText("Corrigir informação"));
     await user.type(screen.getByLabelText("Contexto observado"), "É uma marca de tinta antiga.");
     await user.click(screen.getByRole("button", { name: "Salvar e continuar" }));
-    expect((await screen.findByRole("alert")).textContent).toContain("tipo corrigido");
+    const correctedAlert = await screen.findByRole("alert");
+    const correctedField = screen.getByLabelText("Como deve aparecer no relatório");
+    expect(correctedAlert.textContent).toContain("tipo corrigido");
+    expect(correctedField.getAttribute("aria-invalid")).toBe("true");
+    expect(correctedField.getAttribute("aria-describedby")).toBe(correctedAlert.id);
+    expect(document.activeElement).toBe(correctedField);
     expect(reviewFinding).not.toHaveBeenCalled();
+  });
+
+  it("associa a decisão obrigatória e leva o foco ao primeiro rádio", async () => {
+    const user = userEvent.setup();
+    render(<InspectionReview inspection={inspection} onChange={vi.fn()} onRefresh={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "Salvar e continuar" }));
+
+    const alert = await screen.findByRole("alert");
+    const firstDecision = screen.getByLabelText("Confirmar achado");
+    expect(alert.textContent).toContain("Escolha como este achado");
+    expect(firstDecision.getAttribute("aria-invalid")).toBe("true");
+    expect(firstDecision.getAttribute("aria-describedby")).toBe(alert.id);
+    expect(document.activeElement).toBe(firstDecision);
   });
 
   it("persiste a decisão uma vez antes de avançar para o próximo achado", async () => {

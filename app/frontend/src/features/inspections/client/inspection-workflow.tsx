@@ -90,6 +90,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   const [routeError, setRouteError] = useState<string | null>(null);
   const [savingRoute, setSavingRoute] = useState(false);
   const submitLock = useRef(false);
+  const routeFirstInputRef = useRef<HTMLInputElement>(null);
   const polledStatus = inspection?.status;
 
   useEffect(() => {
@@ -222,6 +223,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
     const validationError = validateEnvironmentDrafts(routeDraft);
     if (validationError) {
       setRouteError(validationError);
+      routeFirstInputRef.current?.focus();
       return;
     }
     setSavingRoute(true);
@@ -237,6 +239,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
       setEditingRoute(false);
     } catch (cause) {
       setRouteError(cause instanceof ApiError ? cause.problem.detail : "Não foi possível salvar o roteiro.");
+      routeFirstInputRef.current?.focus();
     } finally {
       setSavingRoute(false);
     }
@@ -290,8 +293,19 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
             <div><p className="eyebrow">Ajuste em campo</p><h2 id="route-edit-title">Editar roteiro</h2><p>Ambientes com fotos podem ser renomeados ou movidos, mas não removidos.</p></div>
             <button className="button button--ghost" type="button" onClick={() => setEditingRoute(false)}>Cancelar</button>
           </header>
-          {routeError ? <p className="form-alert" role="alert">{routeError}</p> : null}
-          <EnvironmentRouteEditor environments={routeDraft} onChange={setRouteDraft} lockedEnvironmentIds={lockedEnvironmentIds} disabled={savingRoute} />
+          {routeError ? <p className="form-alert" id="route-edit-error" role="alert">{routeError}</p> : null}
+          <EnvironmentRouteEditor
+            environments={routeDraft}
+            onChange={(updated) => {
+              setRouteDraft(updated);
+              if (routeError) setRouteError(null);
+            }}
+            lockedEnvironmentIds={lockedEnvironmentIds}
+            disabled={savingRoute}
+            errorId="route-edit-error"
+            invalid={routeError !== null}
+            firstNameRef={routeFirstInputRef}
+          />
           <button className="button button--primary" type="button" disabled={savingRoute} onClick={() => void saveRoute()}>{savingRoute ? "Salvando roteiro..." : "Salvar roteiro"}</button>
         </section>
       ) : inspection.ambientes.length === 0 ? (
@@ -390,6 +404,7 @@ function AdaptiveWorkspace(props: AdaptiveWorkspaceProps) {
           const detailEvidence = inspection.imagens.filter((evidence) => evidence.ambienteId === environment.id && evidence.categoria === "DETALHE");
           const overviewKey: UploadKey = `${environment.id}-VISAO_GERAL`;
           const detailKey: UploadKey = `${environment.id}-DETALHE`;
+          const roomErrorId = `room-error-${environment.id}`;
           return (
             <article className="environment-capture" data-testid={`environment-capture-${environment.id}`} hidden={selectedEnvironmentId !== environment.id} key={environment.id}>
               <header className="focused-environment__heading">
@@ -398,9 +413,9 @@ function AdaptiveWorkspace(props: AdaptiveWorkspaceProps) {
                 <p>Comece mostrando o espaço inteiro. Depois, aproxime apenas o que precisa de contexto adicional.</p>
               </header>
               <aside className="photo-guidance"><Info size={21} /><div><strong>Como enquadrar</strong><span>Use boa iluminação, fotografe a partir de um canto e evite cortar piso, teto ou aberturas importantes.</span></div></aside>
-              <CaptureCategory environment={environment} category="VISAO_GERAL" title="Visão geral" description="Obrigatória · mostre o ambiente por completo" evidence={overviewEvidence} editable={editable} busy={uploading !== null} activeUpload={uploading === overviewKey} retryFile={retryFiles[overviewKey]} onChoose={onChoose} onRetry={onRetry} />
-              <CaptureCategory environment={environment} category="DETALHE" title="Detalhes" description="Opcional · registre marcas, fissuras ou pontos relevantes" evidence={detailEvidence} editable={editable} busy={uploading !== null} activeUpload={uploading === detailKey} retryFile={retryFiles[detailKey]} onChoose={onChoose} onRetry={onRetry} />
-              {roomErrors[environment.id] ? <p className="item-error" role="alert">{roomErrors[environment.id]}</p> : null}
+              <CaptureCategory environment={environment} category="VISAO_GERAL" title="Visão geral" description="Obrigatória · mostre o ambiente por completo" evidence={overviewEvidence} editable={editable} busy={uploading !== null} activeUpload={uploading === overviewKey} retryFile={retryFiles[overviewKey]} errorId={roomErrors[environment.id] ? roomErrorId : undefined} onChoose={onChoose} onRetry={onRetry} />
+              <CaptureCategory environment={environment} category="DETALHE" title="Detalhes" description="Opcional · registre marcas, fissuras ou pontos relevantes" evidence={detailEvidence} editable={editable} busy={uploading !== null} activeUpload={uploading === detailKey} retryFile={retryFiles[detailKey]} errorId={roomErrors[environment.id] ? roomErrorId : undefined} onChoose={onChoose} onRetry={onRetry} />
+              {roomErrors[environment.id] ? <p className="item-error" id={roomErrorId} role="alert">{roomErrors[environment.id]}</p> : null}
               <footer className="environment-pager">
                 <button className="button button--secondary" type="button" disabled={index === 0} onClick={() => onMove(-1)}><ArrowLeft size={17} />Anterior</button>
                 {!coveredEnvironmentIds.has(environment.id) && index < environments.length - 1
@@ -441,11 +456,12 @@ interface CaptureCategoryProps {
   busy: boolean;
   activeUpload: boolean;
   retryFile?: File;
+  errorId?: string;
   onChoose: AdaptiveWorkspaceProps["onChoose"];
   onRetry: AdaptiveWorkspaceProps["onRetry"];
 }
 
-function CaptureCategory({ environment, category, title, description, evidence, editable, busy, activeUpload, retryFile, onChoose, onRetry }: CaptureCategoryProps) {
+function CaptureCategory({ environment, category, title, description, evidence, editable, busy, activeUpload, retryFile, errorId, onChoose, onRetry }: CaptureCategoryProps) {
   const categoryLabel = category === "VISAO_GERAL" ? "visão geral" : "detalhe";
   return (
     <section className={`capture-category capture-category--${category.toLocaleLowerCase()}`}>
@@ -453,11 +469,11 @@ function CaptureCategory({ environment, category, title, description, evidence, 
       {editable ? <div className={`capture-actions ${busy ? "is-disabled" : ""}`}>
         <label className="capture-action capture-action--primary">
           <Camera aria-hidden="true" size={22} /><span><strong>{activeUpload ? "Enviando foto..." : `Tirar ${categoryLabel}`}</strong><small>Abra a câmera traseira</small></span>
-          <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} aria-label={`Tirar ${categoryLabel} de ${environment.nome}`} onChange={(event) => onChoose(environment.id, category, event)} />
+          <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} aria-label={`Tirar ${categoryLabel} de ${environment.nome}`} aria-invalid={errorId ? true : undefined} aria-describedby={errorId} onChange={(event) => onChoose(environment.id, category, event)} />
         </label>
         <label className="capture-action">
           <Images aria-hidden="true" size={22} /><span><strong>Escolher da galeria</strong><small>JPEG, PNG ou WebP · até 10 MB</small></span>
-          <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} aria-label={`Escolher ${categoryLabel} de ${environment.nome} da galeria`} onChange={(event) => onChoose(environment.id, category, event)} />
+          <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} aria-label={`Escolher ${categoryLabel} de ${environment.nome} da galeria`} aria-invalid={errorId ? true : undefined} aria-describedby={errorId} onChange={(event) => onChoose(environment.id, category, event)} />
         </label>
         {retryFile ? <button className="retry-link" type="button" disabled={busy} onClick={() => void onRetry(environment.id, category, retryFile)}><RefreshCw size={15} />Tentar novamente</button> : null}
       </div> : null}

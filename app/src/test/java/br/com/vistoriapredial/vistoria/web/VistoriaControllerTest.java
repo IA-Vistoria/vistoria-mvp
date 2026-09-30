@@ -388,6 +388,26 @@ class VistoriaControllerTest {
 
     @Test
     @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldListMinhasFiltrandoStatusNoServidor() throws Exception {
+        Vistoria relatorio = new Vistoria();
+        relatorio.setCliente(cliente);
+        relatorio.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
+        ReflectionTestUtils.setField(relatorio, "id", 12L);
+        when(vistoriaService.listarVistoriasClientePorStatus(
+                any(), eq(VistoriaStatus.RELATORIO_DISPONIVEL), any()))
+                .thenReturn(new PageImpl<>(List.of(relatorio), PageRequest.of(0, 10), 1));
+
+        mockMvc.perform(get("/api/vistorias/minhas?status=RELATORIO_DISPONIVEL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(12))
+                .andExpect(jsonPath("$.content[0].status").value("RELATORIO_DISPONIVEL"));
+
+        verify(vistoriaService).listarVistoriasClientePorStatus(
+                eq(cliente), eq(VistoriaStatus.RELATORIO_DISPONIVEL), any());
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
     void shouldFixarOrdenacaoDasMinhasMesmoComSortExternoInvalido() throws Exception {
         when(vistoriaService.listarVistoriasCliente(any(), any()))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(3, 4), 0));

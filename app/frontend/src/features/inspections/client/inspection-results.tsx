@@ -14,10 +14,10 @@ export function InspectionResults({ inspection }: { inspection: Inspection }) {
   const results = report?.imagens ?? [];
 
   return (
-    <main className="results-page">
+    <section className="results-page" aria-labelledby="results-title">
       <header className="results-hero">
         <p className="eyebrow">Resultado da análise</p>
-        <h1>Vistoria concluída</h1>
+        <h1 id="results-title">Vistoria concluída</h1>
         <p>
           A IA analisou {inspection.imagens.length}{" "}
           {inspection.imagens.length === 1 ? "imagem" : "imagens"} de paredes em{" "}
@@ -88,6 +88,6 @@ export function InspectionResults({ inspection }: { inspection: Inspection }) {
           ) : null}
         </div>
       )}
-    </main>
+    </section>
   );
 }

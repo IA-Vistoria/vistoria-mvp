@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Inspection } from "../types";
 import { InspectionReport } from "./inspection-report";
+import { InspectionResults } from "./inspection-results";
 
 vi.mock("../shared/evidence-image", () => ({
   EvidenceImage: ({ alt }: { alt: string }) => <span role="img" aria-label={alt}>foto</span>,
@@ -85,6 +86,15 @@ afterEach(() => {
 });
 
 describe("InspectionReport", () => {
+  it("não cria outro landmark principal dentro do shell autenticado", () => {
+    const { unmount } = render(<InspectionReport inspection={report} />);
+    expect(screen.queryByRole("main")).toBeNull();
+    unmount();
+
+    render(<InspectionResults inspection={{ ...report, status: "CONCLUIDA" }} />);
+    expect(screen.queryByRole("main")).toBeNull();
+  });
+
   it("monta o relatório somente com conclusões confirmadas ou corrigidas", () => {
     render(<InspectionReport inspection={report} />);
 

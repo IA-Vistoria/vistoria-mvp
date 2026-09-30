@@ -6,6 +6,7 @@ import br.com.vistoriapredial.vistoria.application.VistoriaService;
 import br.com.vistoriapredial.vistoria.application.EvidenceContent;
 import br.com.vistoriapredial.vistoria.application.command.RegistrarEvidenciaCommand;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
+import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -74,10 +75,13 @@ public class VistoriaController {
     @PreAuthorize("hasRole('CLIENTE')")
     public ResponseEntity<PaginaResponseDto<VistoriaResponseDto>> listarMinhas(
             Authentication auth,
+            @RequestParam(required = false) VistoriaStatus status,
             @PageableDefault(size = 10) Pageable pageable) {
         Usuario cliente = getUsuario(auth);
-        Page<Vistoria> minhas = vistoriaService.listarVistoriasCliente(
-                cliente, paginacaoDeterministica(pageable));
+        Pageable paginacao = paginacaoDeterministica(pageable);
+        Page<Vistoria> minhas = status == null
+                ? vistoriaService.listarVistoriasCliente(cliente, paginacao)
+                : vistoriaService.listarVistoriasClientePorStatus(cliente, status, paginacao);
         return ResponseEntity.ok(PaginaResponseDto.from(minhas, responseMapper::toResponse));
     }
 

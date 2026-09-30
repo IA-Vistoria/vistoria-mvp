@@ -140,6 +140,23 @@ class VistoriaServiceTest {
     }
 
     @Test
+    void shouldListarVistoriasClientePorStatusComPaginacao() {
+        Vistoria relatorio = inspectionWithEvidence(VistoriaStatus.RELATORIO_DISPONIVEL);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(vistoriaRepository.findByClienteAndStatus(
+                cliente, VistoriaStatus.RELATORIO_DISPONIVEL, pageable))
+                .thenReturn(new PageImpl<>(List.of(relatorio), pageable, 1));
+        when(vistoriaRepository.findByIdIn(List.of(10L))).thenReturn(List.of(relatorio));
+
+        Page<Vistoria> pagina = vistoriaService.listarVistoriasClientePorStatus(
+                cliente, VistoriaStatus.RELATORIO_DISPONIVEL, pageable);
+
+        assertThat(pagina.getContent()).containsExactly(relatorio);
+        verify(vistoriaRepository).findByClienteAndStatus(
+                cliente, VistoriaStatus.RELATORIO_DISPONIVEL, pageable);
+    }
+
+    @Test
     void shouldRejectListarVistoriasClienteForNonCliente() {
         assertThatThrownBy(() -> vistoriaService.listarVistoriasCliente(engenheiro, PageRequest.of(0, 10)))
                 .isInstanceOf(IllegalArgumentException.class);

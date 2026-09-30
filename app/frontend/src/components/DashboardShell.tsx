@@ -9,7 +9,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { getSession, removeSession, type UserRole } from "@/lib/auth";
 import { BrandMark } from "@/components/brand/BrandMark";
@@ -22,8 +22,10 @@ interface DashboardShellProps {
 export function DashboardShell({ role, children }: DashboardShellProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const session = getSession();
   const engineer = role === "ROLE_ENGENHEIRO";
+  const reportsActive = !engineer && pathname === "/client" && searchParams.get("filtro") === "relatorios";
 
   function logout() {
     removeSession();
@@ -55,9 +57,9 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
           <BrandMark inverse={!engineer} compact />
         </Link>
         {!engineer ? <nav className="topbar__primary-nav" aria-label="Navegação principal">
-          <Link className={pathname === "/client" ? "is-active" : ""} href="/client"><Home aria-hidden="true" size={18} />Início</Link>
+          <Link className={pathname === "/client" && !reportsActive ? "is-active" : ""} href="/client"><Home aria-hidden="true" size={18} />Início</Link>
           <Link className={pathname.includes("/vistorias/nova") ? "is-active" : ""} href="/client/vistorias/nova"><Camera aria-hidden="true" size={18} />Nova vistoria</Link>
-          <Link href="/client?filtro=relatorios"><FileText aria-hidden="true" size={18} />Relatórios</Link>
+          <Link className={reportsActive ? "is-active" : ""} href="/client?filtro=relatorios"><FileText aria-hidden="true" size={18} />Relatórios</Link>
         </nav> : <span className="topbar__context">Área legada</span>}
         {!engineer ? <span className="sr-only">Relatório de vistoria por IA</span> : null}
         <div className="topbar__account">
@@ -76,7 +78,7 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
 
       {!engineer ? (
         <nav className="mobile-nav" aria-label="Navegação móvel">
-          <Link className={pathname === "/client" ? "is-active" : ""} href="/client">
+          <Link className={pathname === "/client" && !reportsActive ? "is-active" : ""} href="/client">
             <Home aria-hidden="true" size={20} />
             <span>Início</span>
           </Link>
@@ -84,7 +86,7 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
             <Camera aria-hidden="true" size={20} />
             <span>Nova vistoria</span>
           </Link>
-          <Link href="/client?filtro=relatorios">
+          <Link className={reportsActive ? "is-active" : ""} href="/client?filtro=relatorios">
             <FileText aria-hidden="true" size={20} />
             <span>Relatórios</span>
           </Link>

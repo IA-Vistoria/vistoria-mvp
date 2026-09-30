@@ -89,7 +89,7 @@ export function InspectionReport({ inspection }: { inspection: Inspection }) {
   }
 
   return (
-    <main className="inspection-report" aria-labelledby="report-title">
+    <section className="inspection-report" aria-labelledby="report-title">
       <div className="report-actions no-print" aria-label="Ações do relatório">
         <div>
           <span className="report-ready"><CheckCircle2 size={16} />Documento disponível</span>
@@ -109,7 +109,7 @@ export function InspectionReport({ inspection }: { inspection: Inspection }) {
 
       <article className="report-sheet">
         <header className="report-cover">
-          <div className="report-brand"><BrandMark compact /></div>
+          <div className="report-brand"><BrandMark compact inverse /></div>
           <div className="report-cover__title">
             <p className="eyebrow">Registro visual assistido</p>
             <h1 id="report-title">Relatório de vistoria por IA</h1>
@@ -173,7 +173,7 @@ export function InspectionReport({ inspection }: { inspection: Inspection }) {
           </div>
         </footer>
       </article>
-    </main>
+    </section>
   );
 }
 

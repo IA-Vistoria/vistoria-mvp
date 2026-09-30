@@ -124,6 +124,18 @@ public class VistoriaService {
         return comImagensCarregadas(vistoriaRepository.findByCliente(cliente, pageable));
     }
 
+    @Transactional(readOnly = true)
+    public Page<Vistoria> listarVistoriasClientePorStatus(
+            Usuario cliente,
+            VistoriaStatus status,
+            Pageable pageable) {
+        if (cliente.getPerfil() != PerfilEnum.ROLE_CLIENTE) {
+            throw new IllegalArgumentException("Somente clientes podem listar suas vistorias");
+        }
+        return comImagensCarregadas(
+                vistoriaRepository.findByClienteAndStatus(cliente, status, pageable));
+    }
+
     @Transactional
     public Vistoria uploadImagem(
             Long vistoriaId,

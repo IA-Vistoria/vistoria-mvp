@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, LockKeyhole, Plus, Trash2 } from "lucide-react";
+import type { Ref } from "react";
 
 import type {
   EnvironmentType,
@@ -20,6 +21,9 @@ interface EnvironmentRouteEditorProps {
   onChange: (environments: EnvironmentDraft[]) => void;
   lockedEnvironmentIds?: ReadonlySet<number>;
   disabled?: boolean;
+  errorId?: string;
+  invalid?: boolean;
+  firstNameRef?: Ref<HTMLInputElement>;
 }
 
 const SUGGESTIONS: Record<PropertyType, Array<Omit<EnvironmentDraft, "key">>> = {
@@ -103,6 +107,9 @@ export function EnvironmentRouteEditor({
   onChange,
   lockedEnvironmentIds = new Set<number>(),
   disabled = false,
+  errorId,
+  invalid = false,
+  firstNameRef,
 }: EnvironmentRouteEditorProps) {
   function update(index: number, patch: Partial<EnvironmentDraft>) {
     onChange(environments.map((environment, currentIndex) => (
@@ -131,7 +138,7 @@ export function EnvironmentRouteEditor({
   }
 
   return (
-    <fieldset className="route-editor" disabled={disabled}>
+    <fieldset className="route-editor" disabled={disabled} aria-describedby={invalid ? errorId : undefined}>
       <legend>Ambientes do imóvel</legend>
       <div className="route-editor__heading">
         <div>
@@ -152,6 +159,8 @@ export function EnvironmentRouteEditor({
                   <span className="sr-only">Tipo do ambiente {index + 1}</span>
                   <select
                     aria-label={`Tipo do ambiente ${index + 1}`}
+                    aria-invalid={invalid || undefined}
+                    aria-describedby={invalid ? errorId : undefined}
                     value={environment.tipo}
                     onChange={(event) => update(index, { tipo: event.target.value as EnvironmentType })}
                   >
@@ -163,7 +172,10 @@ export function EnvironmentRouteEditor({
                 <label>
                   <span className="sr-only">Nome do ambiente {index + 1}</span>
                   <input
+                    ref={index === 0 ? firstNameRef : undefined}
                     aria-label={`Nome do ambiente ${index + 1}`}
+                    aria-invalid={invalid || undefined}
+                    aria-describedby={invalid ? errorId : undefined}
                     maxLength={60}
                     value={environment.nome}
                     onChange={(event) => update(index, { nome: event.target.value })}

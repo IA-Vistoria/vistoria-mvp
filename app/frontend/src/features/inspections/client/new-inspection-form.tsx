@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Camera, CheckCircle2, MapPin } from "lucide-react";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { ApiError } from "@/lib/api";
 import { createInspection } from "../api";
@@ -21,25 +21,41 @@ const PROPERTY_TYPES: Array<{ value: PropertyType; label: string; description: s
   { value: "OUTRO", label: "Outro", description: "Você monta do zero" },
 ];
 
+const FORM_ERROR_ID = "new-inspection-error";
+
+interface FormError {
+  message: string;
+  target: "address" | "route" | "form";
+}
+
 export function NewInspectionForm() {
   const router = useRouter();
   const [address, setAddress] = useState("");
   const [propertyType, setPropertyType] = useState<PropertyType>("CASA");
   const [environments, setEnvironments] = useState(() => createSuggestedEnvironments("CASA"));
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FormError | null>(null);
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
+  const addressRef = useRef<HTMLInputElement>(null);
+  const firstEnvironmentRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (error?.target === "form") errorRef.current?.focus();
+  }, [error]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting.current) return;
     if (!address.trim()) {
-      setError("Informe o endereço do imóvel.");
+      setError({ message: "Informe o endereço do imóvel.", target: "address" });
+      addressRef.current?.focus();
       return;
     }
     const routeError = validateEnvironmentDrafts(environments);
     if (routeError) {
-      setError(routeError);
+      setError({ message: routeError, target: "route" });
+      firstEnvironmentRef.current?.focus();
       return;
     }
 
@@ -54,7 +70,10 @@ export function NewInspectionForm() {
       });
       router.replace(`/client/vistorias/${created.id}`);
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.problem.detail : "Não foi possível criar o rascunho. Tente novamente.");
+      setError({
+        message: cause instanceof ApiError ? cause.problem.detail : "Não foi possível criar o rascunho. Tente novamente.",
+        target: "form",
+      });
       submitting.current = false;
       setBusy(false);
     }
@@ -84,13 +103,19 @@ export function NewInspectionForm() {
             <div className="inspection-form__icon"><MapPin size={24} /></div>
             <div><p className="eyebrow">Identificação e roteiro</p><h2>Prepare a vistoria</h2></div>
           </div>
-          {error ? <div className="form-alert" role="alert">{error}</div> : null}
+          {error ? <div className="form-alert" id={FORM_ERROR_ID} ref={errorRef} role="alert" tabIndex={error.target === "form" ? -1 : undefined}>{error.message}</div> : null}
           <label htmlFor="inspection-address">Endereço do imóvel</label>
           <input
+            ref={addressRef}
             id="inspection-address"
             autoComplete="street-address"
             value={address}
-            onChange={(event) => setAddress(event.target.value)}
+            aria-invalid={error?.target === "address" || undefined}
+            aria-describedby={error?.target === "address" ? FORM_ERROR_ID : undefined}
+            onChange={(event) => {
+              setAddress(event.target.value);
+              if (error?.target === "address") setError(null);
+            }}
             placeholder="Rua, número, complemento, cidade"
             disabled={busy}
           />
@@ -121,7 +146,17 @@ export function NewInspectionForm() {
           </fieldset>
 
           <p className="route-suggestion-note"><strong>Sugestão inicial:</strong> você pode adaptar tudo antes de continuar.</p>
-          <EnvironmentRouteEditor environments={environments} onChange={setEnvironments} disabled={busy} />
+          <EnvironmentRouteEditor
+            environments={environments}
+            onChange={(updated) => {
+              setEnvironments(updated);
+              if (error?.target === "route") setError(null);
+            }}
+            disabled={busy}
+            errorId={FORM_ERROR_ID}
+            invalid={error?.target === "route"}
+            firstNameRef={firstEnvironmentRef}
+          />
 
           <button className="button button--primary" disabled={busy} type="submit">
             {busy ? "Preparando roteiro..." : "Começar a registrar fotos"}

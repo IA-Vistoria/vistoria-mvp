@@ -10,7 +10,7 @@ import {
   ScanSearch,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AsyncState } from "@/components/ui/async-state";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -38,14 +38,34 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(value));
 }
 
-export function ClientDashboard() {
+function ReportList({ reports }: { reports: Inspection[] }) {
+  return (
+    <div className="report-list">
+      {reports.map((inspection) => (
+        <article className="report-row" key={inspection.id}>
+          <FileText aria-hidden="true" size={22} />
+          <div><strong>{inspection.endereco}</strong><span className="mono">VISTORIA {String(inspection.id).padStart(4, "0")} · {formatDate(inspection.dataConclusao ?? inspection.dataCriacao)}</span></div>
+          <Link href={`/client/vistorias/${inspection.id}`}>Ver relatório<ArrowRight size={17} /></Link>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+interface ClientDashboardProps {
+  view?: "overview" | "reports";
+}
+
+export function ClientDashboard({ view = "overview" }: ClientDashboardProps) {
   const [page, setPage] = useState(0);
   const [data, setData] = useState<PageResponse<Inspection> | null>(null);
   const [error, setError] = useState(false);
+  const reportsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const statusFilter = view === "reports" ? "RELATORIO_DISPONIVEL" : undefined;
 
   async function load(targetPage: number) {
     try {
-      const loaded = await listMyInspections(targetPage);
+      const loaded = await listMyInspections(targetPage, 10, statusFilter);
       setData(loaded);
       setError(false);
     } catch {
@@ -56,7 +76,7 @@ export function ClientDashboard() {
 
   useEffect(() => {
     let active = true;
-    listMyInspections(page)
+    listMyInspections(page, 10, statusFilter)
       .then((loaded) => {
         if (!active) return;
         setData(loaded);
@@ -70,7 +90,13 @@ export function ClientDashboard() {
     return () => {
       active = false;
     };
-  }, [page]);
+  }, [page, statusFilter]);
+
+  useEffect(() => {
+    if (view === "reports" && data !== null) {
+      reportsHeadingRef.current?.focus();
+    }
+  }, [data, view]);
 
   if (error) {
     return (
@@ -89,6 +115,16 @@ export function ClientDashboard() {
   }
 
   if (data.totalElementos === 0) {
+    if (view === "reports") {
+      return (
+        <AsyncState
+          eyebrow="Documentos"
+          title="Nenhum relatório disponível"
+          description="Quando uma vistoria for concluída, o relatório organizado por ambiente aparecerá aqui."
+          action={<Link className="button button--secondary" href="/client"><ArrowLeft size={17} />Voltar à visão geral</Link>}
+        />
+      );
+    }
     return (
       <AsyncState
         eyebrow="Sua primeira vistoria"
@@ -102,6 +138,7 @@ export function ClientDashboard() {
   const inspections = [...data.content].sort(byNewest);
   const primary = inspections[0];
   const presentation = inspectionStatus[primary.status];
+  const allReports = inspections.filter((inspection) => inspection.status === "RELATORIO_DISPONIVEL");
   const reports = inspections.filter((inspection) =>
     inspection.status === "RELATORIO_DISPONIVEL" && inspection.id !== primary.id,
   );
@@ -112,6 +149,46 @@ export function ClientDashboard() {
       .filter((evidence) => evidence.categoria === "VISAO_GERAL" && evidence.ambienteId !== null)
       .map((evidence) => evidence.ambienteId),
   ).size;
+
+  if (view === "reports") {
+    return (
+      <div className="dashboard-page">
+        <header className="page-heading dashboard-heading">
+          <div>
+            <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar à visão geral</Link>
+            <p className="eyebrow">Documentos</p>
+            <h1 ref={reportsHeadingRef} tabIndex={-1}>Seus relatórios</h1>
+            <p>Consulte os registros concluídos, organizados pelos ambientes reais de cada imóvel.</p>
+          </div>
+          <Link className="button button--primary" href="/client/vistorias/nova"><Plus size={18} />Nova vistoria</Link>
+        </header>
+
+        {allReports.length > 0 ? (
+          <section className="dashboard-section" aria-labelledby="all-reports-title">
+            <header className="section-heading">
+              <div><p className="eyebrow">Disponíveis agora</p><h2 id="all-reports-title">Relatórios concluídos</h2></div>
+              <FileCheck2 aria-hidden="true" size={24} />
+            </header>
+            <ReportList reports={allReports} />
+          </section>
+        ) : (
+          <AsyncState
+            title="Nenhum relatório disponível"
+            description="As vistorias em andamento continuam na visão geral."
+            action={<Link className="button button--secondary" href="/client">Acompanhar vistorias</Link>}
+          />
+        )}
+
+        {data.totalPaginas > 1 ? (
+          <nav className="pagination" aria-label="Paginação de relatórios">
+            <button className="button button--secondary" disabled={data.pagina === 0} onClick={() => setPage((current) => current - 1)}><ArrowLeft size={17} />Anterior</button>
+            <span>Página {data.pagina + 1} de {data.totalPaginas}</span>
+            <button className="button button--secondary" disabled={data.pagina + 1 >= data.totalPaginas} onClick={() => setPage((current) => current + 1)}>Próxima<ArrowRight size={17} /></button>
+          </nav>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-page">
@@ -157,15 +234,7 @@ export function ClientDashboard() {
             <div><p className="eyebrow">Documentos recentes</p><h2 id="available-reports-title">Relatórios disponíveis</h2></div>
             <FileCheck2 aria-hidden="true" size={24} />
           </header>
-          <div className="report-list">
-            {reports.map((inspection) => (
-              <article className="report-row" key={inspection.id}>
-                <FileText aria-hidden="true" size={22} />
-                <div><strong>{inspection.endereco}</strong><span className="mono">VISTORIA {String(inspection.id).padStart(4, "0")} · {formatDate(inspection.dataConclusao ?? inspection.dataCriacao)}</span></div>
-                <Link href={`/client/vistorias/${inspection.id}`}>Ver relatório<ArrowRight size={17} /></Link>
-              </article>
-            ))}
-          </div>
+          <ReportList reports={reports} />
         </section>
       ) : null}
 

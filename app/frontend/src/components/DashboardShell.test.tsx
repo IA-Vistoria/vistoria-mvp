@@ -5,16 +5,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getSession, setSession } from "@/lib/auth";
 import { DashboardShell } from "./DashboardShell";
 
-const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
+const { replace, searchParamsGet } = vi.hoisted(() => ({
+  replace: vi.fn(),
+  searchParamsGet: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/client",
   useRouter: () => ({ replace }),
+  useSearchParams: () => ({ get: searchParamsGet }),
 }));
 
 describe("DashboardShell", () => {
   beforeEach(() => {
     replace.mockReset();
+    searchParamsGet.mockReset();
+    searchParamsGet.mockReturnValue(null);
     setSession({
       token: "jwt",
       tipo: "Bearer",
@@ -74,5 +80,19 @@ describe("DashboardShell", () => {
     );
 
     expect(screen.getByRole("img", { name: "Vistor.IA — vistoria inteligente" })).toBeDefined();
+  });
+
+  it("marca relatórios como destino ativo quando o filtro está aberto", () => {
+    searchParamsGet.mockImplementation((name: string) => name === "filtro" ? "relatorios" : null);
+
+    render(
+      <DashboardShell role="ROLE_CLIENTE">
+        <p>Conteúdo</p>
+      </DashboardShell>,
+    );
+
+    const navigation = screen.getByRole("navigation", { name: "Navegação principal" });
+    expect(within(navigation).getByRole("link", { name: "Relatórios" }).className).toContain("is-active");
+    expect(within(navigation).getByRole("link", { name: "Início" }).className).not.toContain("is-active");
   });
 });
