@@ -270,7 +270,7 @@ metadados da execução e resultados calculados em JSON v2.
 
 ### T7: Adicionar o OCI Java SDK
 
-**Status**: Pending  
+**Status**: Complete  
 **What**: Adicionar BOM, módulo Generative AI Inference e cliente Jersey 3 do
 OCI SDK em versões compatíveis, sem alterar a stack Spring.  
 **Where**: `pom.xml`  
