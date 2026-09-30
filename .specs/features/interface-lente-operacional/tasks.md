@@ -238,6 +238,7 @@ T7 → T8
 **Depends on**: T7
 **Reuses**: suítes existentes e conceitos aprovados.
 **Requirement**: ROTEIRO-01, ROTEIRO-02, CAPTURA-01, ENVIO-01, RELATORIO-01, UI-01
+**Status**: Complete
 
 **Tools**:
 
@@ -245,11 +246,11 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Backend, lint, frontend tests e build passam com contagem registrada.
-- [ ] Casa, apartamento e comercial completam fluxos com roteiros diferentes.
-- [ ] Capturas em 390, 768 e 1440 px não têm overflow ou colisão.
-- [ ] `app/design-qa.md` contém `final result: passed`.
-- [ ] Verificador independente não deixa P0, P1 ou P2 aberto.
+- [x] Backend, lint, frontend tests e build passam com contagem registrada.
+- [x] Casa, apartamento e comercial completam fluxos com roteiros diferentes.
+- [x] Capturas em 390, 768 e 1440 px não têm overflow ou colisão.
+- [x] `app/design-qa.md` contém `final result: passed`.
+- [x] Verificador independente não deixa P0, P1 ou P2 aberto.
 
 **Tests**: build + visual QA
 **Gate**: build

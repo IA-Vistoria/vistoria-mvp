@@ -6,11 +6,11 @@ O MVP atual combina uma interface genérica com um protocolo fixo de 12 itens t�
 
 ## Goals
 
-- [ ] Criar e persistir um roteiro próprio para cada vistoria, com 1 a 30 ambientes ordenados.
-- [ ] Exigir uma visão geral por ambiente e permitir detalhes adicionais associados ao mesmo contexto.
-- [ ] Redesenhar toda a jornada IA-first com a identidade Lente Operacional revisada.
-- [ ] Eliminar protocolo fixo, sobreposição, corte e rolagem horizontal em 390, 768 e 1440 px.
-- [ ] Preservar autenticação, ownership, estados da análise, revisão e relatório existentes.
+- [x] Criar e persistir um roteiro próprio para cada vistoria, com 1 a 30 ambientes ordenados.
+- [x] Exigir uma visão geral por ambiente e permitir detalhes adicionais associados ao mesmo contexto.
+- [x] Redesenhar toda a jornada IA-first com a identidade Lente Operacional revisada.
+- [x] Eliminar protocolo fixo, sobreposição, corte e rolagem horizontal em 390, 768 e 1440 px.
+- [x] Preservar autenticação, ownership, estados da análise, revisão e relatório existentes.
 
 ## Out of Scope
 
@@ -168,12 +168,12 @@ O MVP atual combina uma interface genérica com um protocolo fixo de 12 itens t�
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| ROTEIRO-01 | P1: Configurar roteiro | Implementation | In Progress |
-| ROTEIRO-02 | P1: Editar roteiro | Implementation | In Progress |
-| CAPTURA-01 | P1: Captura estruturada | Implementation | In Progress |
-| ENVIO-01 | P1: Coleta completa | Implementation | In Progress |
-| RELATORIO-01 | P1: Revisão e relatório | Implementation | Planned |
-| UI-01 | P2: Interface acessível | Implementation | Planned |
+| ROTEIRO-01 | P1: Configurar roteiro | Implementation | Complete |
+| ROTEIRO-02 | P1: Editar roteiro | Implementation | Complete |
+| CAPTURA-01 | P1: Captura estruturada | Implementation | Complete |
+| ENVIO-01 | P1: Coleta completa | Implementation | Complete |
+| RELATORIO-01 | P1: Revisão e relatório | Implementation | Complete |
+| UI-01 | P2: Interface acessível | Implementation | Complete |
 
 **Coverage:** 6 total, 6 mapped to tasks, 0 unmapped.
 
@@ -181,9 +181,9 @@ O MVP atual combina uma interface genérica com um protocolo fixo de 12 itens t�
 
 ## Success Criteria
 
-- [ ] Casa, apartamento e imóvel comercial podem usar roteiros diferentes sem mudança de código.
-- [ ] Nenhuma vistoria nova depende do total fixo de 12 itens.
-- [ ] Backend e frontend rejeitam envio enquanto algum ambiente não possui visão geral.
-- [ ] Testes de backend e frontend, lint e builds passam sem remoção ou skip.
-- [ ] Capturas em 390, 768 e 1440 px não apresentam colisão, corte ou overflow horizontal.
-- [ ] `app/design-qa.md` termina com `final result: passed`.
+- [x] Casa, apartamento e imóvel comercial podem usar roteiros diferentes sem mudança de código.
+- [x] Nenhuma vistoria nova depende do total fixo de 12 itens.
+- [x] Backend e frontend rejeitam envio enquanto algum ambiente não possui visão geral.
+- [x] Testes de backend e frontend, lint e builds passam sem remoção ou skip.
+- [x] Capturas em 390, 768 e 1440 px não apresentam colisão, corte ou overflow horizontal.
+- [x] `app/design-qa.md` termina com `final result: passed`.
