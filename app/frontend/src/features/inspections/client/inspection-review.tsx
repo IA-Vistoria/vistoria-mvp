@@ -16,7 +16,6 @@ import { FormEvent, useMemo, useRef, useState } from "react";
 import { ApiError } from "@/lib/api";
 import { completeReport, reviewFinding } from "../api";
 import { EvidenceImage } from "../shared/evidence-image";
-import { PROTOCOL_GROUPS } from "../shared/protocol";
 import type {
   AiFinding,
   AiImageAnalysis,
@@ -24,6 +23,7 @@ import type {
   Inspection,
   ReviewDecision,
 } from "../types";
+import { evidenceContextLabel } from "./evidence-context";
 
 interface InspectionReviewProps {
   inspection: Inspection;
@@ -36,12 +36,6 @@ interface FindingEntry {
   evidence: Evidence | null;
   finding: AiFinding;
 }
-
-const protocolLabels = new Map<string, string>(
-  PROTOCOL_GROUPS.flatMap((group) =>
-    group.items.map((item) => [item.code, `${group.name} — ${item.label}`] as const),
-  ),
-);
 
 const decisions: Array<{
   value: ReviewDecision;
@@ -204,9 +198,7 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
 
   if (!current) return null;
 
-  const environment = current.evidence
-    ? protocolLabels.get(current.evidence.protocoloItem) ?? current.evidence.protocoloItem
-    : "Evidência indisponível";
+  const environment = evidenceContextLabel(current.evidence);
 
   return (
     <section className="review-workspace" aria-labelledby="review-title">
@@ -231,7 +223,7 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
             return (
               <button className={activeIndex === index ? "is-active" : ""} type="button" aria-current={activeIndex === index ? "step" : undefined} onClick={() => openEntry(index)} key={`${entry.analysis.imagemId}-${entry.finding.indice}`}>
                 <span>{reviewed ? <Check size={14} /> : index + 1}</span>
-                <div><strong>{entry.finding.tipo || "Indício visual"}</strong><small>{reviewed ? "Revisado" : "Pendente"}</small></div>
+                <div><strong>{entry.finding.tipo || "Indício visual"}</strong><small>{evidenceContextLabel(entry.evidence)} · {reviewed ? "Revisado" : "Pendente"}</small></div>
               </button>
             );
           })}
@@ -248,12 +240,13 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
 
         <form className="finding-decision" onSubmit={saveReview}>
           <div className="finding-decision__meta"><span>Achado {activeIndex + 1} de {entries.length}</span><span className="mono">IMG {current.analysis.imagemId} · REF {current.finding.indice}</span></div>
-          <p className="eyebrow">Observação da IA</p>
+          <p className="eyebrow">Observação sugerida pela IA</p>
           <h2>{current.finding.tipo || "Indício visual"}</h2>
           {current.finding.area ? <p className="finding-area">{current.finding.area}</p> : null}
           {current.finding.descricao ? <p>{current.finding.descricao}</p> : null}
           {current.finding.evidencia ? <blockquote>{current.finding.evidencia}</blockquote> : null}
 
+          <p className="decision-owner-label">Decisão do responsável</p>
           <fieldset className="decision-options">
             <legend>Isso corresponde ao que você observou?</legend>
             {decisions.map((option) => {

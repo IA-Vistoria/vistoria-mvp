@@ -56,6 +56,19 @@ const report: Inspection = {
   ],
 };
 
+const adaptiveReport: Inspection = {
+  ...report,
+  tipoImovel: "APARTAMENTO",
+  ambientes: [
+    { id: 7, tipo: "SALA", nome: "Sala de estar", ordem: 0 },
+    { id: 8, tipo: "QUARTO", nome: "Quarto de hóspedes", ordem: 1 },
+  ],
+  imagens: [
+    { ...report.imagens[1], ambienteId: 8, ambienteNome: "Quarto de hóspedes", categoria: "DETALHE", protocoloItem: "QUARTO_DETALHE" },
+    { ...report.imagens[0], ambienteId: 7, ambienteNome: "Sala de estar", categoria: "VISAO_GERAL", protocoloItem: "SALA_VISAO_GERAL" },
+  ],
+};
+
 const originalShare = Object.getOwnPropertyDescriptor(navigator, "share");
 const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 
@@ -91,6 +104,37 @@ describe("InspectionReport", () => {
     expect(screen.getByRole("img", { name: "Evidência 14 — Sala — Paredes e revestimentos" })).toBeDefined();
     expect(screen.getByRole("img", { name: "Evidência 15 — Sala — Teto e iluminação" })).toBeDefined();
     expect(screen.getByText("fotos preservadas").previousElementSibling?.textContent).toBe("2");
+  });
+
+  it("agrupa as evidências na ordem dos ambientes persistidos", () => {
+    render(<InspectionReport inspection={adaptiveReport} />);
+
+    const groups = screen.getAllByTestId("report-environment");
+    expect(groups).toHaveLength(2);
+    expect(groups[0].textContent).toContain("Sala de estar");
+    expect(groups[1].textContent).toContain("Quarto de hóspedes");
+  });
+
+  it("identifica visão geral e detalhe dentro do ambiente", () => {
+    render(<InspectionReport inspection={adaptiveReport} />);
+
+    expect(screen.getByText("Visão geral")).toBeDefined();
+    expect(screen.getByText("Detalhe")).toBeDefined();
+  });
+
+  it("distingue observação da IA de decisão e contexto do responsável", () => {
+    render(<InspectionReport inspection={adaptiveReport} />);
+
+    expect(screen.getAllByText("Observação da IA").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Decisão do responsável").length).toBeGreaterThan(0);
+    expect(screen.getByText("A marca já existia na entrega das chaves.")).toBeDefined();
+  });
+
+  it("mantém evidências antigas em um grupo de fallback legível", () => {
+    render(<InspectionReport inspection={report} />);
+
+    expect(screen.getByRole("heading", { name: "Evidências legadas" })).toBeDefined();
+    expect(screen.getByText("Sala — Paredes e revestimentos")).toBeDefined();
   });
 
   it("expõe o limite do documento sem prometer laudo, diagnóstico ou certificação", () => {

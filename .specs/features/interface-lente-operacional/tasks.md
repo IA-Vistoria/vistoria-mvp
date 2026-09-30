@@ -221,10 +221,10 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Foto, ambiente, IA e decisão humana permanecem juntos.
-- [ ] Relatório agrupa evidências por ambiente e mantém ressalva de escopo.
-- [ ] Evidência legada usa fallback legível.
-- [ ] Gate full passa com todos os testes anteriores e ao menos 6 novos cenários.
+- [x] Foto, ambiente, IA e decisão humana permanecem juntos.
+- [x] Relatório agrupa evidências por ambiente e mantém ressalva de escopo.
+- [x] Evidência legada usa fallback legível.
+- [x] Gate full passa com todos os testes anteriores e ao menos 6 novos cenários.
 
 **Tests**: unit
 **Gate**: full

@@ -2,7 +2,6 @@
 
 import {
   AlertTriangle,
-  Bot,
   CalendarDays,
   CheckCircle2,
   FileText,
@@ -14,9 +13,10 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { BrandMark } from "@/components/brand/BrandMark";
 import { EvidenceImage } from "../shared/evidence-image";
-import { PROTOCOL_GROUPS } from "../shared/protocol";
 import type { AiFinding, AiImageAnalysis, Evidence, FindingReview, Inspection } from "../types";
+import { categoryLabel, evidenceContextLabel, groupEvidenceByEnvironment } from "./evidence-context";
 
 interface ReportEntry {
   analysis: AiImageAnalysis;
@@ -25,12 +25,6 @@ interface ReportEntry {
 }
 
 type ShareFeedback = { tone: "success" | "error"; message: string } | null;
-
-const protocolLabels = new Map<string, string>(
-  PROTOCOL_GROUPS.flatMap((group) =>
-    group.items.map((item) => [item.code, `${group.name} — ${item.label}`] as const),
-  ),
-);
 
 function acceptedEntries(inspection: Inspection): ReportEntry[] {
   return (inspection.analiseIa?.imagens ?? []).flatMap((analysis) =>
@@ -65,6 +59,8 @@ export function InspectionReport({ inspection }: { inspection: Inspection }) {
   const entries = acceptedEntries(inspection);
   const rejectedCount = inspection.revisoes.filter((review) => review.decisao === "REJEITADO").length;
   const completedAt = formatDate(inspection.dataConclusao);
+  const evidenceGroups = groupEvidenceByEnvironment(inspection);
+  const evidenceOrder = new Map(inspection.imagens.map((evidence, index) => [evidence.id, index + 1]));
 
   async function shareReport() {
     setShareFeedback(null);
@@ -113,7 +109,7 @@ export function InspectionReport({ inspection }: { inspection: Inspection }) {
 
       <article className="report-sheet">
         <header className="report-cover">
-          <div className="report-brand"><span><Bot size={23} /></span><strong>Vistor.IA</strong></div>
+          <div className="report-brand"><BrandMark compact /></div>
           <div className="report-cover__title">
             <p className="eyebrow">Registro visual assistido</p>
             <h1 id="report-title">Relatório de vistoria por IA</h1>
@@ -145,47 +141,24 @@ export function InspectionReport({ inspection }: { inspection: Inspection }) {
             <p>Somente achados confirmados ou corrigidos aparecem como constatação. Sugestões rejeitadas permanecem fora das conclusões.</p>
           </header>
 
-          {inspection.imagens.map((evidence, photoIndex) => {
-            const evidenceEntries = entriesForEvidence(entries, evidence);
-            const analysis = inspection.analiseIa?.imagens.find((item) => item.imagemId === evidence.id);
-            const label = protocolLabels.get(evidence.protocoloItem) ?? evidence.protocoloItem;
-            return (
-              <article className="report-evidence" key={evidence.id}>
-                <div className="report-evidence__photo">
-                  <div className="report-evidence__label"><span className="mono">FOTO {String(photoIndex + 1).padStart(2, "0")}</span><strong>{label}</strong></div>
-                  <EvidenceImage evidence={evidence} alt={`Evidência ${evidence.id} — ${label}`} />
-                  <small className="mono">IMG {String(evidence.id).padStart(4, "0")} · {formatDate(evidence.dataUpload)}</small>
-                </div>
-                <div className="report-evidence__content">
-                  {evidenceEntries.length > 0 ? evidenceEntries.map((entry) => {
-                    const title = entry.review.decisao === "CORRIGIDO"
-                      ? entry.review.tipoCorrigido || "Constatação corrigida"
-                      : entry.finding.tipo || "Indício visual";
-                    return (
-                      <section className="report-finding" key={`${entry.analysis.imagemId}-${entry.finding.indice}`}>
-                        <div className="report-finding__heading">
-                          <span className={`review-chip review-chip--${entry.review.decisao.toLowerCase()}`}>
-                            {entry.review.decisao === "CORRIGIDO" ? "Corrigido pelo usuário" : "Confirmado pelo usuário"}
-                          </span>
-                          <span className="mono">{referenceFor(entry)}</span>
-                        </div>
-                        <h3>{title}</h3>
-                        {entry.finding.area ? <p className="report-finding__area">{entry.finding.area}</p> : null}
-                        {entry.finding.descricao ? <p>{entry.finding.descricao}</p> : null}
-                        <blockquote><strong>Contexto registrado</strong>{entry.review.contexto}</blockquote>
-                        {entry.finding.recomendacao ? <p className="report-finding__recommendation"><strong>Próxima observação sugerida</strong>{entry.finding.recomendacao}</p> : null}
-                      </section>
-                    );
-                  }) : (
-                    <div className="report-evidence__empty"><ImageIcon size={21} /><p><strong>Foto preservada sem constatação incluída</strong>Não houve achado confirmado ou corrigido nesta evidência.</p></div>
-                  )}
-                  {analysis?.limitacoes.length ? (
-                    <aside className="report-limitations"><AlertTriangle size={18} /><p><strong>Limites desta leitura</strong>{analysis.limitacoes.join(" ")}</p></aside>
-                  ) : null}
-                </div>
-              </article>
-            );
-          })}
+          {evidenceGroups.map((group) => (
+            <section className={`report-environment ${group.legacy ? "report-environment--legacy" : ""}`} data-testid="report-environment" key={group.key}>
+              <header className="report-environment__heading">
+                <div><span className="mono">{group.legacy ? "ARQUIVO ANTERIOR" : "AMBIENTE"}</span><h3>{group.name}</h3></div>
+                <span>{group.evidence.length} {group.evidence.length === 1 ? "foto" : "fotos"}</span>
+              </header>
+              {group.evidence.map((evidence) => (
+                <ReportEvidenceCard
+                  key={evidence.id}
+                  evidence={evidence}
+                  photoIndex={evidenceOrder.get(evidence.id) ?? 0}
+                  entries={entriesForEvidence(entries, evidence)}
+                  analysis={inspection.analiseIa?.imagens.find((item) => item.imagemId === evidence.id)}
+                />
+              ))}
+              {group.evidence.length === 0 ? <div className="report-evidence__empty"><ImageIcon size={21} /><p><strong>Nenhuma foto neste ambiente</strong>O roteiro não possui evidência vinculada a este ambiente.</p></div> : null}
+            </section>
+          ))}
 
           {inspection.imagens.length === 0 ? (
             <div className="report-evidence__empty"><ImageIcon size={21} /><p><strong>Nenhuma evidência disponível</strong>Este registro não contém fotos vinculadas.</p></div>
@@ -201,5 +174,39 @@ export function InspectionReport({ inspection }: { inspection: Inspection }) {
         </footer>
       </article>
     </main>
+  );
+}
+
+function ReportEvidenceCard({ evidence, photoIndex, entries, analysis }: {
+  evidence: Evidence;
+  photoIndex: number;
+  entries: ReportEntry[];
+  analysis: AiImageAnalysis | undefined;
+}) {
+  const label = evidenceContextLabel(evidence);
+  return (
+    <article className="report-evidence">
+      <div className="report-evidence__photo">
+        <div className="report-evidence__label"><span className="mono">FOTO {String(photoIndex).padStart(2, "0")}</span><strong>{evidence.categoria ? categoryLabel(evidence.categoria) : label}</strong></div>
+        <EvidenceImage evidence={evidence} alt={`Evidência ${evidence.id} — ${label}`} />
+        <small className="mono">IMG {String(evidence.id).padStart(4, "0")} · {formatDate(evidence.dataUpload)}</small>
+      </div>
+      <div className="report-evidence__content">
+        {entries.length > 0 ? entries.map((entry) => (
+          <section className="report-finding" key={`${entry.analysis.imagemId}-${entry.finding.indice}`}>
+            <div className="report-finding__heading"><span className={`review-chip review-chip--${entry.review.decisao.toLowerCase()}`}>{entry.review.decisao === "CORRIGIDO" ? "Corrigido pelo responsável" : "Confirmado pelo responsável"}</span><span className="mono">{referenceFor(entry)}</span></div>
+            <div className="report-finding__ai">
+              <p className="report-source-label">Observação da IA</p>
+              <h3>{entry.finding.tipo || "Indício visual"}</h3>
+              {entry.finding.area ? <p className="report-finding__area">{entry.finding.area}</p> : null}
+              {entry.finding.descricao ? <p>{entry.finding.descricao}</p> : null}
+            </div>
+            <blockquote className="report-finding__decision"><strong>Decisão do responsável</strong>{entry.review.decisao === "CORRIGIDO" && entry.review.tipoCorrigido ? <b>{entry.review.tipoCorrigido}</b> : null}<span>{entry.review.contexto}</span></blockquote>
+            {entry.finding.recomendacao ? <p className="report-finding__recommendation"><strong>Próxima observação sugerida</strong>{entry.finding.recomendacao}</p> : null}
+          </section>
+        )) : <div className="report-evidence__empty"><ImageIcon size={21} /><p><strong>Foto preservada sem constatação incluída</strong>Não houve achado confirmado ou corrigido nesta evidência.</p></div>}
+        {analysis?.limitacoes.length ? <aside className="report-limitations"><AlertTriangle size={18} /><p><strong>Limites desta leitura</strong>{analysis.limitacoes.join(" ")}</p></aside> : null}
+      </div>
+    </article>
   );
 }

@@ -76,6 +76,19 @@ const inspection: Inspection = {
   revisoes: [],
 };
 
+const adaptiveInspection: Inspection = {
+  ...inspection,
+  tipoImovel: "APARTAMENTO",
+  ambientes: [{ id: 7, tipo: "SALA", nome: "Sala de estar", ordem: 0 }],
+  imagens: [{
+    ...inspection.imagens[0],
+    ambienteId: 7,
+    ambienteNome: "Sala de estar",
+    categoria: "VISAO_GERAL",
+    protocoloItem: "SALA_VISAO_GERAL",
+  }],
+};
+
 function review(overrides: Partial<FindingReview> = {}): FindingReview {
   return {
     imagemId: 14,
@@ -102,6 +115,28 @@ describe("InspectionReview", () => {
     expect(screen.getByRole("img", { name: "Evidência 14, achado 2" })).toBeDefined();
     expect(screen.getByText("A imagem não revela a origem da marca.")).toBeDefined();
     expect(screen.getAllByRole("textbox")).toHaveLength(1);
+  });
+
+  it("mantém ambiente e categoria visíveis junto da foto", () => {
+    render(<InspectionReview inspection={adaptiveInspection} onChange={vi.fn()} onRefresh={vi.fn()} />);
+
+    expect(screen.getAllByText("Sala de estar · Visão geral").length).toBeGreaterThan(0);
+    expect(screen.getByRole("img", { name: "Evidência 14, achado 1" })).toBeDefined();
+  });
+
+  it("contextualiza cada achado na navegação pelo ambiente real", () => {
+    render(<InspectionReview inspection={adaptiveInspection} onChange={vi.fn()} onRefresh={vi.fn()} />);
+
+    const navigation = screen.getByRole("complementary", { name: "Achados da análise" });
+    expect(navigation.textContent).toContain("Sala de estar");
+    expect(navigation.textContent).toContain("Pendente");
+  });
+
+  it("separa explicitamente a sugestão da IA da decisão do responsável", () => {
+    render(<InspectionReview inspection={adaptiveInspection} onChange={vi.fn()} onRefresh={vi.fn()} />);
+
+    expect(screen.getByText("Observação sugerida pela IA")).toBeDefined();
+    expect(screen.getByText("Decisão do responsável")).toBeDefined();
   });
 
   it("exige contexto e tipo corrigido antes de chamar a API", async () => {
