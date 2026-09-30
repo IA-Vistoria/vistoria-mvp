@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -21,16 +23,19 @@ public class VistoriaAnalysisProcessor {
     private final IaIntegrationService iaIntegrationService;
     private final PreLaudoParser parser;
     private final TransactionTemplate transactionTemplate;
+    private final Clock clock;
 
     public VistoriaAnalysisProcessor(
             VistoriaRepository repository,
             IaIntegrationService iaIntegrationService,
             PreLaudoParser parser,
-            TransactionTemplate transactionTemplate) {
+            TransactionTemplate transactionTemplate,
+            Clock clock) {
         this.repository = repository;
         this.iaIntegrationService = iaIntegrationService;
         this.parser = parser;
         this.transactionTemplate = transactionTemplate;
+        this.clock = clock;
     }
 
     public void process(Long vistoriaId) {
@@ -59,7 +64,7 @@ public class VistoriaAnalysisProcessor {
             repository.findById(vistoriaId)
                     .filter(vistoria -> vistoria.getStatus() == VistoriaStatus.AGUARDANDO_IA)
                     .ifPresent(vistoria -> {
-                        vistoria.registrarAnalise(rawAnalysis);
+                        vistoria.registrarAnalise(rawAnalysis, LocalDateTime.now(clock));
                         repository.saveAndFlush(vistoria);
                     });
             return null;

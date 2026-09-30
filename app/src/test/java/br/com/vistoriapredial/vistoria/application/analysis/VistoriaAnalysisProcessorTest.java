@@ -15,6 +15,10 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,22 +52,24 @@ class VistoriaAnalysisProcessorTest {
                 repository,
                 iaIntegrationService,
                 new PreLaudoParser(new ObjectMapper()),
-                transactionTemplate);
+                transactionTemplate,
+                Clock.fixed(Instant.parse("2026-09-30T20:00:00Z"), ZoneOffset.UTC));
         vistoria = pendingInspection();
         when(repository.findById(10L)).thenReturn(Optional.of(vistoria));
     }
 
     @Test
-    void shouldPersistValidAnalysisAsPendingReview() {
+    void shouldMakeReportAvailableAfterValidAnalysis() {
         String raw = validAnalysis();
         when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(iaIntegrationService.analisarImagens(java.util.List.of("uploads/a.jpg"))).thenReturn(raw);
 
         processor.process(10L);
 
-        assertThat(vistoria.getStatus()).isEqualTo(VistoriaStatus.REVISAO_PENDENTE);
+        assertThat(vistoria.getStatus()).isEqualTo(VistoriaStatus.RELATORIO_DISPONIVEL);
         assertThat(vistoria.getPreLaudoIa()).isEqualTo(raw);
-        assertThat(vistoria.getDataConclusao()).isNull();
+        assertThat(vistoria.getDataConclusao()).isEqualTo(
+                LocalDateTime.of(2026, 9, 30, 20, 0));
         verify(repository).saveAndFlush(vistoria);
     }
 

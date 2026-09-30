@@ -244,7 +244,7 @@ metadados da execução e resultados calculados em JSON v2.
 
 ### T6: Disponibilizar relatório após análise válida
 
-**Status**: Pending  
+**Status**: Complete  
 **What**: Alterar a máquina de estados para que uma análise válida conclua em
 `RELATORIO_DISPONIVEL` com data de conclusão, sem revisão obrigatória.  
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/domain/Vistoria.java`  

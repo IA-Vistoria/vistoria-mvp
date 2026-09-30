@@ -352,11 +352,17 @@ public class Vistoria {
         return true;
     }
 
-    public void registrarAnalise(String analiseOriginal) {
+    public void registrarAnalise(String analiseOriginal, LocalDateTime concludedAt) {
         exigirAnaliseEmAndamento();
+        if (analiseOriginal == null || analiseOriginal.isBlank()) {
+            throw new IllegalArgumentException("O documento validado da análise é obrigatório.");
+        }
+        if (concludedAt == null) {
+            throw new IllegalArgumentException("O instante de conclusão da análise é obrigatório.");
+        }
         preLaudoIa = analiseOriginal;
-        dataConclusao = null;
-        status = VistoriaStatus.REVISAO_PENDENTE;
+        dataConclusao = concludedAt;
+        status = VistoriaStatus.RELATORIO_DISPONIVEL;
     }
 
     public void falharAnalise() {
