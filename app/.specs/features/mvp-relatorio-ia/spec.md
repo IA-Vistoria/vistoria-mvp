@@ -11,11 +11,11 @@ vistoria por IA sem prometer laudo técnico ou diagnóstico profissional.
 
 ## Goals
 
-- [ ] Permitir que o usuário conclua a jornada principal sem entrar em fila de engenheiro.
-- [ ] Preservar o vínculo entre foto, achado da IA, contexto confirmado e trecho do relatório.
-- [ ] Processar a análise fora da requisição HTTP e representar falha, retomada e concorrência reais.
-- [ ] Entregar uma interface autoral, responsiva e acessível baseada no protótipo aprovado.
-- [ ] Manter frontend, API e persistência alinhados por contratos tipados e testes derivados desta especificação.
+- [x] Permitir que o usuário conclua a jornada principal sem entrar em fila de engenheiro.
+- [x] Preservar o vínculo entre foto, achado da IA, contexto confirmado e trecho do relatório.
+- [x] Processar a análise fora da requisição HTTP e representar falha, retomada e concorrência reais.
+- [x] Entregar uma interface autoral, responsiva e acessível baseada no protótipo aprovado.
+- [x] Manter frontend, API e persistência alinhados por contratos tipados e testes derivados desta especificação.
 
 ## Out of Scope
 
@@ -37,13 +37,13 @@ vistoria por IA sem prometer laudo técnico ou diagnóstico profissional.
 | --- | --- | --- | --- |
 | Papel principal do MVP | O usuário proprietário conduz captura, revisão de contexto e geração do relatório; engenheiro não aparece na jornada principal. | Decisão explícita do usuário: a função central do MVP é a IA produzir o relatório. | y |
 | Direção visual | Aplicar o sistema `Clareza Técnica` e o conceito `Evidência Viva` do protótipo em `../docs/design/prototype/index.html`, com cobalto, jade, superfícies claras e modo de campo escuro. | Direção visual já aprovada e materializada em artefato navegável. | y |
-| Registro do contexto | Persistir revisões como JSON tipado na própria vistoria, identificado por `imagemId + indiceAchado`. | Mantém a análise original imutável e evita uma modelagem relacional prematura no MVP. | n |
-| Legado de engenharia | Preservar código e schema legados por compatibilidade, mas remover referências de engenharia da navegação, cadastro público, metadata e fluxo do cliente. | Evita uma remoção destrutiva enquanto alinha a experiência ao produto atual. | n |
-| Roteiro inicial | Usar cinco grupos fixos e doze itens já definidos no frontend, expandindo a validação do backend para os mesmos códigos. | O schema já aceita código textual; a expansão entrega ambientes sem nova entidade administrativa. | n |
-| Processamento assíncrono | Publicar evento após o commit da submissão e processar a IA em executor Spring separado. | A requisição não deve manter conexão HTTP nem transação de banco durante a chamada externa. | n |
-| Achados antigos sem revisão | Vistorias legadas `CONCLUIDA` continuam legíveis como resultado histórico; somente novas análises entram em `REVISAO_PENDENTE`. | Mantém compatibilidade sem fabricar decisões do usuário. | n |
-| Documento final | Derivar o relatório do JSON da IA mais as revisões persistidas e usar impressão do navegador para salvar em PDF. | Evita dependência nova e entrega um documento útil dentro do escopo do MVP. | n |
-| Compartilhamento | Usar `navigator.share` quando disponível e copiar o link como fallback. | É progressivo, sem serviço externo ou permissão adicional. | n |
+| Registro do contexto | Persistir revisões como JSON tipado na própria vistoria, identificado por `imagemId + indiceAchado`. | Mantém a análise original imutável e evita uma modelagem relacional prematura no MVP. | y |
+| Legado de engenharia | Preservar código e schema legados por compatibilidade, mas remover referências de engenharia da navegação, cadastro público, metadata e fluxo do cliente. | Evita uma remoção destrutiva enquanto alinha a experiência ao produto atual. | y |
+| Roteiro inicial | Usar cinco grupos fixos e doze itens já definidos no frontend, expandindo a validação do backend para os mesmos códigos. | O schema já aceita código textual; a expansão entrega ambientes sem nova entidade administrativa. | y |
+| Processamento assíncrono | Publicar evento após o commit da submissão e processar a IA em executor Spring separado. | A requisição não deve manter conexão HTTP nem transação de banco durante a chamada externa. | y |
+| Achados antigos sem revisão | Vistorias legadas `CONCLUIDA` continuam legíveis como resultado histórico; somente novas análises entram em `REVISAO_PENDENTE`. | Mantém compatibilidade sem fabricar decisões do usuário. | y |
+| Documento final | Derivar o relatório do JSON da IA mais as revisões persistidas e usar impressão do navegador para salvar em PDF. | Evita dependência nova e entrega um documento útil dentro do escopo do MVP. | y |
+| Compartilhamento | Usar `navigator.share` quando disponível e copiar o link como fallback. | É progressivo, sem serviço externo ou permissão adicional. | y |
 
 **Open questions:** none - all resolved or logged above.
 
@@ -216,19 +216,19 @@ vistoria por IA sem prometer laudo técnico ou diagnóstico profissional.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| AIR-01 | P1: Acesso e início IA-first | Tasks T4, T5, T8 | In Progress |
-| AIR-02 | P1: Captura guiada e análise assíncrona | Tasks T1, T2, T5, T8 | In Progress |
-| AIR-03 | P1: Revisão rastreável dos achados | Tasks T3, T6, T8 | In Progress |
-| AIR-04 | P1: Relatório de vistoria por IA | Tasks T3, T7, T8 | In Progress |
-| AIR-05 | P1: Contratos seguros e estados íntegros | Tasks T1, T2, T3, T8 | In Progress |
-| AIR-06 | P1: Sistema visual responsivo e acessível | Tasks T4, T5, T6, T7, T8 | In Progress |
+| AIR-01 | P1: Acesso e início IA-first | Tasks T4, T5, T8 | Verified |
+| AIR-02 | P1: Captura guiada e análise assíncrona | Tasks T1, T2, T5, T8 | Verified |
+| AIR-03 | P1: Revisão rastreável dos achados | Tasks T3, T6, T8 | Verified |
+| AIR-04 | P1: Relatório de vistoria por IA | Tasks T3, T7, T8 | Verified |
+| AIR-05 | P1: Contratos seguros e estados íntegros | Tasks T1, T2, T3, T8 | Verified |
+| AIR-06 | P1: Sistema visual responsivo e acessível | Tasks T4, T5, T6, T7, T8 | Verified |
 
 **Coverage:** 6 total, 6 mapped to tasks, 0 unmapped.
 
 ## Success Criteria
 
-- [ ] Um cliente conclui o caminho cadastro → captura → análise → revisão → relatório sem contato com engenheiro.
-- [ ] Toda conclusão do relatório aponta para uma evidência e uma revisão persistida.
-- [ ] Nenhuma chamada HTTP de submissão permanece aberta durante o processamento da IA.
-- [ ] As suítes backend e frontend, lint, build e migration PostgreSQL passam em execução atual.
-- [ ] Captura, revisão e relatório passam pela auditoria em 390, 768 e 1440 px sem overflow horizontal.
+- [x] Um cliente conclui o caminho cadastro → captura → análise → revisão → relatório sem contato com engenheiro.
+- [x] Toda conclusão do relatório aponta para uma evidência e uma revisão persistida.
+- [x] Nenhuma chamada HTTP de submissão permanece aberta durante o processamento da IA.
+- [x] As suítes backend e frontend, lint, build e migration PostgreSQL passam em execução atual.
+- [x] Captura, revisão e relatório passam pela auditoria em 390, 768 e 1440 px sem overflow horizontal.

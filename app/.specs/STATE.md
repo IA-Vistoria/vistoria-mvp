@@ -71,10 +71,10 @@
 ## Handoff
 
 - **Feature**: `.specs/features/mvp-relatorio-ia`
-- **Phase / Task**: Design — requisitos e contexto fechados; desenho técnico em elaboração
-- **Completed**: direção visual IA-first aprovada; protótipo navegável local concluído; Figma criado com 78 variáveis antes do bloqueio de cota Starter
-- **In-progress**: reconciliação dos contratos de análise, revisão e relatório entre Spring Boot e Next.js
-- **Next step**: concluir `design.md`, gerar `tasks.md`, validar ambos e iniciar T1 com TDD
-- **Blockers**: somente a materialização adicional no Figma está bloqueada pela cota; especificação e implementação local não estão bloqueadas
+- **Phase / Task**: Validate — T1 a T8 concluídas; verificação independente em `validation.md` com PASS
+- **Completed**: jornada IA-first integrada de cadastro, captura, análise assíncrona, revisão de contexto e Relatório de vistoria por IA; 141 testes backend e 72 frontend verdes; lint, build, PostgreSQL e UAT responsiva aprovados
+- **In-progress**: nenhum trabalho funcional desta feature
+- **Next step**: publicar a branch `codex/especifica-interface-ia-first` para revisão do time
+- **Blockers**: nenhum bloqueio de implementação; somente materialização adicional no Figma permanece limitada pela cota Starter
 - **Uncommitted files**: ver `git status` no momento da leitura — este documento não substitui a checagem real
 - **Branch**: `codex/especifica-interface-ia-first`
