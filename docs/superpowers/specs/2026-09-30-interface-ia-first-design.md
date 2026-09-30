@@ -1,7 +1,7 @@
 # Vistor.IA — especificação da interface IA-first
 
 **Data:** 30 de setembro de 2026
-**Status:** direção aprovada em conversa; documento aguardando revisão
+**Status:** aprovado pelo usuário em 30 de setembro de 2026
 **Repositório analisado:** `IA-Vistoria/vistoria-mvp` no commit `89e494f`
 
 ## 1. Objetivo
