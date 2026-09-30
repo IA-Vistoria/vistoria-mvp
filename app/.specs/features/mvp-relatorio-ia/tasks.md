@@ -52,7 +52,7 @@ T1 -> T2 -> T3 -> T4 -> T5 -> T6 -> T7 -> T8
 
 ### T1: Consolidar o contrato seguro de análise
 
-**Status:** Pending  
+**Status:** Complete  
 **Requirement:** AIR-02, AIR-05  
 **Where:** `vistoria/application/analysis`, DTOs/mapper web, protocolo e testes correspondentes.
 

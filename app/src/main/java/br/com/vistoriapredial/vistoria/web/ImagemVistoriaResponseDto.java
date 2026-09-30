@@ -8,16 +8,14 @@ public record ImagemVistoriaResponseDto(
         Long id,
         String protocoloItem,
         LocalDateTime dataUpload,
-        String conteudoUrl,
-        String storagePath
+        String conteudoUrl
 ) {
     public static ImagemVistoriaResponseDto from(Long vistoriaId, ImagemVistoria imagem) {
         return new ImagemVistoriaResponseDto(
                 imagem.getId(),
                 imagem.getProtocoloItem(),
                 imagem.getDataUpload(),
-                "/api/vistorias/" + vistoriaId + "/imagens/" + imagem.getId() + "/conteudo",
-                imagem.getUrl()
+                "/api/vistorias/" + vistoriaId + "/imagens/" + imagem.getId() + "/conteudo"
         );
     }
 }

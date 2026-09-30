@@ -30,10 +30,15 @@ public class VistoriaController {
 
     private final VistoriaService vistoriaService;
     private final UsuarioRepository usuarioRepository;
+    private final VistoriaResponseMapper responseMapper;
 
-    public VistoriaController(VistoriaService vistoriaService, UsuarioRepository usuarioRepository) {
+    public VistoriaController(
+            VistoriaService vistoriaService,
+            UsuarioRepository usuarioRepository,
+            VistoriaResponseMapper responseMapper) {
         this.vistoriaService = vistoriaService;
         this.usuarioRepository = usuarioRepository;
+        this.responseMapper = responseMapper;
     }
 
     private Usuario getUsuario(Authentication authentication) {
@@ -50,7 +55,7 @@ public class VistoriaController {
             Authentication auth) {
         Usuario cliente = getUsuario(auth);
         Vistoria v = vistoriaService.criarVistoria(cliente, request.endereco());
-        return ResponseEntity.status(HttpStatus.CREATED).body(VistoriaResponseDto.from(v));
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseMapper.toResponse(v));
     }
 
     @GetMapping("/minhas")
@@ -61,7 +66,7 @@ public class VistoriaController {
         Usuario cliente = getUsuario(auth);
         Page<Vistoria> minhas = vistoriaService.listarVistoriasCliente(
                 cliente, paginacaoDeterministica(pageable));
-        return ResponseEntity.ok(PaginaResponseDto.from(minhas, VistoriaResponseDto::from));
+        return ResponseEntity.ok(PaginaResponseDto.from(minhas, responseMapper::toResponse));
     }
 
     @GetMapping("/{id}")
@@ -71,7 +76,7 @@ public class VistoriaController {
             Authentication auth) {
         Usuario usuario = getUsuario(auth);
         Vistoria vistoria = vistoriaService.buscarVistoria(id, usuario);
-        return ResponseEntity.ok(VistoriaResponseDto.from(vistoria));
+        return ResponseEntity.ok(responseMapper.toResponse(vistoria));
     }
 
     @PostMapping("/{id}/imagens")
@@ -83,7 +88,7 @@ public class VistoriaController {
         Authentication auth) {
         Usuario cliente = getUsuario(auth);
         Vistoria vistoria = vistoriaService.uploadImagem(id, cliente, protocoloItem, file);
-        return ResponseEntity.ok(VistoriaResponseDto.from(vistoria));
+        return ResponseEntity.ok(responseMapper.toResponse(vistoria));
     }
 
     @PostMapping("/{id}/submeter")
@@ -93,7 +98,7 @@ public class VistoriaController {
             Authentication auth) {
         Usuario cliente = getUsuario(auth);
         Vistoria v = vistoriaService.submeterVistoria(id, cliente);
-        return ResponseEntity.ok(VistoriaResponseDto.from(v));
+        return ResponseEntity.ok(responseMapper.toResponse(v));
     }
 
     @GetMapping("/{vistoriaId}/imagens/{imagemId}/conteudo")
@@ -121,7 +126,7 @@ public class VistoriaController {
         Usuario engenheiro = getUsuario(auth);
         Page<Vistoria> pendentes = vistoriaService.listarPendentesEngenharia(
                 engenheiro, paginacaoDeterministica(pageable));
-        return ResponseEntity.ok(PaginaResponseDto.from(pendentes, VistoriaResponseDto::from));
+        return ResponseEntity.ok(PaginaResponseDto.from(pendentes, responseMapper::toResponse));
     }
 
     @PostMapping("/{id}/analisar")
@@ -139,7 +144,7 @@ public class VistoriaController {
             v = vistoriaService.devolverAoCliente(id, engenheiro, request.parecer());
         }
         
-        return ResponseEntity.ok(VistoriaResponseDto.from(v));
+        return ResponseEntity.ok(responseMapper.toResponse(v));
     }
 
     private Pageable paginacaoDeterministica(Pageable pageable) {

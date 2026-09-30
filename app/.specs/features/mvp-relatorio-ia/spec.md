@@ -217,10 +217,10 @@ vistoria por IA sem prometer laudo técnico ou diagnóstico profissional.
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
 | AIR-01 | P1: Acesso e início IA-first | Tasks T4, T5, T8 | Planned |
-| AIR-02 | P1: Captura guiada e análise assíncrona | Tasks T1, T2, T5, T8 | Planned |
+| AIR-02 | P1: Captura guiada e análise assíncrona | Tasks T1, T2, T5, T8 | In Progress |
 | AIR-03 | P1: Revisão rastreável dos achados | Tasks T3, T6, T8 | Planned |
 | AIR-04 | P1: Relatório de vistoria por IA | Tasks T3, T7, T8 | Planned |
-| AIR-05 | P1: Contratos seguros e estados íntegros | Tasks T1, T2, T3, T8 | Planned |
+| AIR-05 | P1: Contratos seguros e estados íntegros | Tasks T1, T2, T3, T8 | In Progress |
 | AIR-06 | P1: Sistema visual responsivo e acessível | Tasks T4, T5, T6, T7, T8 | Planned |
 
 **Coverage:** 6 total, 6 mapped to tasks, 0 unmapped.

@@ -152,7 +152,41 @@ class VistoriaControllerTest {
                 .andExpect(jsonPath("$.imagens[0].dataUpload").exists())
                 .andExpect(jsonPath("$.imagens[0].conteudoUrl")
                         .value("/api/vistorias/10/imagens/20/conteudo"))
-                .andExpect(jsonPath("$.imagens[0].storagePath").exists());
+                .andExpect(jsonPath("$.imagens[0].storagePath").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldExposeTypedAiAnalysisWithoutRawPayloadOrStoragePath() throws Exception {
+        Vistoria vistoria = new Vistoria();
+        vistoria.setCliente(cliente);
+        vistoria.setStatus(VistoriaStatus.CONCLUIDA);
+        vistoria.setPreLaudoIa("""
+                {"version":1,"images":[{
+                  "storagePath":"uploads/foto.jpg",
+                  "analysisId":"ana-7",
+                  "overallSummary":"Marca visual identificada.",
+                  "limitations":["Sem medição."],
+                  "imageQuality":{"usable":true,"issues":[]},
+                  "areas":[{"issueType":"stain","description":"Marca escura."}]
+                }]}
+                """);
+        ReflectionTestUtils.setField(vistoria, "id", 10L);
+        ImagemVistoria image = new ImagemVistoria();
+        image.setUrl("uploads/foto.jpg");
+        image.setProtocoloItem("SALA_PAREDES_REVESTIMENTOS");
+        ReflectionTestUtils.setField(image, "id", 20L);
+        vistoria.getImagens().add(image);
+        when(vistoriaService.buscarVistoria(10L, cliente)).thenReturn(vistoria);
+
+        mockMvc.perform(get("/api/vistorias/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.analiseIa.version").value(1))
+                .andExpect(jsonPath("$.analiseIa.imagens[0].imagemId").value(20))
+                .andExpect(jsonPath("$.analiseIa.imagens[0].achados[0].indice").value(0))
+                .andExpect(jsonPath("$.analiseIa.imagens[0].achados[0].tipo").value("stain"))
+                .andExpect(jsonPath("$.preLaudoIa").doesNotExist())
+                .andExpect(jsonPath("$.imagens[0].storagePath").doesNotExist());
     }
 
     @Test
