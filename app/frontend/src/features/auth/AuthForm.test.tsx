@@ -132,6 +132,22 @@ describe("AuthForm", () => {
     expect(screen.queryByText(/engenheir/i)).toBeNull();
   });
 
+  it("apresenta a marca aprovada sem uma caixa de imagem", () => {
+    render(<AuthForm mode="login" />);
+
+    const logo = screen.getByRole("img", { name: "Vistor.IA — vistoria inteligente" });
+    expect(logo.getAttribute("src")).toContain("vistoria-logo");
+    expect(logo.parentElement?.className).toContain("brand-mark");
+  });
+
+  it("explica captura, revisão e relatório antes do cadastro", () => {
+    render(<AuthForm mode="register" />);
+
+    expect(screen.getByText("Registre os ambientes reais")).toBeDefined();
+    expect(screen.getByText("Envie fotos guiadas")).toBeDefined();
+    expect(screen.getByText("Revise e gere o relatório")).toBeDefined();
+  });
+
   it.each([409, 422])("preserva campos não sensíveis após erro %s", async (status) => {
     vi.mocked(login).mockRejectedValue(
       new ApiError({

@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowRight, Camera, Eye, EyeOff, ScanLine, ShieldCheck } from "lucide-react";
+import { ArrowRight, Camera, Eye, EyeOff, FileCheck2, ListChecks, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 
 import { ApiError } from "@/lib/api";
 import { setSession } from "@/lib/auth";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { login, register } from "./auth-service";
 import { roleHome } from "./role-home";
 
@@ -67,17 +68,21 @@ export function AuthForm({ mode }: AuthFormProps) {
   return (
     <main className="auth-page">
       <section className="auth-story" aria-label="Sobre a Vistor.IA">
-        <div className="brand-lockup brand-lockup--light">
-          <ScanLine aria-hidden="true" size={34} strokeWidth={1.9} />
-          <span>Vistor.IA</span>
-        </div>
+        <Link className="auth-story__brand" href="/">
+          <BrandMark inverse />
+        </Link>
         <div className="auth-story__content">
-          <p className="eyebrow">Evidência visual, contexto humano</p>
+          <p className="eyebrow">Da coleta ao documento</p>
           <h1>Relatório de vistoria por IA</h1>
           <p>
-            Capture cada ambiente com um roteiro simples, revise os indícios visuais e organize
-            tudo em um documento claro e rastreável.
+            Um fluxo claro para registrar o imóvel real, orientar as fotos e revisar cada indício
+            antes de gerar o relatório.
           </p>
+          <ol className="auth-journey" aria-label="Como funciona">
+            <li><ListChecks aria-hidden="true" size={20} /><span><strong>Registre os ambientes reais</strong><small>O roteiro se adapta ao imóvel, não o contrário.</small></span></li>
+            <li><Camera aria-hidden="true" size={20} /><span><strong>Envie fotos guiadas</strong><small>Uma visão geral por ambiente e detalhes quando necessário.</small></span></li>
+            <li><FileCheck2 aria-hidden="true" size={20} /><span><strong>Revise e gere o relatório</strong><small>Você confirma o contexto antes do documento final.</small></span></li>
+          </ol>
           <div className="auth-proof">
             <ShieldCheck aria-hidden="true" size={24} />
             <span>Cada conclusão permanece ligada à foto e ao contexto que você confirmou.</span>
@@ -88,10 +93,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <section className="auth-panel" aria-labelledby="auth-title">
         <div className="auth-card">
-          <div className="brand-lockup auth-card__brand">
-            <ScanLine aria-hidden="true" size={30} strokeWidth={1.9} />
-            <span>Vistor.IA</span>
-          </div>
+          <div className="auth-card__brand" aria-hidden="true"><BrandMark compact /></div>
           <p className="eyebrow">{isRegister ? "Comece sua jornada" : "Bem-vindo de volta"}</p>
           <h2 id="auth-title">{isRegister ? "Crie sua conta" : "Entre na sua conta"}</h2>
           <p className="auth-card__intro">

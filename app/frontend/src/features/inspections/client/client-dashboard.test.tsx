@@ -26,9 +26,15 @@ vi.mock("../api", () => ({
 
 const draftInspection: Inspection = {
   id: 42,
+  version: 0,
   clienteId: 1,
   status: "EM_RASCUNHO",
   endereco: "Rua das Obras, 10",
+  tipoImovel: "APARTAMENTO",
+  ambientes: [
+    { id: 11, tipo: "SALA", nome: "Sala", ordem: 0 },
+    { id: 12, tipo: "QUARTO", nome: "Quarto", ordem: 1 },
+  ],
   dataCriacao: "2026-09-18T10:00:00",
   dataConclusao: null,
   imagens: [],
@@ -72,6 +78,27 @@ describe("ClientDashboard", () => {
     expect(within(card).getByRole("link", { name: "Continuar vistoria" }).getAttribute("href")).toBe(
       "/client/vistorias/42",
     );
+  });
+
+  it("mostra o progresso real dos ambientes sem mencionar protocolo fixo", async () => {
+    vi.mocked(listMyInspections).mockResolvedValue(page([{
+      ...draftInspection,
+      imagens: [{
+        id: 91,
+        ambienteId: 11,
+        ambienteNome: "Sala",
+        categoria: "VISAO_GERAL",
+        protocoloItem: "SALA_VISAO_GERAL",
+        dataUpload: "2026-09-18T10:05:00",
+        conteudoUrl: "/api/vistorias/42/imagens/91/conteudo",
+      }],
+    }]));
+
+    render(<ClientDashboard />);
+
+    const card = await screen.findByTestId("next-action");
+    expect(card.textContent).toContain("1 de 2 ambientes com visão geral");
+    expect(card.textContent).not.toContain("12 itens");
   });
 
   it("prioriza a próxima ação da vistoria mais recente antes dos relatórios", async () => {

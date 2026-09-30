@@ -6,13 +6,13 @@ import {
   FileText,
   Home,
   LogOut,
-  ScanLine,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { getSession, removeSession, type UserRole } from "@/lib/auth";
+import { BrandMark } from "@/components/brand/BrandMark";
 
 interface DashboardShellProps {
   role: UserRole;
@@ -31,35 +31,15 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
   }
 
   return (
-    <div className={engineer ? "app-shell app-shell--workspace app-shell--engineer" : "app-shell app-shell--workspace"}>
-      <aside className="main-sidebar" aria-label={engineer ? "Navegação legada" : "Navegação principal"}>
-        <Link className="brand-lockup" href={engineer ? "/engineer" : "/client"}>
-          <ScanLine aria-hidden="true" size={29} strokeWidth={1.9} />
-          <span>Vistor.IA</span>
-        </Link>
-        <p className="main-sidebar__label">{engineer ? "Área legada" : "Seu espaço"}</p>
+    <div className={engineer ? "app-shell app-shell--workspace app-shell--engineer" : "app-shell app-shell--workspace app-shell--client"}>
+      {engineer ? <aside className="main-sidebar" aria-label="Navegação legada">
+        <Link href="/engineer"><BrandMark compact /></Link>
+        <p className="main-sidebar__label">Área legada</p>
         <nav>
-          {engineer ? (
-            <Link className="is-active" href="/engineer">
-              <ClipboardList aria-hidden="true" size={19} />
-              Fila de revisão
-            </Link>
-          ) : (
-            <>
-              <Link className={pathname === "/client" ? "is-active" : ""} href="/client">
-                <Home aria-hidden="true" size={19} />
-                Início
-              </Link>
-              <Link className={pathname.includes("/vistorias/nova") ? "is-active" : ""} href="/client/vistorias/nova">
-                <Camera aria-hidden="true" size={19} />
-                Nova vistoria
-              </Link>
-              <Link href="/client?filtro=relatorios">
-                <FileText aria-hidden="true" size={19} />
-                Relatórios
-              </Link>
-            </>
-          )}
+          <Link className="is-active" href="/engineer">
+            <ClipboardList aria-hidden="true" size={19} />
+            Fila de revisão
+          </Link>
         </nav>
         <div className="main-sidebar__account">
           <UserRound aria-hidden="true" size={19} />
@@ -68,19 +48,23 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
             <small>{engineer ? "Acesso legado" : "Responsável pelo imóvel"}</small>
           </span>
         </div>
-      </aside>
+      </aside> : null}
 
       <header className="topbar">
-        <Link className="brand-lockup topbar__brand" href={engineer ? "/engineer" : "/client"}>
-          <ScanLine aria-hidden="true" size={27} strokeWidth={1.9} />
-          <span>Vistor.IA</span>
+        <Link className="topbar__brand" href={engineer ? "/engineer" : "/client"}>
+          <BrandMark inverse={!engineer} compact />
         </Link>
-        <span className="topbar__context">{engineer ? "Área legada" : "Relatório de vistoria por IA"}</span>
+        {!engineer ? <nav className="topbar__primary-nav" aria-label="Navegação principal">
+          <Link className={pathname === "/client" ? "is-active" : ""} href="/client"><Home aria-hidden="true" size={18} />Início</Link>
+          <Link className={pathname.includes("/vistorias/nova") ? "is-active" : ""} href="/client/vistorias/nova"><Camera aria-hidden="true" size={18} />Nova vistoria</Link>
+          <Link href="/client?filtro=relatorios"><FileText aria-hidden="true" size={18} />Relatórios</Link>
+        </nav> : <span className="topbar__context">Área legada</span>}
+        {!engineer ? <span className="sr-only">Relatório de vistoria por IA</span> : null}
         <div className="topbar__account">
           <UserRound aria-hidden="true" size={21} />
           <span>
             <strong>{session?.nome || "Sua conta"}</strong>
-            <small>{engineer ? "Acesso legado" : "Responsável pelo imóvel"}</small>
+            <small>{engineer ? "Acesso legado" : "Seu espaço de vistoria"}</small>
           </span>
           <button className="icon-action" type="button" onClick={logout} aria-label="Sair da conta">
             <LogOut aria-hidden="true" size={20} />

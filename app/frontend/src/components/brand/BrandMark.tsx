@@ -12,7 +12,7 @@ export function BrandMark({ inverse = false, compact = false }: BrandMarkProps) 
     >
       <Image
         className="brand-mark__symbol"
-        src="/vistoria-logo.svg"
+        src={inverse ? "/vistoria-logo-inverse.svg" : "/vistoria-logo.svg"}
         width={52}
         height={52}
         alt="Vistor.IA — vistoria inteligente"

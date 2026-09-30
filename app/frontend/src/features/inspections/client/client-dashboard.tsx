@@ -106,6 +106,12 @@ export function ClientDashboard() {
     inspection.status === "RELATORIO_DISPONIVEL" && inspection.id !== primary.id,
   );
   const history = inspections.slice(1).filter((inspection) => inspection.status !== "RELATORIO_DISPONIVEL");
+  const environments = primary.ambientes ?? [];
+  const environmentsWithOverview = new Set(
+    primary.imagens
+      .filter((evidence) => evidence.categoria === "VISAO_GERAL" && evidence.ambienteId !== null)
+      .map((evidence) => evidence.ambienteId),
+  ).size;
 
   return (
     <div className="dashboard-page">
@@ -130,6 +136,14 @@ export function ClientDashboard() {
           <p className="eyebrow">Sua próxima ação</p>
           <h2 id="next-action-title">{primary.endereco}</h2>
           <p>{nextActionCopy[primary.status]}</p>
+          {environments.length > 0 ? (
+            <div className="next-action-card__progress">
+              <span>{environmentsWithOverview} de {environments.length} ambientes com visão geral</span>
+              <progress value={environmentsWithOverview} max={environments.length}>
+                {environmentsWithOverview} de {environments.length}
+              </progress>
+            </div>
+          ) : null}
           <span className="next-action-card__date">Iniciada em {formatDate(primary.dataCriacao)}</span>
         </div>
         <Link className="button button--primary" href={`/client/vistorias/${primary.id}`}>

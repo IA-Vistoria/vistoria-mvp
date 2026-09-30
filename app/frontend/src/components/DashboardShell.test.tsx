@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -50,5 +50,29 @@ describe("DashboardShell", () => {
 
     expect(getSession()).toBeNull();
     expect(replace).toHaveBeenCalledWith("/login");
+  });
+
+  it("usa cabeçalho horizontal no desktop sem barra lateral do cliente", () => {
+    render(
+      <DashboardShell role="ROLE_CLIENTE">
+        <p>Conteúdo</p>
+      </DashboardShell>,
+    );
+
+    const header = screen.getByRole("banner");
+    const navigation = within(header).getByRole("navigation", { name: "Navegação principal" });
+    expect(within(navigation).getByRole("link", { name: "Início" })).toBeDefined();
+    expect(within(navigation).getByRole("link", { name: "Nova vistoria" })).toBeDefined();
+    expect(screen.queryByRole("complementary", { name: "Navegação principal" })).toBeNull();
+  });
+
+  it("expõe a marca acessível no cabeçalho do produto", () => {
+    render(
+      <DashboardShell role="ROLE_CLIENTE">
+        <p>Conteúdo</p>
+      </DashboardShell>,
+    );
+
+    expect(screen.getByRole("img", { name: "Vistor.IA — vistoria inteligente" })).toBeDefined();
   });
 });

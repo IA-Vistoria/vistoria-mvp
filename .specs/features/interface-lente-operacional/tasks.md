@@ -172,10 +172,10 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Desktop usa cabeçalho e celular usa navegação inferior com alvos de 44 px.
-- [ ] Acesso explica captura, IA revisável e relatório sem engenharia.
-- [ ] Início prioriza próxima ação e estados reais.
-- [ ] Gate full passa com todos os testes anteriores e ao menos 5 novos cenários.
+- [x] Desktop usa cabeçalho e celular usa navegação inferior com alvos de 44 px.
+- [x] Acesso explica captura, IA revisável e relatório sem engenharia.
+- [x] Início prioriza próxima ação e estados reais.
+- [x] Gate full passa com todos os testes anteriores e ao menos 5 novos cenários.
 
 **Tests**: unit
 **Gate**: full
