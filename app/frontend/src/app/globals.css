@@ -1,27 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  --canvas: #f6f8fc;
-  --surface: #ffffff;
-  --text: #172033;
-  --muted: #596579;
-  --primary: #2f5bea;
-  --primary-strong: #1d3fbb;
-  --evidence: #08705f;
-  --warning: #b86700;
-  --danger: #b83b4b;
-  --border: #d8dfea;
+  --canvas: #f3f1e9;
+  --surface: #fffefa;
+  --text: #102a2e;
+  --muted: #5d6d6f;
+  --primary: #0f766e;
+  --primary-strong: #095b56;
+  --evidence: #0f766e;
+  --warning: #9a6518;
+  --danger: #ad3f3f;
+  --success: #26705f;
+  --border: #cfd7d2;
+  --surface-dark: #08272b;
+  --surface-muted: #e7ece7;
   --concrete: var(--canvas);
   --limestone: var(--border);
   --graphite: var(--text);
   --ink: var(--text);
-  --blueprint: var(--primary-strong);
+  --blueprint: var(--text);
   --clay: var(--primary);
   --structural: var(--evidence);
   --safety: var(--warning);
   --paper: var(--surface);
   --line: var(--border);
-  --shadow: 0 20px 55px rgba(25, 42, 78, 0.11);
+  --shadow: 0 20px 55px rgba(16, 42, 46, 0.11);
   --display: var(--font-instrument-sans), "Segoe UI", sans-serif;
   --mono: var(--font-ibm-plex-mono), "SFMono-Regular", Consolas, monospace;
 }
@@ -124,6 +127,59 @@ a {
   overflow: hidden;
   background: #111a31;
   color: var(--paper);
+}
+
+.brand-mark {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.brand-mark__symbol {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+}
+
+.brand-mark__name {
+  display: grid;
+  color: inherit;
+  font-family: var(--display);
+  font-size: 1.45rem;
+  font-weight: 760;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+}
+
+.brand-mark__name strong {
+  color: var(--primary);
+  font-weight: inherit;
+}
+
+.brand-mark__name small {
+  margin-top: 0.42rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.48rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.brand-mark--inverse {
+  color: var(--surface);
+}
+
+.brand-mark--inverse .brand-mark__name small {
+  color: color-mix(in srgb, var(--surface) 64%, transparent);
+}
+
+.brand-mark--compact .brand-mark__name small {
+  display: none;
 }
 
 .auth-story::after {

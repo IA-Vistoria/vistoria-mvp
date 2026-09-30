@@ -1,10 +1,12 @@
 import { apiFetch, fetchEvidenceBlob } from "@/lib/api";
 import type {
+  CreateInspectionRequest,
   Inspection,
   LegacyInspection,
   PageResponse,
-  ProtocolItemCode,
   ReviewDecision,
+  UpdateInspectionRouteRequest,
+  UploadEvidenceRequest,
 } from "./types";
 
 export interface ReviewFindingRequest {
@@ -21,16 +23,39 @@ export const listMyInspections = (page = 0, size = 10) =>
 export const getMyInspection = (id: number, signal?: AbortSignal) =>
   apiFetch<Inspection>(`/vistorias/${id}`, { signal });
 
-export const createInspection = (endereco: string) =>
+export const createInspection = (request: CreateInspectionRequest) =>
   apiFetch<Inspection>("/vistorias", {
     method: "POST",
-    body: JSON.stringify({ endereco: endereco.trim() }),
+    body: JSON.stringify({
+      ...request,
+      endereco: request.endereco.trim(),
+      ambientes: request.ambientes.map((ambiente) => ({
+        ...ambiente,
+        nome: ambiente.nome.trim(),
+      })),
+    }),
   });
 
-export const uploadEvidence = (inspectionId: number, protocoloItem: ProtocolItemCode, file: File) => {
+export const updateInspectionRoute = (
+  inspectionId: number,
+  request: UpdateInspectionRouteRequest,
+) =>
+  apiFetch<Inspection>(`/vistorias/${inspectionId}/roteiro`, {
+    method: "PUT",
+    body: JSON.stringify({
+      ...request,
+      ambientes: request.ambientes.map((ambiente) => ({
+        ...ambiente,
+        nome: ambiente.nome.trim(),
+      })),
+    }),
+  });
+
+export const uploadEvidence = (inspectionId: number, request: UploadEvidenceRequest) => {
   const body = new FormData();
-  body.append("protocoloItem", protocoloItem);
-  body.append("file", file);
+  body.append("ambienteId", String(request.ambienteId));
+  body.append("categoria", request.categoria);
+  body.append("file", request.file);
   return apiFetch<Inspection>(`/vistorias/${inspectionId}/imagens`, { method: "POST", body });
 };
 

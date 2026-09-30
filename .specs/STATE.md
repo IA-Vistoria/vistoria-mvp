@@ -29,10 +29,10 @@
 ## Handoff
 
 - **feature**: `interface-lente-operacional`
-- **phase**: Fundação visual e contratos do frontend
-- **completed**: T1 — domínio e persistência do roteiro; T2 — criação e edição atômica com migrations V8/V9; T3 — captura estruturada e regra de completude
-- **in_progress**: T4 — fundações visuais e contratos adaptativos do frontend
-- **next_step**: Aplicar tokens da identidade Lente Operacional, marca sem moldura e tipos de API compatíveis com o roteiro persistido
+- **phase**: Redesenho da entrada e navegação
+- **completed**: T1 — domínio e persistência do roteiro; T2 — criação e edição atômica com migrations V8/V9; T3 — captura estruturada e regra de completude; T4 — fundações visuais e contratos adaptativos
+- **in_progress**: T5 — shell, acesso e início IA-first
+- **next_step**: Integrar a nova marca ao shell responsivo e tornar login, cadastro e início claros sobre a jornada IA-first
 - **blockers**: Nenhum
 - **uncommitted_files**: `.impeccable/build/`, `.impeccable/review/`, `assets/`, `app/frontend/src/components/brand/`
 - **branch**: `codex/especifica-interface-ia-first`

@@ -8,6 +8,54 @@ export type InspectionStatus =
   | "CONCLUIDA"
   | "DEVOLVIDA_CLIENTE";
 
+export type PropertyType = "CASA" | "APARTAMENTO" | "COMERCIAL" | "OUTRO";
+
+export type EnvironmentType =
+  | "ENTRADA"
+  | "SALA"
+  | "COZINHA"
+  | "BANHEIRO"
+  | "QUARTO"
+  | "AREA_SERVICO"
+  | "VARANDA"
+  | "GARAGEM"
+  | "AREA_EXTERNA"
+  | "ESCRITORIO"
+  | "OUTRO";
+
+export type EvidenceCategory = "VISAO_GERAL" | "DETALHE";
+
+export interface InspectionEnvironment {
+  id: number;
+  tipo: EnvironmentType;
+  nome: string;
+  ordem: number;
+}
+
+export interface InspectionEnvironmentInput {
+  id?: number | null;
+  tipo: EnvironmentType;
+  nome: string;
+}
+
+export interface CreateInspectionRequest {
+  endereco: string;
+  tipoImovel: PropertyType;
+  ambientes: InspectionEnvironmentInput[];
+}
+
+export interface UpdateInspectionRouteRequest {
+  version: number;
+  tipoImovel: PropertyType;
+  ambientes: InspectionEnvironmentInput[];
+}
+
+export interface UploadEvidenceRequest {
+  ambienteId: number;
+  categoria: EvidenceCategory;
+  file: File;
+}
+
 export type ProtocolItemCode =
   | "SALA_PISO"
   | "SALA_PAREDES_REVESTIMENTOS"
@@ -24,7 +72,10 @@ export type ProtocolItemCode =
 
 export interface Evidence {
   id: number;
-  protocoloItem: ProtocolItemCode;
+  ambienteId: number | null;
+  ambienteNome: string | null;
+  categoria: EvidenceCategory | null;
+  protocoloItem: string;
   dataUpload: string;
   conteudoUrl: string;
 }
@@ -79,9 +130,12 @@ export interface PageResponse<T> {
 
 export interface Inspection {
   id: number;
+  version: number;
   clienteId: number;
   status: InspectionStatus;
   endereco: string;
+  tipoImovel: PropertyType | null;
+  ambientes: InspectionEnvironment[];
   dataCriacao: string;
   dataConclusao: string | null;
   imagens: Evidence[];

@@ -148,10 +148,10 @@ T7 → T8
 
 **Done when**:
 
-- [ ] `BrandMark` possui nome acessível e não contém moldura externa.
-- [ ] Tokens usam somente grafite-petróleo, mineral, verdigris, âmbar e cores semânticas.
-- [ ] Tipos e funções da API representam ambientes e categorias estruturados.
-- [ ] Gate quick passa com todos os testes anteriores e ao menos 4 novos cenários.
+- [x] `BrandMark` possui nome acessível e não contém moldura externa.
+- [x] Tokens usam somente grafite-petróleo, mineral, verdigris, âmbar e cores semânticas.
+- [x] Tipos e funções da API representam ambientes e categorias estruturados.
+- [x] Gate quick passa com todos os testes anteriores e ao menos 4 novos cenários.
 
 **Tests**: unit
 **Gate**: quick frontend
