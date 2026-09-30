@@ -83,6 +83,7 @@ a {
 }
 
 .brand-lockup {
+  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
@@ -417,8 +418,8 @@ a {
 }
 
 .icon-action {
-  min-width: 2.6rem;
-  min-height: 2.6rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   display: grid;
   place-items: center;
   margin-left: 0.5rem;
@@ -686,6 +687,7 @@ a {
 .async-state__action { margin-top: 1.4rem; }
 
 .back-link {
+  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
