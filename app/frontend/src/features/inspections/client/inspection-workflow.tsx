@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -9,10 +8,13 @@ import {
   Check,
   CheckCircle2,
   FileCheck2,
+  Images,
   Info,
   RefreshCw,
+  ScanSearch,
   Send,
 } from "lucide-react";
+import Link from "next/link";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { AsyncState } from "@/components/ui/async-state";
@@ -29,11 +31,6 @@ import {
 import type { Inspection, InspectionStatus, ProtocolItemCode } from "../types";
 import { InspectionResults } from "./inspection-results";
 
-const trackingTitles = {
-  AGUARDANDO_IA: "Análise da IA em andamento",
-  CONCLUIDA: "Vistoria concluída",
-} as const;
-
 const POLLING_INTERVAL_MS = 4000;
 const POLLED_STATUSES: ReadonlySet<InspectionStatus> = new Set(["AGUARDANDO_IA"]);
 
@@ -42,34 +39,37 @@ const protocolItems = PROTOCOL_GROUPS.flatMap((group) =>
 );
 
 const journeySteps = [
-  ["Imóvel", "Dados do imóvel"],
-  ["Paredes", "Fotos das paredes"],
-  ["Envio", "Análise pela IA"],
-  ["Resultado", "Relatório por imagem"],
+  ["Imóvel", "Endereço salvo"],
+  ["Evidências", "Fotos guiadas"],
+  ["Revisão", "Contexto humano"],
+  ["Relatório", "Documento final"],
 ] as const;
 
 type JourneyStepState = "complete" | "active" | "pending";
 
 function getJourneyStepState(status: InspectionStatus, index: number): JourneyStepState {
-  if (status === "EM_RASCUNHO" || status === "DEVOLVIDA_CLIENTE") {
+  if (["EM_RASCUNHO", "DEVOLVIDA_CLIENTE", "FALHA_IA"].includes(status)) {
     if (index === 0) return "complete";
     return index === 1 ? "active" : "pending";
   }
+  if (status === "AGUARDANDO_IA") return index < 2 ? "complete" : index === 2 ? "active" : "pending";
+  if (status === "REVISAO_PENDENTE") return index < 2 ? "complete" : index === 2 ? "active" : "pending";
+  if (status === "RELATORIO_DISPONIVEL" || status === "CONCLUIDA") return "complete";
+  return index < 2 ? "complete" : index === 2 ? "active" : "pending";
+}
 
-  if (status === "FALHA_IA" || status === "AGUARDANDO_IA") {
-    return index < 2 ? "complete" : index === 2 ? "active" : "pending";
-  }
-
-  if (status === "CONCLUIDA") {
-    return "complete";
-  }
-
-  return index < journeySteps.length - 1 ? "complete" : "active";
+function firstIncompleteCode(inspection: Inspection, after?: ProtocolItemCode): ProtocolItemCode {
+  const completed = new Set(inspection.imagens.map((evidence) => evidence.protocoloItem));
+  const start = after ? protocolItems.findIndex(({ item }) => item.code === after) + 1 : 0;
+  const ordered = [...protocolItems.slice(start), ...protocolItems.slice(0, start)];
+  return ordered.find(({ item }) => !completed.has(item.code))?.item.code
+    ?? after
+    ?? protocolItems[0].item.code;
 }
 
 export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   const [inspection, setInspection] = useState<Inspection | null>(null);
-  const [selectedCode, setSelectedCode] = useState<ProtocolItemCode>("SALA_PAREDES_REVESTIMENTOS");
+  const [selectedCode, setSelectedCode] = useState<ProtocolItemCode>(protocolItems[0].item.code);
   const [loadError, setLoadError] = useState(false);
   const [uploading, setUploading] = useState<ProtocolItemCode | null>(null);
   const [itemErrors, setItemErrors] = useState<Partial<Record<ProtocolItemCode, string>>>({});
@@ -77,43 +77,47 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const submitLock = useRef(false);
+  const polledStatus = inspection?.status;
 
   useEffect(() => {
-    let active = true;
-    getMyInspection(inspectionId)
+    const controller = new AbortController();
+    getMyInspection(inspectionId, controller.signal)
       .then((loaded) => {
-        if (!active) return;
         setInspection(loaded);
+        setSelectedCode(firstIncompleteCode(loaded));
         setLoadError(false);
       })
-      .catch(() => {
-        if (active) setLoadError(true);
+      .catch((cause: unknown) => {
+        if (!(cause instanceof DOMException && cause.name === "AbortError")) setLoadError(true);
       });
-    return () => {
-      active = false;
-    };
+    return () => controller.abort();
   }, [inspectionId]);
 
   useEffect(() => {
-    if (!inspection || !POLLED_STATUSES.has(inspection.status)) return;
+    if (!polledStatus || !POLLED_STATUSES.has(polledStatus)) return;
 
     let active = true;
-    const timer = setInterval(() => {
-      getMyInspection(inspectionId)
-        .then((loaded) => {
-          if (active) setInspection(loaded);
-        })
-        .catch(() => {
-          /* keep last known state */
-        });
-    }, POLLING_INTERVAL_MS);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const controller = new AbortController();
+    const poll = async () => {
+      try {
+        const loaded = await getMyInspection(inspectionId, controller.signal);
+        if (active) setInspection(loaded);
+      } catch {
+        if (!controller.signal.aborted) {
+          // A tela preserva o último estado confirmado e tenta novamente.
+        }
+      }
+      if (active) timer = setTimeout(poll, POLLING_INTERVAL_MS);
+    };
+    timer = setTimeout(poll, POLLING_INTERVAL_MS);
 
     return () => {
       active = false;
-      clearInterval(timer);
+      controller.abort();
+      if (timer) clearTimeout(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inspectionId, inspection?.status]);
+  }, [inspectionId, polledStatus]);
 
   const selectedIndex = useMemo(
     () => Math.max(0, protocolItems.findIndex(({ item }) => item.code === selectedCode)),
@@ -122,7 +126,9 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
 
   async function reload() {
     try {
-      setInspection(await getMyInspection(inspectionId));
+      const loaded = await getMyInspection(inspectionId);
+      setInspection(loaded);
+      setSelectedCode(firstIncompleteCode(loaded));
       setLoadError(false);
     } catch {
       setLoadError(true);
@@ -143,6 +149,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
       const updated = await uploadEvidence(inspectionId, code, file);
       setInspection(updated);
       setRetryFiles((current) => ({ ...current, [code]: undefined }));
+      setSelectedCode(firstIncompleteCode(updated, code));
     } catch (cause) {
       setRetryFiles((current) => ({ ...current, [code]: file }));
       setItemErrors((current) => ({
@@ -163,7 +170,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   async function sendInspection() {
     if (!inspection || submitLock.current) return;
     if (inspection.imagens.length === 0) {
-      setSubmitError("Adicione ao menos uma foto de parede antes de enviar.");
+      setSubmitError("Adicione ao menos uma foto antes de enviar.");
       return;
     }
     submitLock.current = true;
@@ -187,97 +194,88 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   if (loadError) {
     return <AsyncState role="alert" title="Não foi possível abrir a vistoria" description="Tente carregar novamente sem criar outro rascunho." action={<button className="button button--secondary" onClick={() => void reload()}>Tentar novamente</button>} />;
   }
-  if (!inspection) return <AsyncState title="Carregando protocolo" description="Buscando as evidências já confirmadas para este imóvel." />;
+  if (!inspection) return <AsyncState title="Carregando roteiro" description="Buscando as evidências já confirmadas para este imóvel." />;
 
-  if (inspection.status === "CONCLUIDA") {
+  if (inspection.status === "RELATORIO_DISPONIVEL" || inspection.status === "CONCLUIDA") {
     return (
       <div className="workflow-page">
-        <div className="workflow-titlebar">
-          <div>
-            <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar para vistorias</Link>
-            <StatusBadge status={inspection.status} />
-          </div>
-        </div>
+        <WorkflowBackHeader inspection={inspection} />
         <InspectionResults inspection={inspection} />
       </div>
     );
   }
 
-  const editable = inspection.status === "EM_RASCUNHO" || inspection.status === "DEVOLVIDA_CLIENTE";
+  if (inspection.status === "REVISAO_PENDENTE") {
+    return (
+      <div className="workflow-page">
+        <WorkflowBackHeader inspection={inspection} />
+        <section className="analysis-ready" aria-live="polite">
+          <div className="analysis-ready__icon"><CheckCircle2 aria-hidden="true" size={30} /></div>
+          <p className="eyebrow">Pronta para você</p>
+          <h1>Análise concluída</h1>
+          <p>A IA organizou os indícios por evidência. A próxima etapa é confirmar o contexto observado no imóvel.</p>
+        </section>
+      </div>
+    );
+  }
+
+  if (inspection.status === "AGUARDANDO_IA") {
+    return (
+      <div className="workflow-page">
+        <WorkflowBackHeader inspection={inspection} />
+        <section className="processing-state" aria-live="polite">
+          <div className="processing-state__visual" aria-hidden="true"><ScanSearch size={36} /></div>
+          <p className="eyebrow">Processamento assíncrono</p>
+          <h1>Análise da IA em andamento</h1>
+          <p>As fotos já estão salvas. É seguro sair e voltar: esta página consulta o estado real, sem estimar porcentagens.</p>
+          <Link className="button button--secondary" href="/client">Voltar ao início</Link>
+        </section>
+      </div>
+    );
+  }
+
+  const editable = ["EM_RASCUNHO", "DEVOLVIDA_CLIENTE", "FALHA_IA"].includes(inspection.status);
   const progress = calculateProgress(inspection.imagens);
-  const trackedTitle = inspection.status in trackingTitles
-    ? trackingTitles[inspection.status as keyof typeof trackingTitles]
-    : null;
 
   return (
-    <main className="workflow-page">
+    <div className="workflow-page">
       <div className="workflow-titlebar">
         <div>
-          <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar para vistorias</Link>
-          <p className="eyebrow">MVP — paredes</p>
-          <h1>Análise visual de paredes</h1>
-          <p>Envie fotos das paredes; a IA analisa e libera o resultado automaticamente.</p>
+          <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar ao início</Link>
+          <p className="eyebrow">Captura guiada</p>
+          <h1>Documente o imóvel, ambiente por ambiente.</h1>
+          <p>O roteiro organiza as fotos; você decide quanto contexto registrar antes da análise.</p>
         </div>
         <StatusBadge status={inspection.status} />
       </div>
 
-      <nav className="journey-steps" aria-label="Etapas da vistoria">
-        <ol>
-          {journeySteps.map(([title, description], index) => {
-            const state = getJourneyStepState(inspection.status, index);
-            return (
-              <li
-                className={state === "complete" ? "is-complete" : state === "active" ? "is-active" : ""}
-                aria-current={state === "active" ? "step" : undefined}
-                key={title}
-              >
-                <span>{state === "complete" ? <Check size={16} /> : index + 1}</span>
-                <div><strong>{index + 1}. {title}</strong><small>{description}</small></div>
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
+      <Journey status={inspection.status} />
 
       {inspection.status === "FALHA_IA" ? (
-        <section className="tracking-panel" role="alert">
+        <section className="tracking-panel tracking-panel--error" role="alert">
           <AlertTriangle size={28} />
-          <div><p className="eyebrow">Falha no processamento</p><h2>A análise da IA não foi concluída</h2><p>Suas fotos continuam salvas. Reenvie para tentar novamente.</p></div>
+          <div><p className="eyebrow">Falha no processamento</p><h2>A análise da IA não foi concluída</h2><p>Suas fotos continuam salvas. Você pode conferir as evidências e tentar novamente.</p></div>
           <button className="button button--primary" disabled={submitting} onClick={() => void sendInspection()}>{submitting ? "Reenviando..." : "Reenviar para análise"}</button>
-        </section>
-      ) : null}
-
-      {trackedTitle && inspection.status === "AGUARDANDO_IA" ? (
-        <section className="tracking-panel" aria-live="polite">
-          <FileCheck2 size={28} />
-          <div>
-            <p className="eyebrow">Acompanhamento</p>
-            <h2>{trackedTitle}</h2>
-            <p>Esta página atualiza sozinha. Em seguida o resultado aparece por imagem.</p>
-          </div>
         </section>
       ) : null}
 
       <div className="guided-workspace">
         <aside className="protocol-sidebar">
           <div className="property-summary">
-            <p className="eyebrow">Imóvel vistoriado</p>
+            <p className="eyebrow">Imóvel</p>
             <strong>{inspection.endereco}</strong>
-            <span>Vistoria #{inspection.id}</span>
+            <span className="mono">VISTORIA {String(inspection.id).padStart(4, "0")}</span>
           </div>
           <section className="workflow-progress" aria-label="Progresso da documentação">
-            <div>
-              <strong>{progress} de {PROTOCOL_ITEM_TOTAL} {PROTOCOL_ITEM_TOTAL === 1 ? "item documentado" : "itens documentados"}</strong>
-              <span>Você pode enviar várias fotos do mesmo item.</span>
-            </div>
+            <div><strong>{progress} de {PROTOCOL_ITEM_TOTAL} itens documentados</strong><span>Progresso calculado apenas pelas fotos salvas.</span></div>
             <progress value={progress} max={PROTOCOL_ITEM_TOTAL}>{progress} de {PROTOCOL_ITEM_TOTAL}</progress>
           </section>
-          <nav className="protocol-navigation" aria-label="Itens do protocolo">
+          <nav className="protocol-navigation" aria-label="Itens do roteiro">
             {PROTOCOL_GROUPS.map((group, groupIndex) => {
               const completed = group.items.filter((item) => inspection.imagens.some((entry) => entry.protocoloItem === item.code)).length;
               return (
                 <section data-testid="protocol-group" key={group.name}>
-                  <header><span>{String(groupIndex + 1).padStart(2, "0")}</span><strong>{group.name}</strong><small>{completed} de {group.items.length}</small></header>
+                  <header><span className="mono">{String(groupIndex + 1).padStart(2, "0")}</span><strong>{group.name}</strong><small>{completed} de {group.items.length}</small></header>
                   {group.items.map((item) => {
                     const complete = inspection.imagens.some((entry) => entry.protocoloItem === item.code);
                     return (
@@ -294,10 +292,6 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
         </aside>
 
         <section className="focused-protocol" aria-live="polite">
-          <aside className="photo-guidance">
-            <Camera size={24} />
-            <div><strong>Dicas para boas fotos</strong><ul><li>Use boa iluminação e enquadre a parede completa.</li><li>Registre fissuras, manchas ou sinais de umidade.</li><li>Evite fotos tremidas ou muito próximas.</li></ul></div>
-          </aside>
           {protocolItems.map(({ group, item }, index) => {
             const evidence = inspection.imagens.filter((entry) => entry.protocoloItem === item.code);
             const isBusy = uploading === item.code;
@@ -307,34 +301,41 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
             return (
               <article className="protocol-item" data-testid={`protocol-item-${item.code}`} hidden={!active} key={item.code}>
                 <header className="focused-protocol__heading">
-                  <p className="eyebrow">{group.name}</p>
+                  <p className="eyebrow">{group.name} · item {index + 1} de {PROTOCOL_ITEM_TOTAL}</p>
                   <h2>{item.label}</h2>
                   <p>{item.guidance}</p>
                 </header>
 
+                <aside className="photo-guidance"><Info size={21} /><div><strong>Uma boa evidência</strong><span>Use luz uniforme, mantenha referência do ambiente e faça uma aproximação somente quando houver algo a destacar.</span></div></aside>
+
                 {editable ? (
-                  <div className="protocol-item__actions">
-                    <label className={`upload-zone ${isBusy ? "is-disabled" : ""}`}>
-                      <Camera size={28} />
-                      <strong>{isBusy ? "Enviando foto..." : "Clique para enviar uma foto"}</strong>
-                      <span>JPEG, PNG ou WebP · máximo 10 MB</span>
-                      <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={isBusy || uploading !== null} aria-label={`Adicionar foto de ${group.name} — ${item.label}`} onChange={(event) => chooseFile(item.code, event)} />
+                  <div className={`capture-actions ${isBusy ? "is-disabled" : ""}`}>
+                    <label className="capture-action capture-action--primary">
+                      <Camera aria-hidden="true" size={23} />
+                      <span><strong>{isBusy ? "Enviando foto..." : "Tirar foto"}</strong><small>Abra a câmera traseira</small></span>
+                      <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={isBusy || uploading !== null} aria-label={`Tirar foto de ${group.name} — ${item.label}`} onChange={(event) => chooseFile(item.code, event)} />
+                    </label>
+                    <label className="capture-action">
+                      <Images aria-hidden="true" size={23} />
+                      <span><strong>Escolher da galeria</strong><small>JPEG, PNG ou WebP · até 10 MB</small></span>
+                      <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={isBusy || uploading !== null} aria-label={`Escolher da galeria para ${group.name} — ${item.label}`} onChange={(event) => chooseFile(item.code, event)} />
                     </label>
                     {retryFiles[item.code] ? <button className="retry-link" disabled={isBusy} onClick={() => void sendFile(item.code, retryFiles[item.code]!)}><RefreshCw size={15} />Tentar novamente</button> : null}
                   </div>
                 ) : null}
 
                 {evidence.length ? (
-                  <div className="evidence-strip">
-                    {evidence.map((photo, evidenceIndex) => <EvidenceImage evidence={photo} alt={`${group.name} — ${item.label}, foto ${evidenceIndex + 1}`} key={photo.id} />)}
-                  </div>
-                ) : <p className="empty-evidence">Nenhuma foto registrada neste item.</p>}
+                  <section className="evidence-section" aria-label={`Fotos salvas de ${group.name} — ${item.label}`}>
+                    <div className="evidence-section__heading"><CheckCircle2 size={18} /><strong>{evidence.length} {evidence.length === 1 ? "foto salva" : "fotos salvas"}</strong></div>
+                    <div className="evidence-strip">{evidence.map((photo, evidenceIndex) => <EvidenceImage evidence={photo} alt={`${group.name} — ${item.label}, foto ${evidenceIndex + 1}`} key={photo.id} />)}</div>
+                  </section>
+                ) : <p className="empty-evidence">Nenhuma foto salva para este item.</p>}
                 {itemErrors[item.code] ? <p className="item-error" role="alert">{itemErrors[item.code]}</p> : null}
 
                 <footer className="protocol-pager">
-                  <button className="button button--secondary" type="button" disabled={!previous} onClick={() => selectRelative(-1)}><ArrowLeft size={17} />{previous ? `Voltar: ${previous.label}` : "Primeiro item"}</button>
-                  <span>{evidence.length} {evidence.length === 1 ? "foto registrada" : "fotos registradas"}</span>
-                  <button className="button button--primary" type="button" disabled={!next} onClick={() => selectRelative(1)}>{next ? `Próximo: ${next.label}` : "Pronto para enviar"}<ArrowRight size={17} /></button>
+                  <button className="button button--secondary" type="button" disabled={!previous} onClick={() => selectRelative(-1)}><ArrowLeft size={17} />{previous ? "Anterior" : "Primeiro item"}</button>
+                  <span className="mono">{String(index + 1).padStart(2, "0")} / {PROTOCOL_ITEM_TOTAL}</span>
+                  <button className="button button--primary" type="button" disabled={!next} onClick={() => selectRelative(1)}>{next ? "Próximo item" : "Roteiro percorrido"}<ArrowRight size={17} /></button>
                 </footer>
               </article>
             );
@@ -342,35 +343,48 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
         </section>
 
         <aside className="submission-guide" aria-label="Orientações antes do envio">
-          <section>
-            <FileCheck2 size={24} />
-            <div><h2>Antes de enviar</h2><p>Confira se as fotos mostram bem as paredes do imóvel.</p></div>
-          </section>
+          <section><FileCheck2 size={24} /><div><h2>Antes de analisar</h2><p>Você não precisa completar os 12 itens, mas fotos variadas deixam o registro mais útil.</p></div></section>
           <ul className="submission-checklist">
-            <li><CheckCircle2 size={18} />Fotos nítidas e bem iluminadas</li>
-            <li className={progress >= 1 ? "is-complete" : ""}><span>{inspection.imagens.length}</span>foto(s) de parede</li>
+            <li className={inspection.imagens.length > 0 ? "is-complete" : ""}><CheckCircle2 size={18} />{inspection.imagens.length} {inspection.imagens.length === 1 ? "foto salva" : "fotos salvas"}</li>
+            <li className={progress > 1 ? "is-complete" : ""}><span>{progress}</span>{progress === 1 ? "item coberto" : "itens cobertos"}</li>
           </ul>
-          <section className="next-steps">
-            <Info size={22} />
-            <div>
-              <h2>O que acontece depois?</h2>
-              <ol>
-                <li><strong>IA analisa as fotos</strong><span>Indícios visuais por imagem.</span></li>
-                <li><strong>Vistoria concluída</strong><span>Resultado liberado automaticamente.</span></li>
-              </ol>
-            </div>
-          </section>
-          <div className="professional-warning"><AlertTriangle size={19} /><p><strong>Importante</strong>Esta é uma análise visual preliminar e não substitui vistoria técnica presencial.</p></div>
+          <section className="next-steps"><Info size={22} /><div><h2>Depois do envio</h2><ol><li><strong>A IA organiza indícios</strong><span>Você pode sair durante a análise.</span></li><li><strong>Você confirma o contexto</strong><span>Nenhum achado vira conclusão silenciosamente.</span></li><li><strong>O relatório é montado</strong><span>Foto e decisão permanecem ligadas.</span></li></ol></div></section>
+          <div className="professional-warning"><AlertTriangle size={19} /><p><strong>Limite claro</strong>A análise visual não constitui laudo técnico ou diagnóstico estrutural.</p></div>
           {editable ? (
             <div className="workflow-submit">
-              <p>Revise as fotos antes de concluir.</p>
+              <p>Envie quando as evidências representarem bem o imóvel.</p>
               {submitError ? <p className="item-error" role="alert">{submitError}</p> : null}
-              <button className="button button--primary" disabled={submitting || uploading !== null} onClick={() => void sendInspection()}><Send size={17} />{submitting ? "Analisando..." : "Enviar para análise da IA"}</button>
-              <small>O processamento pode levar alguns instantes por foto. O resultado aparece nesta página.</small>
+              <button className="button button--primary" disabled={submitting || uploading !== null} onClick={() => void sendInspection()}><Send size={17} />{submitting ? "Enviando..." : "Enviar para análise da IA"}</button>
+              <small>A resposta é assíncrona; não feche esta tela esperando uma porcentagem.</small>
             </div>
           ) : null}
         </aside>
       </div>
-    </main>
+    </div>
+  );
+}
+
+function Journey({ status }: { status: InspectionStatus }) {
+  return (
+    <nav className="journey-steps" aria-label="Etapas da vistoria">
+      <ol>{journeySteps.map(([title, description], index) => {
+        const state = getJourneyStepState(status, index);
+        return (
+          <li className={state === "complete" ? "is-complete" : state === "active" ? "is-active" : ""} aria-current={state === "active" ? "step" : undefined} key={title}>
+            <span>{state === "complete" ? <Check size={16} /> : index + 1}</span>
+            <div><strong>{title}</strong><small>{description}</small></div>
+          </li>
+        );
+      })}</ol>
+    </nav>
+  );
+}
+
+function WorkflowBackHeader({ inspection }: { inspection: Inspection }) {
+  return (
+    <div className="workflow-titlebar workflow-titlebar--compact">
+      <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar ao início</Link>
+      <StatusBadge status={inspection.status} />
+    </div>
   );
 }

@@ -3,18 +3,15 @@
 import { AlertTriangle, CheckCircle2, ImageIcon } from "lucide-react";
 
 import { EvidenceImage } from "../shared/evidence-image";
-import type { Evidence, Inspection } from "../types";
-import { issueTypeLabel, parseAiReport, type AiImageResult } from "./ai-report";
+import type { AiImageAnalysis, Evidence, Inspection } from "../types";
 
-function matchResult(evidence: Evidence, results: AiImageResult[], index: number): AiImageResult | null {
-  const byPath = results.find((item) => item.storagePath === evidence.storagePath);
-  if (byPath) return byPath;
-  return results[index] ?? null;
+function matchResult(evidence: Evidence, results: AiImageAnalysis[]): AiImageAnalysis | null {
+  return results.find((item) => item.imagemId === evidence.id) ?? null;
 }
 
 export function InspectionResults({ inspection }: { inspection: Inspection }) {
-  const report = parseAiReport(inspection.preLaudoIa);
-  const results = report?.images ?? [];
+  const report = inspection.analiseIa;
+  const results = report?.imagens ?? [];
 
   return (
     <main className="results-page">
@@ -32,12 +29,11 @@ export function InspectionResults({ inspection }: { inspection: Inspection }) {
         <section className="results-empty" role="status">
           <AlertTriangle size={22} />
           <p>O relatório estruturado não está disponível para esta vistoria.</p>
-          {inspection.preLaudoIa ? <pre className="results-fallback">{inspection.preLaudoIa}</pre> : null}
         </section>
       ) : (
         <div className="results-grid">
           {inspection.imagens.map((evidence, index) => {
-            const result = matchResult(evidence, results, index);
+            const result = matchResult(evidence, results);
             return (
               <article className="result-card" key={evidence.id}>
                 <div className="result-card__media">
@@ -47,36 +43,36 @@ export function InspectionResults({ inspection }: { inspection: Inspection }) {
                   <p className="eyebrow">Foto {index + 1}</p>
                   {!result ? (
                     <p className="result-card__empty">Sem análise vinculada a esta imagem.</p>
-                  ) : !result.imageQuality.usable ? (
+                  ) : !result.qualidade.utilizavel ? (
                     <>
                       <h2>Imagem não utilizável</h2>
                       <ul className="result-findings">
-                        {result.imageQuality.issues.map((issue) => (
+                        {result.qualidade.problemas.map((issue) => (
                           <li key={issue}>{issue}</li>
                         ))}
                       </ul>
                     </>
                   ) : (
                     <>
-                      <h2>{result.overallSummary || "Análise visual"}</h2>
-                      {result.areas.length === 0 ? (
+                      <h2>{result.resumoGeral || "Análise visual"}</h2>
+                      {result.achados.length === 0 ? (
                         <p className="result-card__ok">
                           <CheckCircle2 size={18} /> Nenhum problema visual evidente.
                         </p>
                       ) : (
                         <ul className="result-findings">
-                          {result.areas.map((area, areaIndex) => (
-                            <li key={`${area.issueType}-${areaIndex}`}>
-                              <strong>{issueTypeLabel(area.issueType)}</strong>
-                              {area.confidence ? <span>Confiança: {area.confidence}</span> : null}
-                              {area.description ? <p>{area.description}</p> : null}
-                              {area.recommendation ? <small>{area.recommendation}</small> : null}
+                          {result.achados.map((finding) => (
+                            <li key={`${finding.indice}-${finding.tipo ?? "achado"}`}>
+                              <strong>{finding.tipo || "Indício visual"}</strong>
+                              {finding.confianca ? <span>Confiança: {finding.confianca}</span> : null}
+                              {finding.descricao ? <p>{finding.descricao}</p> : null}
+                              {finding.recomendacao ? <small>{finding.recomendacao}</small> : null}
                             </li>
                           ))}
                         </ul>
                       )}
-                      {result.limitations.length ? (
-                        <p className="result-limitations">{result.limitations.join(" ")}</p>
+                      {result.limitacoes.length ? (
+                        <p className="result-limitations">{result.limitacoes.join(" ")}</p>
                       ) : null}
                     </>
                   )}

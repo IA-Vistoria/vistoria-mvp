@@ -5,12 +5,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api";
 import { getPendingInspection, listPendingInspections, loadEvidence, reviewInspection } from "../api";
 import { EvidenceImage } from "../shared/evidence-image";
-import type { Inspection, PageResponse } from "../types";
+import type { Inspection, LegacyInspection, PageResponse } from "../types";
 import { EngineerDashboard } from "./engineer-dashboard";
 import { EngineerReview } from "./engineer-review";
 import { splitPreReport } from "./pre-report";
 
-function page(content: Inspection[]): PageResponse<Inspection> {
+function page<T extends Inspection>(content: T[]): PageResponse<T> {
   return { content, pagina: 0, tamanho: 10, totalElementos: content.length, totalPaginas: content.length === 0 ? 0 : 1 };
 }
 
@@ -24,16 +24,17 @@ vi.mock("../api", () => ({
   reviewInspection: vi.fn(),
 }));
 
-const pending: Inspection = {
+const pending: LegacyInspection = {
   id: 20,
   clienteId: 7,
-  engenheiroId: null,
   status: "AGUARDANDO_ENGENHEIRO",
   preLaudoIa: "- Fissura aparente na parede norte\n• Sinal de umidade próximo à janela",
   parecerEngenheiro: null,
   endereco: "Av. Concreto, 180",
   dataCriacao: "2026-09-19T09:00:00",
   dataConclusao: null,
+  analiseIa: null,
+  revisoes: [],
   imagens: [
     { id: 3, protocoloItem: "SALA_PAREDES_REVESTIMENTOS", dataUpload: "2026-09-19T09:10:00", conteudoUrl: "/api/foto/3" },
   ],
@@ -112,12 +113,12 @@ describe("EngineerReview", () => {
     const queue = await screen.findByRole("region", { name: "Fila de revisão" });
     expect(within(queue).getAllByRole("link")).toHaveLength(2);
     expect(within(queue).getByRole("link", { name: /vistoria #20/i }).getAttribute("aria-current")).toBe("page");
-    expect(await screen.findByAltText("Evidência em destaque: Paredes — Paredes")).toBeDefined();
+    expect(await screen.findByAltText("Evidência em destaque: Sala — Paredes e revestimentos")).toBeDefined();
     expect(screen.getByRole("heading", { name: "Pré-laudo da IA" })).toBeDefined();
     expect(screen.getByRole("heading", { name: "Decisão técnica" })).toBeDefined();
 
-    await user.click(screen.getByRole("button", { name: "Visualizar Paredes — Paredes, evidência 2" }));
-    expect(await screen.findByAltText("Evidência em destaque: Paredes — Paredes")).toBeDefined();
+    await user.click(screen.getByRole("button", { name: "Visualizar Sala — Paredes e revestimentos, evidência 2" }));
+    expect(await screen.findByAltText("Evidência em destaque: Sala — Paredes e revestimentos")).toBeDefined();
   });
 
   it("exibe evidências e linhas reais sem inventar severidade ou confiança", async () => {
@@ -125,7 +126,7 @@ describe("EngineerReview", () => {
 
     expect(await screen.findByText("Fissura aparente na parede norte")).toBeDefined();
     expect(screen.getByText("Sinal de umidade próximo à janela")).toBeDefined();
-    expect(await screen.findByAltText("Paredes — Paredes, evidência 1")).toBeDefined();
+    expect(await screen.findByAltText("Sala — Paredes e revestimentos, evidência 1")).toBeDefined();
     expect(screen.queryByText(/severidade/i)).toBeNull();
     expect(screen.queryByText(/confiança/i)).toBeNull();
   });

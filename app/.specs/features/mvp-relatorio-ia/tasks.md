@@ -121,7 +121,7 @@ T1 -> T2 -> T3 -> T4 -> T5 -> T6 -> T7 -> T8
 
 ### T5: Reconstruir início e captura guiada
 
-**Status:** Pending  
+**Status:** Complete  
 **Depends on:** T4  
 **Requirement:** AIR-01, AIR-02, AIR-06  
 **Where:** dashboard, nova vistoria, workflow, protocolo e upload.

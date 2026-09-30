@@ -19,7 +19,7 @@ import { ApiError } from "@/lib/api";
 import { getPendingInspection, listPendingInspections, reviewInspection } from "../api";
 import { EvidenceImage } from "../shared/evidence-image";
 import { PROTOCOL_GROUPS } from "../shared/protocol";
-import type { Evidence, Inspection, ProtocolItemCode } from "../types";
+import type { Evidence, Inspection, LegacyInspection, ProtocolItemCode } from "../types";
 import { PreReport } from "./pre-report";
 
 const protocolLabels = new Map<ProtocolItemCode, string>(
@@ -37,8 +37,8 @@ function evidenceLabel(evidence: Evidence) {
 
 export function EngineerReview({ inspectionId }: { inspectionId: number }) {
   const router = useRouter();
-  const [inspection, setInspection] = useState<Inspection | null>(null);
-  const [queue, setQueue] = useState<Inspection[]>([]);
+  const [inspection, setInspection] = useState<LegacyInspection | null>(null);
+  const [queue, setQueue] = useState<LegacyInspection[]>([]);
   const [queueTotal, setQueueTotal] = useState(0);
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<number | null>(null);
   const [opinion, setOpinion] = useState("");
@@ -164,7 +164,7 @@ export function EngineerReview({ inspectionId }: { inspectionId: number }) {
             </div>
           </section>
 
-          <PreReport value={inspection.preLaudoIa} />
+          <PreReport value={inspection.preLaudoIa ?? null} />
         </section>
 
         <section className="decision-panel" aria-labelledby="decision-title">

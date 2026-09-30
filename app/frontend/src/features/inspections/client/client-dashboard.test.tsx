@@ -27,14 +27,13 @@ vi.mock("../api", () => ({
 const draftInspection: Inspection = {
   id: 42,
   clienteId: 1,
-  engenheiroId: null,
   status: "EM_RASCUNHO",
-  preLaudoIa: null,
-  parecerEngenheiro: null,
   endereco: "Rua das Obras, 10",
   dataCriacao: "2026-09-18T10:00:00",
   dataConclusao: null,
   imagens: [],
+  analiseIa: null,
+  revisoes: [],
 };
 
 describe("ClientDashboard", () => {
@@ -54,9 +53,9 @@ describe("ClientDashboard", () => {
 
     render(<ClientDashboard />);
 
-    const cards = await screen.findAllByTestId("inspection-card");
+    expect((await screen.findByTestId("next-action")).textContent).toContain("Recente 3");
+    const cards = screen.getAllByTestId("inspection-card");
     expect(cards.map((card) => card.textContent)).toEqual([
-      expect.stringContaining("Recente 3"),
       expect.stringContaining("Recente 2"),
       expect.stringContaining("Antiga"),
     ]);
@@ -67,12 +66,42 @@ describe("ClientDashboard", () => {
 
     render(<ClientDashboard />);
 
-    const card = await screen.findByTestId("inspection-card");
+    const card = await screen.findByTestId("next-action");
     expect(card.textContent).toContain("Rua das Obras, 10");
     expect(card.textContent).toContain("Em preenchimento");
     expect(within(card).getByRole("link", { name: "Continuar vistoria" }).getAttribute("href")).toBe(
       "/client/vistorias/42",
     );
+  });
+
+  it("prioriza a próxima ação da vistoria mais recente antes dos relatórios", async () => {
+    vi.mocked(listMyInspections).mockResolvedValue(page([
+      {
+        ...draftInspection,
+        id: 7,
+        status: "RELATORIO_DISPONIVEL",
+        endereco: "Rua do Relatório, 7",
+        dataCriacao: "2026-09-17T10:00:00",
+        dataConclusao: "2026-09-18T10:00:00",
+      },
+      {
+        ...draftInspection,
+        id: 9,
+        status: "AGUARDANDO_IA",
+        endereco: "Avenida Mais Recente, 9",
+        dataCriacao: "2026-09-20T10:00:00",
+      },
+    ]));
+
+    render(<ClientDashboard />);
+
+    const nextAction = await screen.findByTestId("next-action");
+    expect(nextAction.textContent).toContain("Avenida Mais Recente, 9");
+    expect(within(nextAction).getByRole("link", { name: "Acompanhar análise" })).toBeDefined();
+
+    const report = screen.getByRole("heading", { name: "Relatórios disponíveis" });
+    expect(nextAction.compareDocumentPosition(report) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText("Rua do Relatório, 7")).toBeDefined();
   });
 
   it("oferece uma única ação quando a lista está vazia", async () => {
@@ -81,6 +110,7 @@ describe("ClientDashboard", () => {
     render(<ClientDashboard />);
 
     expect(await screen.findByText("Nenhuma vistoria iniciada")).toBeDefined();
+    expect(screen.getByText(/fotos, contexto e relatório/i)).toBeDefined();
     expect(screen.getAllByRole("link", { name: "Iniciar primeira vistoria" })).toHaveLength(1);
   });
 

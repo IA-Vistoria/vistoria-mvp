@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Building2, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, ScanLine } from "lucide-react";
 import { FormEvent, useRef, useState } from "react";
 
 import { ApiError } from "@/lib/api";
@@ -37,20 +37,20 @@ export function NewInspectionForm() {
   }
 
   return (
-    <main className="new-inspection-page">
-      <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar para vistorias</Link>
+    <div className="new-inspection-page">
+      <Link className="back-link" href="/client"><ArrowLeft size={17} />Voltar ao início</Link>
       <div className="new-inspection-layout">
         <section className="new-inspection-copy">
-          <p className="eyebrow">Nova vistoria</p>
-          <h1>Comece pelo endereço. O restante fica salvo passo a passo.</h1>
-          <p>Este primeiro registro cria apenas um rascunho. Nada será enviado para análise antes da sua confirmação.</p>
-          <div className="process-note"><Building2 size={22} /><span><strong>Você mantém o controle.</strong> Fotos e progresso ficam vinculados a este imóvel.</span></div>
+          <p className="eyebrow">Nova vistoria · etapa 1 de 4</p>
+          <h1>Qual imóvel você quer documentar?</h1>
+          <p>O endereço identifica o registro. Em seguida, um roteiro simples orienta as fotos de cada ambiente.</p>
+          <div className="process-note"><ScanLine size={22} /><span><strong>Nada é enviado à IA agora.</strong> Primeiro criamos um rascunho para salvar seu progresso com segurança.</span></div>
         </section>
 
         <form className="inspection-form" onSubmit={handleSubmit}>
           <div className="inspection-form__icon"><MapPin size={26} /></div>
           <h2>Identifique o imóvel</h2>
-          <p>Use um endereço completo para facilitar a revisão técnica.</p>
+          <p>Use um endereço que você reconheça facilmente na lista de vistorias.</p>
           {error ? <div className="form-alert" role="alert">{error}</div> : null}
           <label htmlFor="inspection-address">Endereço do imóvel</label>
           <input
@@ -64,10 +64,10 @@ export function NewInspectionForm() {
           <button className="button button--primary" disabled={busy} type="submit">
             {busy ? "Criando rascunho..." : "Criar rascunho"}
           </button>
-          <small>Você poderá revisar o endereço antes de enviar a vistoria.</small>
+          <small>Ao continuar, você abre o roteiro de 12 itens para registrar as fotos.</small>
         </form>
       </div>
-    </main>
+    </div>
   );
 }
 
