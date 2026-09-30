@@ -114,7 +114,7 @@ T18 -> T19
 
 ### T1: Introduzir a solicitação de análise contextual
 
-**Status**: Pending  
+**Status**: Complete  
 **What**: Criar o contrato imutável que transporta vistoria, imagem, ambiente,
 categoria, caminho e tipo de conteúdo até a porta de IA.  
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/application/ia/`  
