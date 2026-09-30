@@ -26,7 +26,7 @@ interface ReportEntry {
 
 type ShareFeedback = { tone: "success" | "error"; message: string } | null;
 
-const protocolLabels = new Map(
+const protocolLabels = new Map<string, string>(
   PROTOCOL_GROUPS.flatMap((group) =>
     group.items.map((item) => [item.code, `${group.name} — ${item.label}`] as const),
   ),

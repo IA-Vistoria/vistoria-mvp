@@ -26,17 +26,20 @@ vi.mock("../api", () => ({
 
 const pending: LegacyInspection = {
   id: 20,
+  version: 0,
   clienteId: 7,
   status: "AGUARDANDO_ENGENHEIRO",
   preLaudoIa: "- Fissura aparente na parede norte\n• Sinal de umidade próximo à janela",
   parecerEngenheiro: null,
   endereco: "Av. Concreto, 180",
+  tipoImovel: null,
+  ambientes: [],
   dataCriacao: "2026-09-19T09:00:00",
   dataConclusao: null,
   analiseIa: null,
   revisoes: [],
   imagens: [
-    { id: 3, protocoloItem: "SALA_PAREDES_REVESTIMENTOS", dataUpload: "2026-09-19T09:10:00", conteudoUrl: "/api/foto/3" },
+    { id: 3, ambienteId: null, ambienteNome: null, categoria: null, protocoloItem: "SALA_PAREDES_REVESTIMENTOS", dataUpload: "2026-09-19T09:10:00", conteudoUrl: "/api/foto/3" },
   ],
 };
 
@@ -97,6 +100,9 @@ describe("EngineerReview", () => {
   it("integra fila, galeria, pré-laudo e decisão no mesmo workspace", async () => {
     const secondEvidence = {
       id: 4,
+      ambienteId: null,
+      ambienteNome: null,
+      categoria: null,
       protocoloItem: "SALA_PAREDES_REVESTIMENTOS" as const,
       dataUpload: "2026-09-19T09:12:00",
       conteudoUrl: "/api/foto/4",

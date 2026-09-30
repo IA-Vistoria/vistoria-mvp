@@ -19,10 +19,10 @@ import { ApiError } from "@/lib/api";
 import { getPendingInspection, listPendingInspections, reviewInspection } from "../api";
 import { EvidenceImage } from "../shared/evidence-image";
 import { PROTOCOL_GROUPS } from "../shared/protocol";
-import type { Evidence, Inspection, LegacyInspection, ProtocolItemCode } from "../types";
+import type { Evidence, Inspection, LegacyInspection } from "../types";
 import { PreReport } from "./pre-report";
 
-const protocolLabels = new Map<ProtocolItemCode, string>(
+const protocolLabels = new Map<string, string>(
   PROTOCOL_GROUPS.flatMap((group) => group.items.map((item) => [item.code, `${group.name} — ${item.label}`] as const)),
 );
 

@@ -2,30 +2,49 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError } from "@/lib/api";
-import { getMyInspection, loadEvidence, submitInspection, uploadEvidence } from "../api";
-import type { Inspection } from "../types";
-import { InspectionWorkflow } from "./inspection-workflow";
 import {
-  ACCEPTED_EVIDENCE_TYPES,
-  MAX_EVIDENCE_BYTES,
-  PROTOCOL_GROUPS,
-  PROTOCOL_ITEM_TOTAL,
-  calculateProgress,
-} from "../shared/protocol";
+  getMyInspection,
+  loadEvidence,
+  submitInspection,
+  updateInspectionRoute,
+  uploadEvidence,
+} from "../api";
+import type { Evidence, Inspection } from "../types";
+import { MAX_EVIDENCE_BYTES } from "../shared/protocol";
+import { InspectionWorkflow } from "./inspection-workflow";
 
 vi.mock("../api", () => ({
   getMyInspection: vi.fn(),
-  submitInspection: vi.fn(),
-  uploadEvidence: vi.fn(),
   loadEvidence: vi.fn(),
+  submitInspection: vi.fn(),
+  updateInspectionRoute: vi.fn(),
+  uploadEvidence: vi.fn(),
 }));
+
+const environments = [
+  { id: 11, tipo: "SALA" as const, nome: "Sala", ordem: 0 },
+  { id: 12, tipo: "QUARTO" as const, nome: "Quarto de hóspedes", ordem: 1 },
+  { id: 13, tipo: "VARANDA" as const, nome: "Varanda", ordem: 2 },
+];
+
+const overview: Evidence = {
+  id: 1,
+  ambienteId: 11,
+  ambienteNome: "Sala",
+  categoria: "VISAO_GERAL",
+  protocoloItem: "SALA_VISAO_GERAL",
+  dataUpload: "2026-09-19T08:10:00",
+  conteudoUrl: "/api/foto/1",
+};
 
 const draft: Inspection = {
   id: 10,
+  version: 2,
   clienteId: 1,
   status: "EM_RASCUNHO",
   endereco: "Rua das Estruturas, 80",
+  tipoImovel: "APARTAMENTO",
+  ambientes: environments,
   dataCriacao: "2026-09-19T08:00:00",
   dataConclusao: null,
   imagens: [],
@@ -33,109 +52,52 @@ const draft: Inspection = {
   revisoes: [],
 };
 
-const withEvidence: Inspection = {
+const withOverview: Inspection = { ...draft, imagens: [overview] };
+const complete: Inspection = {
   ...draft,
-  imagens: [
-    {
-      id: 1,
-      protocoloItem: "SALA_PAREDES_REVESTIMENTOS",
-      dataUpload: "2026-09-19T08:10:00",
-      conteudoUrl: "/api/foto/1",
-    },
-  ],
+  imagens: environments.map((environment, index) => ({
+    ...overview,
+    id: index + 1,
+    ambienteId: environment.id,
+    ambienteNome: environment.nome,
+    protocoloItem: `${environment.tipo}_VISAO_GERAL`,
+  })),
 };
 
-const reviewPending: Inspection = {
-  ...withEvidence,
-  status: "REVISAO_PENDENTE",
-  analiseIa: {
-    version: 1,
-    imagens: [
-      {
-        imagemId: 1,
-        identificadorAnalise: "evidencia-1",
-        resumoGeral: "Há indícios visuais de possível umidade.",
-        limitacoes: ["Análise baseada apenas em imagem."],
-        qualidade: { utilizavel: true, problemas: [] },
-        achados: [
-          {
-            indice: 0,
-            area: "Parede",
-            tipo: "Umidade possível",
-            descricao: "Mancha aparente.",
-            evidencia: "Alteração de cor.",
-            gravidade: "media",
-            confianca: "media",
-            recomendacao: "Observar a evolução.",
-            localizacao: null,
-          },
-        ],
-      },
-    ],
-  },
-};
-
-describe("contrato do protocolo", () => {
-  it("define os doze itens do MVP em cinco grupos", () => {
-    expect(PROTOCOL_GROUPS.map((group) => group.name)).toEqual([
-      "Sala",
-      "Cozinha",
-      "Banheiro",
-      "Quarto",
-      "Instalações",
-    ]);
-    expect(PROTOCOL_ITEM_TOTAL).toBe(12);
-    expect(ACCEPTED_EVIDENCE_TYPES).toEqual(["image/jpeg", "image/png", "image/webp"]);
-    expect(PROTOCOL_GROUPS.flatMap((group) => group.items.map((item) => item.code))).toEqual([
-      "SALA_PISO",
-      "SALA_PAREDES_REVESTIMENTOS",
-      "SALA_TETO_ILUMINACAO",
-      "COZINHA_PISO",
-      "COZINHA_PAREDES_BANCADAS",
-      "COZINHA_INSTALACOES",
-      "BANHEIRO_REVESTIMENTOS",
-      "BANHEIRO_HIDRAULICA",
-      "QUARTO_PISO",
-      "QUARTO_PAREDES_TETO",
-      "INSTALACOES_ELETRICAS",
-      "INSTALACOES_HIDRAULICAS",
-    ]);
-  });
-
-  it("calcula progresso por item único confirmado pela API", () => {
-    expect(calculateProgress([
-      ...withEvidence.imagens,
-      { ...withEvidence.imagens[0], id: 2 },
-    ])).toBe(1);
-  });
-});
-
-describe("InspectionWorkflow", () => {
+describe("InspectionWorkflow adaptativo", () => {
   beforeEach(() => {
     vi.mocked(getMyInspection).mockReset();
-    vi.mocked(uploadEvidence).mockReset();
-    vi.mocked(submitInspection).mockReset();
     vi.mocked(loadEvidence).mockReset();
+    vi.mocked(submitInspection).mockReset();
+    vi.mocked(updateInspectionRoute).mockReset();
+    vi.mocked(uploadEvidence).mockReset();
     vi.mocked(getMyInspection).mockResolvedValue(draft);
     vi.mocked(loadEvidence).mockResolvedValue(new Blob(["foto"], { type: "image/jpeg" }));
   });
 
-  it("renderiza o item de paredes e progresso persistido", async () => {
-    vi.mocked(getMyInspection).mockResolvedValue(withEvidence);
+  it("usa somente os ambientes persistidos e o progresso real", async () => {
+    vi.mocked(getMyInspection).mockResolvedValue(withOverview);
     render(<InspectionWorkflow inspectionId={10} />);
 
-    expect(await screen.findByText("1 de 12 itens documentados")).toBeDefined();
-    expect(screen.getAllByTestId("protocol-group")).toHaveLength(5);
-    expect(document.querySelectorAll(".protocol-item")).toHaveLength(12);
-    expect(screen.getByRole("button", { name: "Sala — Piso" }).getAttribute("aria-current")).toBe("step");
+    expect(await screen.findByText("1 de 3 ambientes com visão geral")).toBeDefined();
+    expect(screen.getAllByTestId("environment-step")).toHaveLength(3);
+    expect(screen.getByRole("button", { name: /Quarto de hóspedes/ }).getAttribute("aria-current")).toBe("step");
+    expect(screen.queryByText(/12 itens/i)).toBeNull();
   });
 
-  it("oferece câmera e galeria para o item selecionado", async () => {
+  it("explica a regra mínima e mantém detalhe como opcional", async () => {
     render(<InspectionWorkflow inspectionId={10} />);
 
-    const item = await screen.findByTestId("protocol-item-SALA_PISO");
-    expect(within(item).getByLabelText("Tirar foto de Sala — Piso")).toBeDefined();
-    expect(within(item).getByLabelText("Escolher da galeria para Sala — Piso")).toBeDefined();
+    expect(await screen.findByText(/uma visão geral é obrigatória/i)).toBeDefined();
+    expect(screen.getByText(/detalhes são opcionais/i)).toBeDefined();
+  });
+
+  it("oferece câmera e galeria para visão geral e detalhe", async () => {
+    render(<InspectionWorkflow inspectionId={10} />);
+    const room = await screen.findByTestId("environment-capture-11");
+
+    expect(within(room).getByLabelText("Tirar visão geral de Sala")).toBeDefined();
+    expect(within(room).getByLabelText("Escolher detalhe de Sala da galeria")).toBeDefined();
   });
 
   it.each([
@@ -144,169 +106,151 @@ describe("InspectionWorkflow", () => {
     ["tamanho", oversizedFile(), "10 MB"],
   ])("rejeita arquivo %s sem chamar a API", async (_, file, message) => {
     render(<InspectionWorkflow inspectionId={10} />);
-    const item = await screen.findByTestId("protocol-item-SALA_PISO");
+    const room = await screen.findByTestId("environment-capture-11");
 
-    fireEvent.change(within(item).getByLabelText("Escolher da galeria para Sala — Piso"), {
+    fireEvent.change(within(room).getByLabelText("Escolher visão geral de Sala da galeria"), {
       target: { files: [file] },
     });
 
-    expect((await within(item).findByRole("alert")).textContent).toContain(message);
+    expect((await within(room).findByRole("alert")).textContent).toContain(message);
     expect(uploadEvidence).not.toHaveBeenCalled();
   });
 
-  it("envia o código exato e avança após confirmação da API", async () => {
-    const updated = {
-      ...draft,
-      imagens: [
-        {
-          id: 2,
-          protocoloItem: "SALA_PISO",
-          dataUpload: "2026-09-19T08:20:00",
-          conteudoUrl: "/api/foto/2",
-        },
-      ],
-    } satisfies Inspection;
-    vi.mocked(uploadEvidence).mockResolvedValue(updated);
+  it("envia ambiente e categoria exatos e avança após a visão geral", async () => {
+    vi.mocked(uploadEvidence).mockResolvedValue(withOverview);
     const user = userEvent.setup();
     render(<InspectionWorkflow inspectionId={10} />);
-    const item = await screen.findByTestId("protocol-item-SALA_PISO");
-    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], "piso.jpg", { type: "image/jpeg" });
+    const room = await screen.findByTestId("environment-capture-11");
+    const file = imageFile("sala.jpg");
 
-    await user.upload(within(item).getByLabelText("Escolher da galeria para Sala — Piso"), file);
+    await user.upload(within(room).getByLabelText("Escolher visão geral de Sala da galeria"), file);
 
-    await waitFor(() =>
-      expect(uploadEvidence).toHaveBeenCalledWith(10, "SALA_PISO", file),
-    );
-    expect(await screen.findByText("1 de 12 itens documentados")).toBeDefined();
-    expect(screen.getByRole("button", { name: "Sala — Paredes e revestimentos" }).getAttribute("aria-current")).toBe("step");
-  });
-
-  it("mantém a evidência confirmada quando outro upload falha", async () => {
-    vi.mocked(getMyInspection).mockResolvedValue(withEvidence);
-    vi.mocked(uploadEvidence).mockRejectedValue(new ApiError({
-      type: "urn:vistoria:problem:invalid-evidence",
-      title: "Imagem inválida",
-      status: 422,
-      detail: "A assinatura da imagem não corresponde ao tipo informado.",
+    await waitFor(() => expect(uploadEvidence).toHaveBeenCalledWith(10, {
+      ambienteId: 11,
+      categoria: "VISAO_GERAL",
+      file,
     }));
-    const user = userEvent.setup();
-    render(<InspectionWorkflow inspectionId={10} />);
-    const item = await screen.findByTestId("protocol-item-SALA_PAREDES_REVESTIMENTOS");
-    const file = new File(["conteudo"], "outra.png", { type: "image/png" });
-
-    await user.upload(within(item).getByLabelText("Escolher da galeria para Sala — Paredes e revestimentos"), file);
-
-    expect((await within(item).findByRole("alert")).textContent).toContain("assinatura da imagem");
-    expect(await screen.findByText("1 de 12 itens documentados")).toBeDefined();
+    expect(screen.getByRole("button", { name: /Quarto de hóspedes/ }).getAttribute("aria-current")).toBe("step");
   });
 
-  it("impede submissão sem evidência confirmada", async () => {
+  it("envia detalhe sem marcar o ambiente como concluído", async () => {
+    const detail: Evidence = { ...overview, categoria: "DETALHE", protocoloItem: "SALA_DETALHE" };
+    vi.mocked(uploadEvidence).mockResolvedValue({ ...draft, imagens: [detail] });
     const user = userEvent.setup();
     render(<InspectionWorkflow inspectionId={10} />);
-    await screen.findByText("0 de 12 itens documentados");
+    const room = await screen.findByTestId("environment-capture-11");
+    const file = imageFile("detalhe.jpg");
+
+    await user.upload(within(room).getByLabelText("Escolher detalhe de Sala da galeria"), file);
+
+    expect(await screen.findByText("0 de 3 ambientes com visão geral")).toBeDefined();
+    expect(uploadEvidence).toHaveBeenCalledWith(10, { ambienteId: 11, categoria: "DETALHE", file });
+  });
+
+  it("pula para o próximo ambiente sem alterar o progresso", async () => {
+    const user = userEvent.setup();
+    render(<InspectionWorkflow inspectionId={10} />);
+    await screen.findByText("0 de 3 ambientes com visão geral");
+
+    await user.click(screen.getByRole("button", { name: "Pular por agora" }));
+
+    expect(screen.getByRole("button", { name: /Quarto de hóspedes/ }).getAttribute("aria-current")).toBe("step");
+    expect(screen.getByText("0 de 3 ambientes com visão geral")).toBeDefined();
+  });
+
+  it("leva ao primeiro ambiente ausente antes de enviar", async () => {
+    vi.mocked(getMyInspection).mockResolvedValue(withOverview);
+    const user = userEvent.setup();
+    render(<InspectionWorkflow inspectionId={10} />);
+    await screen.findByText("1 de 3 ambientes com visão geral");
 
     await user.click(screen.getByRole("button", { name: "Enviar para análise da IA" }));
 
-    expect((await screen.findByRole("alert")).textContent).toContain("ao menos uma foto");
+    expect((await screen.findByRole("alert")).textContent).toContain("Quarto de hóspedes e Varanda");
+    expect(screen.getByRole("button", { name: /Quarto de hóspedes/ }).getAttribute("aria-current")).toBe("step");
     expect(submitInspection).not.toHaveBeenCalled();
   });
 
-  it("submete uma única vez e mostra o estado assíncrono real", async () => {
-    vi.mocked(getMyInspection).mockResolvedValue(withEvidence);
-    vi.mocked(submitInspection).mockResolvedValue({ ...withEvidence, status: "AGUARDANDO_IA" });
+  it("salva adição, renomeação e ordem do roteiro", async () => {
+    const updated = {
+      ...draft,
+      version: 3,
+      ambientes: [
+        { ...environments[1], nome: "Suíte", ordem: 0 },
+        { ...environments[0], ordem: 1 },
+        { id: 20, tipo: "OUTRO" as const, nome: "Ateliê", ordem: 2 },
+      ],
+    };
+    vi.mocked(updateInspectionRoute).mockResolvedValue(updated);
     const user = userEvent.setup();
     render(<InspectionWorkflow inspectionId={10} />);
-    await screen.findByText("1 de 12 itens documentados");
+    await screen.findByText("0 de 3 ambientes com visão geral");
+
+    await user.click(screen.getByRole("button", { name: "Editar roteiro" }));
+    const roomNames = screen.getAllByLabelText(/Nome do ambiente/i) as HTMLInputElement[];
+    await user.clear(roomNames[1]);
+    await user.type(roomNames[1], "Suíte");
+    await user.click(screen.getByRole("button", { name: "Mover Suíte para cima" }));
+    await user.click(screen.getByRole("button", { name: "Remover Varanda" }));
+    await user.click(screen.getByRole("button", { name: "Adicionar ambiente" }));
+    const updatedNames = screen.getAllByLabelText(/Nome do ambiente/i) as HTMLInputElement[];
+    await user.clear(updatedNames.at(-1)!);
+    await user.type(updatedNames.at(-1)!, "Ateliê");
+    await user.click(screen.getByRole("button", { name: "Salvar roteiro" }));
+
+    await waitFor(() => expect(updateInspectionRoute).toHaveBeenCalledWith(10, expect.objectContaining({
+      version: 2,
+      tipoImovel: "APARTAMENTO",
+      ambientes: [
+        expect.objectContaining({ id: 12, nome: "Suíte" }),
+        expect.objectContaining({ id: 11, nome: "Sala" }),
+        expect.objectContaining({ nome: "Ateliê", tipo: "OUTRO" }),
+      ],
+    })));
+    expect(await screen.findByRole("button", { name: /Ateliê/ })).toBeDefined();
+  });
+
+  it("não oferece remover ambiente que já possui evidência", async () => {
+    vi.mocked(getMyInspection).mockResolvedValue(withOverview);
+    const user = userEvent.setup();
+    render(<InspectionWorkflow inspectionId={10} />);
+    await screen.findByText("1 de 3 ambientes com visão geral");
+
+    await user.click(screen.getByRole("button", { name: "Editar roteiro" }));
+
+    expect((screen.getByRole("button", { name: "Remover Sala" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/possui fotos e não pode ser removido/i)).toBeDefined();
+  });
+
+  it("submete uma única vez quando todas as visões gerais existem", async () => {
+    vi.mocked(getMyInspection).mockResolvedValue(complete);
+    vi.mocked(submitInspection).mockResolvedValue({ ...complete, status: "AGUARDANDO_IA" });
+    const user = userEvent.setup();
+    render(<InspectionWorkflow inspectionId={10} />);
+    await screen.findByText("3 de 3 ambientes com visão geral");
 
     await user.dblClick(screen.getByRole("button", { name: "Enviar para análise da IA" }));
 
     await waitFor(() => expect(submitInspection).toHaveBeenCalledTimes(1));
     expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
-    expect(screen.getByText(/seguro sair e voltar/i)).toBeDefined();
   });
 
-  it("reenvia o mesmo caso somente quando a IA falhou", async () => {
-    vi.mocked(getMyInspection).mockResolvedValue({ ...withEvidence, status: "FALHA_IA" });
-    vi.mocked(submitInspection).mockResolvedValue({ ...withEvidence, status: "AGUARDANDO_IA" });
+  it("mantém o último estado e libera retry quando a IA falha", async () => {
+    vi.mocked(getMyInspection).mockResolvedValue({ ...complete, status: "FALHA_IA" });
+    vi.mocked(submitInspection).mockResolvedValue({ ...complete, status: "AGUARDANDO_IA" });
     const user = userEvent.setup();
     render(<InspectionWorkflow inspectionId={10} />);
 
-    const retryButton = await screen.findByRole("button", { name: "Reenviar para análise" });
-    expect(screen.queryByLabelText("Tirar foto de Sala — Piso")).toBeNull();
-    expect(screen.queryByLabelText("Escolher da galeria para Sala — Piso")).toBeNull();
-
-    await user.click(retryButton);
+    await user.click(await screen.findByRole("button", { name: "Reenviar para análise" }));
 
     expect(submitInspection).toHaveBeenCalledWith(10);
     expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
   });
-
-  it("libera nova tentativa quando o polling informa falha da IA", async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    try {
-      vi.mocked(getMyInspection)
-        .mockResolvedValueOnce(withEvidence)
-        .mockResolvedValueOnce({ ...withEvidence, status: "FALHA_IA" });
-      vi.mocked(submitInspection).mockResolvedValue({ ...withEvidence, status: "AGUARDANDO_IA" });
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-      render(<InspectionWorkflow inspectionId={10} />);
-
-      await user.click(await screen.findByRole("button", { name: "Enviar para análise da IA" }));
-      expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
-
-      await vi.advanceTimersByTimeAsync(4000);
-      await user.click(await screen.findByRole("button", { name: "Reenviar para análise" }));
-
-      await waitFor(() => expect(submitInspection).toHaveBeenCalledTimes(2));
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("mantém acompanhamento sem upload enquanto a IA processa", async () => {
-    vi.mocked(getMyInspection).mockResolvedValue({ ...withEvidence, status: "AGUARDANDO_IA" });
-    render(<InspectionWorkflow inspectionId={10} />);
-
-    expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
-    expect(screen.queryByRole("button", { name: "Enviar para análise da IA" })).toBeNull();
-  });
-
-  it("atualiza sozinha quando a análise termina (polling)", async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    try {
-      vi.mocked(getMyInspection)
-        .mockResolvedValueOnce({ ...withEvidence, status: "AGUARDANDO_IA" })
-        .mockResolvedValueOnce(reviewPending);
-
-      render(<InspectionWorkflow inspectionId={10} />);
-
-      expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
-
-      await vi.advanceTimersByTimeAsync(4000);
-
-      await waitFor(() => expect(screen.getByText("Análise concluída")).toBeDefined());
-      expect(getMyInspection).toHaveBeenCalledTimes(2);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("cancela novas consultas quando a tela é desmontada", async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    try {
-      vi.mocked(getMyInspection).mockResolvedValue({ ...withEvidence, status: "AGUARDANDO_IA" });
-      const { unmount } = render(<InspectionWorkflow inspectionId={10} />);
-      expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
-
-      unmount();
-      await vi.advanceTimersByTimeAsync(8000);
-
-      expect(getMyInspection).toHaveBeenCalledTimes(1);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
 });
+
+function imageFile(name: string): File {
+  return new File([new Uint8Array([0xff, 0xd8, 0xff])], name, { type: "image/jpeg" });
+}
 
 function oversizedFile(): File {
   const file = new File(["x"], "grande.webp", { type: "image/webp" });

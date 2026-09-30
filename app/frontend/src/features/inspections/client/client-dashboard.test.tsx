@@ -162,15 +162,73 @@ describe("NewInspectionForm", () => {
     vi.mocked(submitInspection).mockReset();
   });
 
-  it("cria um rascunho sem submetê-lo", async () => {
+  it("explica a regra mínima antes da criação", () => {
+    render(<NewInspectionForm />);
+
+    expect(screen.getByText(/uma visão geral por ambiente/i)).toBeDefined();
+    expect(screen.getByText(/você pode adaptar/i)).toBeDefined();
+    expect(screen.queryByText(/12 itens/i)).toBeNull();
+  });
+
+  it("troca as sugestões sem transformar os ambientes em obrigação", async () => {
+    const user = userEvent.setup();
+    render(<NewInspectionForm />);
+
+    await user.click(screen.getByRole("radio", { name: "Apartamento" }));
+
+    const roomNames = screen.getAllByLabelText(/Nome do ambiente/i) as HTMLInputElement[];
+    expect(roomNames.some((input) => input.value === "Área de serviço")).toBe(true);
+    expect(roomNames.some((input) => input.value === "Área externa")).toBe(false);
+    expect(screen.getAllByText(/sugestão inicial/i).length).toBeGreaterThan(0);
+  });
+
+  it("permite adicionar, renomear, remover e reordenar ambientes", async () => {
+    const user = userEvent.setup();
+    render(<NewInspectionForm />);
+
+    await user.click(screen.getByRole("button", { name: "Adicionar ambiente" }));
+    const names = screen.getAllByLabelText(/Nome do ambiente/i) as HTMLInputElement[];
+    await user.clear(names.at(-1)!);
+    await user.type(names.at(-1)!, "Biblioteca");
+    await user.click(screen.getByRole("button", { name: "Mover Biblioteca para cima" }));
+    await user.click(screen.getByRole("button", { name: "Remover Entrada e fachada" }));
+
+    expect(screen.getByDisplayValue("Biblioteca")).toBeDefined();
+    expect(screen.queryByDisplayValue("Entrada e fachada")).toBeNull();
+  });
+
+  it("mostra validação acessível para nomes duplicados", async () => {
+    const user = userEvent.setup();
+    render(<NewInspectionForm />);
+    const names = screen.getAllByLabelText(/Nome do ambiente/i) as HTMLInputElement[];
+    await user.clear(names[1]);
+    await user.type(names[1], names[0].value.toUpperCase());
+    await user.type(screen.getByLabelText("Endereço do imóvel"), "Rua das Obras, 10");
+
+    await user.click(screen.getByRole("button", { name: "Começar a registrar fotos" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain("nomes diferentes");
+    expect(createInspection).not.toHaveBeenCalled();
+  });
+
+  it("cria endereço, tipo e roteiro em uma única operação sem submeter", async () => {
     vi.mocked(createInspection).mockResolvedValue(draftInspection);
     const user = userEvent.setup();
     render(<NewInspectionForm />);
 
     await user.type(screen.getByLabelText("Endereço do imóvel"), "Rua das Obras, 10");
-    await user.dblClick(screen.getByRole("button", { name: "Criar rascunho" }));
+    await user.click(screen.getByRole("radio", { name: "Apartamento" }));
+    await user.dblClick(screen.getByRole("button", { name: "Começar a registrar fotos" }));
 
     await waitFor(() => expect(createInspection).toHaveBeenCalledTimes(1));
+    expect(createInspection).toHaveBeenCalledWith(expect.objectContaining({
+      endereco: "Rua das Obras, 10",
+      tipoImovel: "APARTAMENTO",
+      ambientes: expect.arrayContaining([
+        expect.objectContaining({ tipo: "SALA", nome: "Sala" }),
+        expect.objectContaining({ tipo: "QUARTO", nome: "Quarto" }),
+      ]),
+    }));
     expect(submitInspection).not.toHaveBeenCalled();
     expect(replace).toHaveBeenCalledWith(`/client/vistorias/${draftInspection.id}`);
   });
@@ -188,7 +246,7 @@ describe("NewInspectionForm", () => {
     render(<NewInspectionForm />);
 
     await user.type(screen.getByLabelText("Endereço do imóvel"), "Rua incompleta");
-    await user.click(screen.getByRole("button", { name: "Criar rascunho" }));
+    await user.click(screen.getByRole("button", { name: "Começar a registrar fotos" }));
 
     expect((await screen.findByRole("alert")).textContent).toContain("Confirme o endereço");
     expect((screen.getByLabelText("Endereço do imóvel") as HTMLInputElement).value).toBe(
@@ -207,9 +265,9 @@ describe("NewInspectionForm", () => {
     render(<NewInspectionForm />);
     await user.type(screen.getByLabelText("Endereço do imóvel"), "Av. Estrutural, 100");
 
-    await user.click(screen.getByRole("button", { name: "Criar rascunho" }));
+    await user.click(screen.getByRole("button", { name: "Começar a registrar fotos" }));
 
-    const busyButton = screen.getByRole("button", { name: "Criando rascunho..." });
+    const busyButton = screen.getByRole("button", { name: "Preparando roteiro..." });
     expect((busyButton as HTMLButtonElement).disabled).toBe(true);
     finish(draftInspection);
     await waitFor(() => expect(replace).toHaveBeenCalled());

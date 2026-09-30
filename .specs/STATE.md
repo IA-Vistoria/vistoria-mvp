@@ -29,10 +29,10 @@
 ## Handoff
 
 - **feature**: `interface-lente-operacional`
-- **phase**: Configuração e captura adaptativa
-- **completed**: T1 — domínio e persistência do roteiro; T2 — criação e edição atômica com migrations V8/V9; T3 — captura estruturada e regra de completude; T4 — fundações visuais e contratos adaptativos; T5 — shell, acesso e início IA-first
-- **in_progress**: T6 — construtor de roteiro e captura flexível
-- **next_step**: Implementar sugestões por tipo, lista editável e ordenada de ambientes e captura estruturada por ambiente
+- **phase**: Revisão e relatório contextualizados
+- **completed**: T1 — domínio e persistência do roteiro; T2 — criação e edição atômica com migrations V8/V9; T3 — captura estruturada e regra de completude; T4 — fundações visuais e contratos adaptativos; T5 — shell, acesso e início IA-first; T6 — construtor de roteiro e captura flexível
+- **in_progress**: T7 — revisão e relatório agrupados por ambiente
+- **next_step**: Manter foto, ambiente, observação da IA e decisão humana no mesmo contexto, com fallback legível para evidências legadas
 - **blockers**: Nenhum
 - **uncommitted_files**: `.impeccable/build/`, `.impeccable/review/`, `assets/`, `app/frontend/src/components/brand/`
 - **branch**: `codex/especifica-interface-ia-first`

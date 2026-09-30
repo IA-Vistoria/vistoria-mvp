@@ -18,14 +18,20 @@ vi.mock("../shared/evidence-image", () => ({
 
 const inspection: Inspection = {
   id: 31,
+  version: 0,
   clienteId: 4,
   status: "REVISAO_PENDENTE",
   endereco: "Rua do Contexto, 31",
+  tipoImovel: null,
+  ambientes: [],
   dataCriacao: "2026-09-21T09:00:00",
   dataConclusao: null,
   imagens: [
     {
       id: 14,
+      ambienteId: null,
+      ambienteNome: null,
+      categoria: null,
       protocoloItem: "SALA_PAREDES_REVESTIMENTOS",
       dataUpload: "2026-09-21T09:05:00",
       conteudoUrl: "/api/vistorias/31/imagens/14/conteudo",

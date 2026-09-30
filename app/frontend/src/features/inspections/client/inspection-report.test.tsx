@@ -11,14 +11,17 @@ vi.mock("../shared/evidence-image", () => ({
 
 const report: Inspection = {
   id: 31,
+  version: 0,
   clienteId: 4,
   status: "RELATORIO_DISPONIVEL",
   endereco: "Rua do Contexto, 31",
+  tipoImovel: null,
+  ambientes: [],
   dataCriacao: "2026-09-21T09:00:00Z",
   dataConclusao: "2026-09-21T11:00:00Z",
   imagens: [
-    { id: 14, protocoloItem: "SALA_PAREDES_REVESTIMENTOS", dataUpload: "2026-09-21T09:05:00Z", conteudoUrl: "/api/foto/14" },
-    { id: 15, protocoloItem: "SALA_TETO_ILUMINACAO", dataUpload: "2026-09-21T09:06:00Z", conteudoUrl: "/api/foto/15" },
+    { id: 14, ambienteId: null, ambienteNome: null, categoria: null, protocoloItem: "SALA_PAREDES_REVESTIMENTOS", dataUpload: "2026-09-21T09:05:00Z", conteudoUrl: "/api/foto/14" },
+    { id: 15, ambienteId: null, ambienteNome: null, categoria: null, protocoloItem: "SALA_TETO_ILUMINACAO", dataUpload: "2026-09-21T09:06:00Z", conteudoUrl: "/api/foto/15" },
   ],
   analiseIa: {
     version: 1,

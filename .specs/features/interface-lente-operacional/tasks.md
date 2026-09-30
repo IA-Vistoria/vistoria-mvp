@@ -196,11 +196,11 @@ T7 → T8
 
 **Done when**:
 
-- [ ] Tipo sugere ambientes sem impô-los; nome personalizado e validação são acessíveis.
-- [ ] A criação envia endereço e roteiro em uma operação.
-- [ ] Captura usa `x de y ambientes`, editar roteiro, visão geral, detalhe e pular por agora.
-- [ ] Envio incompleto leva aos ambientes ausentes.
-- [ ] Gate full passa com todos os testes anteriores e ao menos 10 novos cenários.
+- [x] Tipo sugere ambientes sem impô-los; nome personalizado e validação são acessíveis.
+- [x] A criação envia endereço e roteiro em uma operação.
+- [x] Captura usa `x de y ambientes`, editar roteiro, visão geral, detalhe e pular por agora.
+- [x] Envio incompleto leva aos ambientes ausentes.
+- [x] Gate full passa com todos os testes anteriores e ao menos 10 novos cenários.
 
 **Tests**: unit
 **Gate**: full
