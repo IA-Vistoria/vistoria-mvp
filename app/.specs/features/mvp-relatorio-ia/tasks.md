@@ -139,7 +139,7 @@ T1 -> T2 -> T3 -> T4 -> T5 -> T6 -> T7 -> T8
 
 ### T6: Implementar revisão rastreável
 
-**Status:** Pending  
+**Status:** Complete  
 **Depends on:** T5  
 **Requirement:** AIR-03, AIR-06  
 **Where:** `InspectionReview`, serviços/tipos e integração no workflow.

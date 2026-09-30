@@ -1,5 +1,19 @@
 import { apiFetch, fetchEvidenceBlob } from "@/lib/api";
-import type { Inspection, LegacyInspection, PageResponse, ProtocolItemCode } from "./types";
+import type {
+  Inspection,
+  LegacyInspection,
+  PageResponse,
+  ProtocolItemCode,
+  ReviewDecision,
+} from "./types";
+
+export interface ReviewFindingRequest {
+  imagemId: number;
+  indiceAchado: number;
+  decisao: ReviewDecision;
+  contexto: string;
+  tipoCorrigido: string | null;
+}
 
 export const listMyInspections = (page = 0, size = 10) =>
   apiFetch<PageResponse<Inspection>>(`/vistorias/minhas?page=${page}&size=${size}`);
@@ -22,6 +36,15 @@ export const uploadEvidence = (inspectionId: number, protocoloItem: ProtocolItem
 
 export const submitInspection = (inspectionId: number) =>
   apiFetch<Inspection>(`/vistorias/${inspectionId}/submeter`, { method: "POST" });
+
+export const reviewFinding = (inspectionId: number, review: ReviewFindingRequest) =>
+  apiFetch<Inspection>(`/vistorias/${inspectionId}/revisao`, {
+    method: "PUT",
+    body: JSON.stringify(review),
+  });
+
+export const completeReport = (inspectionId: number) =>
+  apiFetch<Inspection>(`/vistorias/${inspectionId}/relatorio`, { method: "POST" });
 
 export const loadEvidence = (url: string) => fetchEvidenceBlob(url);
 

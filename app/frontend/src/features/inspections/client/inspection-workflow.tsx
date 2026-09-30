@@ -29,6 +29,7 @@ import {
   validateEvidenceFile,
 } from "../shared/protocol";
 import type { Inspection, InspectionStatus, ProtocolItemCode } from "../types";
+import { InspectionReview } from "./inspection-review";
 import { InspectionResults } from "./inspection-results";
 
 const POLLING_INTERVAL_MS = 4000;
@@ -209,12 +210,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
     return (
       <div className="workflow-page">
         <WorkflowBackHeader inspection={inspection} />
-        <section className="analysis-ready" aria-live="polite">
-          <div className="analysis-ready__icon"><CheckCircle2 aria-hidden="true" size={30} /></div>
-          <p className="eyebrow">Pronta para você</p>
-          <h1>Análise concluída</h1>
-          <p>A IA organizou os indícios por evidência. A próxima etapa é confirmar o contexto observado no imóvel.</p>
-        </section>
+        <InspectionReview inspection={inspection} onChange={setInspection} onRefresh={() => getMyInspection(inspection.id)} />
       </div>
     );
   }
