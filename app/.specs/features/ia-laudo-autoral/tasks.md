@@ -192,7 +192,7 @@ geral conforme qualidade e maior gravidade.
 
 ### T4: Validar e projetar o JSON v2
 
-**Status**: Pending  
+**Status**: Complete  
 **What**: Evoluir `PreLaudoParser` para validar integralmente o JSON v2,
 associar IDs conhecidos e manter compatibilidade de leitura v1.  
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/application/analysis/PreLaudoParser.java`  
