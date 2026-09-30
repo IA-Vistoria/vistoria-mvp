@@ -165,7 +165,7 @@ qualidade, achado descritivo e resultados v2 sem quebrar a leitura v1.
 
 ### T3: Calcular resultados de forma determinística
 
-**Status**: Pending  
+**Status**: Complete  
 **What**: Implementar `ResultadoAnaliseCalculator` com resultado por ambiente e
 geral conforme qualidade e maior gravidade.  
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/application/analysis/ResultadoAnaliseCalculator.java`  
