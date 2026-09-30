@@ -139,7 +139,7 @@ categoria, caminho e tipo de conteúdo até a porta de IA.
 
 ### T2: Modelar o documento canônico v2
 
-**Status**: Pending  
+**Status**: Complete  
 **What**: Evoluir `AnaliseVistoria` para representar execução, imagem, ambiente,
 qualidade, achado descritivo e resultados v2 sem quebrar a leitura v1.  
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/application/analysis/AnaliseVistoria.java`  
