@@ -1,0 +1,2100 @@
+{
+  "tool": "comp-spec",
+  "version": 1,
+  "createdAt": "2026-09-30T12:32:27.164Z",
+  "comp": ".impeccable\\mocks\\approved-lente-operacional.png",
+  "warnings": [
+    "region header: \"container\": true set in the regions file (the region-size refusal is overridden: one undivided element)",
+    "region evidence-panel: \"container\": true set in the regions file (the region-size refusal is overridden: one undivided element)",
+    "region facade-photo: \"bleed\": true set in the regions file (the clipped-artwork refusal is overridden: the page crops it there)",
+    "region photo-count: \"codeDrawn\": true set in the regions file (the painted-material refusal is overridden: code draws this region)",
+    "region thumb-facade: \"bleed\": true set in the regions file (the clipped-artwork refusal is overridden: the page crops it there)",
+    "region thumb-kitchen: \"bleed\": true set in the regions file (the clipped-artwork refusal is overridden: the page crops it there)",
+    "region thumb-bedroom: \"bleed\": true set in the regions file (the clipped-artwork refusal is overridden: the page crops it there)",
+    "region add-photos: \"codeDrawn\": true set in the regions file (the painted-material refusal is overridden: code draws this region)",
+    "region form-panel: \"container\": true set in the regions file (the region-size refusal is overridden: one undivided element)",
+    "region form-card: \"container\": true set in the regions file (the region-size refusal is overridden: one undivided element)"
+  ],
+  "uncoveredInkCells": [],
+  "compSize": {
+    "width": 1487,
+    "height": 1058
+  },
+  "aspect": 1.4055,
+  "orientation": "landscape",
+  "palette": [
+    {
+      "hex": "#091722",
+      "coverage": 0.7461
+    },
+    {
+      "hex": "#675e52",
+      "coverage": 0.0713
+    },
+    {
+      "hex": "#423b3b",
+      "coverage": 0.0652
+    },
+    {
+      "hex": "#76a9ee",
+      "coverage": 0.0601
+    },
+    {
+      "hex": "#727985",
+      "coverage": 0.0573
+    }
+  ],
+  "bands": [
+    {
+      "y": 0.1209,
+      "strength": 0.6414
+    },
+    {
+      "y": 0.1758,
+      "strength": 0.2174
+    },
+    {
+      "y": 0.3407,
+      "strength": 0.3716
+    },
+    {
+      "y": 0.3736,
+      "strength": 0.2777
+    },
+    {
+      "y": 0.4286,
+      "strength": 0.3258
+    },
+    {
+      "y": 0.4615,
+      "strength": 0.483
+    },
+    {
+      "y": 0.6264,
+      "strength": 0.2006
+    },
+    {
+      "y": 0.6703,
+      "strength": 0.2683
+    },
+    {
+      "y": 0.7253,
+      "strength": 0.2959
+    },
+    {
+      "y": 0.7582,
+      "strength": 0.7977
+    },
+    {
+      "y": 0.7802,
+      "strength": 0.6896
+    },
+    {
+      "y": 0.8462,
+      "strength": 0.2577
+    },
+    {
+      "y": 0.9011,
+      "strength": 0.3769
+    }
+  ],
+  "regions": [
+    {
+      "id": "header",
+      "kind": "chrome",
+      "note": "deep navy application header with subtle bottom rule",
+      "grid": null,
+      "container": true,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 0.1002
+      },
+      "px": {
+        "x": 0,
+        "y": 0,
+        "w": 1487,
+        "h": 106
+      },
+      "aspect": 14.0283,
+      "palette": [
+        {
+          "hex": "#091825",
+          "coverage": 0.8726
+        },
+        {
+          "hex": "#091838",
+          "coverage": 0.1065
+        },
+        {
+          "hex": "#f4f5f5",
+          "coverage": 0.0093
+        },
+        {
+          "hex": "#3a4553",
+          "coverage": 0.0063
+        },
+        {
+          "hex": "#f8f868",
+          "coverage": 0.0053
+        }
+      ],
+      "detail": {
+        "energy": 19.7881
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": true,
+        "rules": false
+      }
+    },
+    {
+      "id": "brand",
+      "kind": "plate",
+      "note": "Vistor.IA logo lockup in mineral white and turquoise",
+      "grid": null,
+      "box": {
+        "x": 0.0229,
+        "y": 0.017,
+        "w": 0.1426,
+        "h": 0.0558
+      },
+      "px": {
+        "x": 34,
+        "y": 18,
+        "w": 212,
+        "h": 59
+      },
+      "aspect": 3.5932,
+      "palette": [
+        {
+          "hex": "#091623",
+          "coverage": 0.8229
+        },
+        {
+          "hex": "#edeef0",
+          "coverage": 0.0748
+        },
+        {
+          "hex": "#2dd9c0",
+          "coverage": 0.0389
+        },
+        {
+          "hex": "#a9b0b8",
+          "coverage": 0.0344
+        },
+        {
+          "hex": "#3d4550",
+          "coverage": 0.029
+        }
+      ],
+      "detail": {
+        "energy": 45.0172
+      },
+      "medium": "raster",
+      "plate": "assets/plates/brand.png",
+      "text": null
+    },
+    {
+      "id": "nav-home",
+      "kind": "control",
+      "note": "home navigation item with outline icon and label",
+      "grid": null,
+      "box": {
+        "x": 0.197,
+        "y": 0.0189,
+        "w": 0.0572,
+        "h": 0.0624
+      },
+      "px": {
+        "x": 293,
+        "y": 20,
+        "w": 85,
+        "h": 66
+      },
+      "aspect": 1.2879,
+      "palette": [
+        {
+          "hex": "#081727",
+          "coverage": 0.941
+        },
+        {
+          "hex": "#444b5f",
+          "coverage": 0.0191
+        },
+        {
+          "hex": "#e6ebeb",
+          "coverage": 0.0159
+        },
+        {
+          "hex": "#76809a",
+          "coverage": 0.0128
+        },
+        {
+          "hex": "#c8cae6",
+          "coverage": 0.0112
+        }
+      ],
+      "detail": {
+        "energy": 9.3376
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      }
+    },
+    {
+      "id": "nav-new",
+      "kind": "control",
+      "note": "active new inspection navigation item with underline",
+      "grid": null,
+      "box": {
+        "x": 0.2703,
+        "y": 0.0189,
+        "w": 0.0948,
+        "h": 0.0652
+      },
+      "px": {
+        "x": 402,
+        "y": 20,
+        "w": 141,
+        "h": 69
+      },
+      "aspect": 2.0435,
+      "palette": [
+        {
+          "hex": "#081726",
+          "coverage": 0.8706
+        },
+        {
+          "hex": "#ebf757",
+          "coverage": 0.0451
+        },
+        {
+          "hex": "#919b4a",
+          "coverage": 0.0451
+        },
+        {
+          "hex": "#f5f6f6",
+          "coverage": 0.023
+        },
+        {
+          "hex": "#878d98",
+          "coverage": 0.0163
+        }
+      ],
+      "detail": {
+        "energy": 20.4515
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      }
+    },
+    {
+      "id": "nav-reports",
+      "kind": "control",
+      "note": "reports navigation item with document icon",
+      "grid": null,
+      "box": {
+        "x": 0.38,
+        "y": 0.0189,
+        "w": 0.0874,
+        "h": 0.0624
+      },
+      "px": {
+        "x": 565,
+        "y": 20,
+        "w": 130,
+        "h": 66
+      },
+      "aspect": 1.9697,
+      "palette": [
+        {
+          "hex": "#081728",
+          "coverage": 0.9323
+        },
+        {
+          "hex": "#647291",
+          "coverage": 0.0271
+        },
+        {
+          "hex": "#a5b2c7",
+          "coverage": 0.024
+        },
+        {
+          "hex": "#d9e5ec",
+          "coverage": 0.0115
+        },
+        {
+          "hex": "#324262",
+          "coverage": 0.0052
+        }
+      ],
+      "detail": {
+        "energy": 13.4451
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      }
+    },
+    {
+      "id": "account",
+      "kind": "control",
+      "note": "signed-in user identity and role",
+      "grid": null,
+      "box": {
+        "x": 0.7828,
+        "y": 0.0189,
+        "w": 0.1365,
+        "h": 0.0529
+      },
+      "px": {
+        "x": 1164,
+        "y": 20,
+        "w": 203,
+        "h": 56
+      },
+      "aspect": 3.625,
+      "palette": [
+        {
+          "hex": "#091727",
+          "coverage": 0.87
+        },
+        {
+          "hex": "#424e5f",
+          "coverage": 0.047
+        },
+        {
+          "hex": "#727b8c",
+          "coverage": 0.0329
+        },
+        {
+          "hex": "#ededef",
+          "coverage": 0.0298
+        },
+        {
+          "hex": "#aeb3bb",
+          "coverage": 0.0204
+        }
+      ],
+      "detail": {
+        "energy": 33.4023
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      }
+    },
+    {
+      "id": "logout",
+      "kind": "control",
+      "note": "outlined square logout control",
+      "grid": null,
+      "box": {
+        "x": 0.9462,
+        "y": 0.018,
+        "w": 0.039,
+        "h": 0.052
+      },
+      "px": {
+        "x": 1407,
+        "y": 19,
+        "w": 58,
+        "h": 55
+      },
+      "aspect": 1.0545,
+      "palette": [
+        {
+          "hex": "#091827",
+          "coverage": 0.9235
+        },
+        {
+          "hex": "#182848",
+          "coverage": 0.0264
+        },
+        {
+          "hex": "#f8f8f8",
+          "coverage": 0.0264
+        },
+        {
+          "hex": "#a2a6b0",
+          "coverage": 0.0211
+        },
+        {
+          "hex": "#183848",
+          "coverage": 0.0026
+        }
+      ],
+      "detail": {
+        "energy": 6.4392
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      }
+    },
+    {
+      "id": "evidence-panel",
+      "kind": "chrome",
+      "note": "framed evidence workspace on navy surface",
+      "grid": null,
+      "container": true,
+      "box": {
+        "x": 0.0134,
+        "y": 0.1068,
+        "w": 0.6268,
+        "h": 0.8459
+      },
+      "px": {
+        "x": 20,
+        "y": 113,
+        "w": 932,
+        "h": 895
+      },
+      "aspect": 1.0413,
+      "palette": [
+        {
+          "hex": "#0a1728",
+          "coverage": 0.2774
+        },
+        {
+          "hex": "#0d130f",
+          "coverage": 0.2142
+        },
+        {
+          "hex": "#454345",
+          "coverage": 0.1855
+        },
+        {
+          "hex": "#6a5f51",
+          "coverage": 0.1678
+        },
+        {
+          "hex": "#76a9ee",
+          "coverage": 0.1551
+        }
+      ],
+      "detail": {
+        "energy": 34.9189
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": true
+      }
+    },
+    {
+      "id": "facade-photo",
+      "kind": "image",
+      "note": "sunlit contemporary house facade photograph inside a camera viewport",
+      "grid": null,
+      "bleed": true,
+      "box": {
+        "x": 0.0202,
+        "y": 0.1144,
+        "w": 0.6147,
+        "h": 0.6389
+      },
+      "px": {
+        "x": 30,
+        "y": 121,
+        "w": 914,
+        "h": 676
+      },
+      "aspect": 1.3521,
+      "palette": [
+        {
+          "hex": "#0f100c",
+          "coverage": 0.2207
+        },
+        {
+          "hex": "#655c4d",
+          "coverage": 0.2106
+        },
+        {
+          "hex": "#76a9ee",
+          "coverage": 0.2101
+        },
+        {
+          "hex": "#707781",
+          "coverage": 0.1924
+        },
+        {
+          "hex": "#413b3b",
+          "coverage": 0.1662
+        }
+      ],
+      "detail": {
+        "energy": 30.628
+      },
+      "medium": "raster",
+      "plate": "assets/plates/facade-photo.png",
+      "text": null
+    },
+    {
+      "id": "photo-mode",
+      "kind": "control",
+      "note": "dark caption tag reading fachada principal",
+      "grid": null,
+      "box": {
+        "x": 0.0585,
+        "y": 0.1465,
+        "w": 0.1056,
+        "h": 0.0293
+      },
+      "px": {
+        "x": 87,
+        "y": 155,
+        "w": 157,
+        "h": 31
+      },
+      "aspect": 5.0645,
+      "palette": [
+        {
+          "hex": "#233759",
+          "coverage": 0.499
+        },
+        {
+          "hex": "#29475c",
+          "coverage": 0.2601
+        },
+        {
+          "hex": "#5991df",
+          "coverage": 0.1272
+        },
+        {
+          "hex": "#cfcd5c",
+          "coverage": 0.0694
+        },
+        {
+          "hex": "#969b51",
+          "coverage": 0.0443
+        }
+      ],
+      "detail": {
+        "energy": 35.0535
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": true,
+        "rules": false
+      }
+    },
+    {
+      "id": "photo-count",
+      "kind": "control",
+      "note": "code-rendered count control showing 1 of 12",
+      "grid": null,
+      "codeDrawn": true,
+      "box": {
+        "x": 0.5703,
+        "y": 0.1465,
+        "w": 0.0437,
+        "h": 0.0293
+      },
+      "px": {
+        "x": 848,
+        "y": 155,
+        "w": 65,
+        "h": 31
+      },
+      "aspect": 2.0968,
+      "palette": [
+        {
+          "hex": "#1c2f46",
+          "coverage": 0.6751
+        },
+        {
+          "hex": "#7aadeb",
+          "coverage": 0.1857
+        },
+        {
+          "hex": "#3d5376",
+          "coverage": 0.0886
+        },
+        {
+          "hex": "#ebedf0",
+          "coverage": 0.0253
+        },
+        {
+          "hex": "#a8b0b5",
+          "coverage": 0.0253
+        }
+      ],
+      "detail": {
+        "energy": 13.5316
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": true,
+        "rules": false
+      }
+    },
+    {
+      "id": "photo-caption",
+      "kind": "text",
+      "note": "caption identifying the facade view",
+      "grid": null,
+      "box": {
+        "x": 0.0612,
+        "y": 0.6853,
+        "w": 0.2455,
+        "h": 0.0416
+      },
+      "px": {
+        "x": 91,
+        "y": 725,
+        "w": 365,
+        "h": 44
+      },
+      "aspect": 8.2955,
+      "palette": [
+        {
+          "hex": "#2f3219",
+          "coverage": 0.619
+        },
+        {
+          "hex": "#141509",
+          "coverage": 0.1985
+        },
+        {
+          "hex": "#908d30",
+          "coverage": 0.0801
+        },
+        {
+          "hex": "#606327",
+          "coverage": 0.0561
+        },
+        {
+          "hex": "#404a1a",
+          "coverage": 0.0462
+        }
+      ],
+      "detail": {
+        "energy": 47.0287
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": true,
+        "rules": false
+      },
+      "type": {
+        "comp": {
+          "lines": 2,
+          "glyphs": 42,
+          "capHeightPx": 8.9,
+          "inkIsDark": false,
+          "allCaps": true,
+          "advance": 0.8045,
+          "advTall": 0.7622,
+          "advX": null,
+          "gap": 0.127,
+          "xRatio": null,
+          "stemW": 0.2575,
+          "contrast": 1.2469,
+          "serif": 0.2932,
+          "densTall": 0.6804,
+          "densX": null,
+          "weight": 0.6804
+        },
+        "widthClass": "normal",
+        "weightClass": "black"
+      }
+    },
+    {
+      "id": "photo-expand",
+      "kind": "control",
+      "note": "fullscreen icon button",
+      "grid": null,
+      "box": {
+        "x": 0.5891,
+        "y": 0.6834,
+        "w": 0.0323,
+        "h": 0.0425
+      },
+      "px": {
+        "x": 876,
+        "y": 723,
+        "w": 48,
+        "h": 45
+      },
+      "aspect": 1.0667,
+      "palette": [
+        {
+          "hex": "#12202f",
+          "coverage": 0.7249
+        },
+        {
+          "hex": "#111737",
+          "coverage": 0.1179
+        },
+        {
+          "hex": "#3a4150",
+          "coverage": 0.0786
+        },
+        {
+          "hex": "#6d6d73",
+          "coverage": 0.0437
+        },
+        {
+          "hex": "#aeb2be",
+          "coverage": 0.0349
+        }
+      ],
+      "detail": {
+        "energy": 9.3321
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": true,
+        "rules": false
+      }
+    },
+    {
+      "id": "thumb-facade",
+      "kind": "image",
+      "note": "portrait thumbnail of the house facade",
+      "grid": null,
+      "bleed": true,
+      "box": {
+        "x": 0.0229,
+        "y": 0.7769,
+        "w": 0.0814,
+        "h": 0.1219
+      },
+      "px": {
+        "x": 34,
+        "y": 822,
+        "w": 121,
+        "h": 129
+      },
+      "aspect": 0.938,
+      "palette": [
+        {
+          "hex": "#524b49",
+          "coverage": 0.2285
+        },
+        {
+          "hex": "#89baf5",
+          "coverage": 0.211
+        },
+        {
+          "hex": "#786e5d",
+          "coverage": 0.1976
+        },
+        {
+          "hex": "#7f8792",
+          "coverage": 0.1868
+        },
+        {
+          "hex": "#181913",
+          "coverage": 0.1761
+        }
+      ],
+      "detail": {
+        "energy": 17.0165
+      },
+      "medium": "raster",
+      "plate": "assets/plates/thumb-facade.png",
+      "text": null
+    },
+    {
+      "id": "thumb-garage",
+      "kind": "image",
+      "note": "portrait thumbnail of a modern garage",
+      "grid": null,
+      "box": {
+        "x": 0.113,
+        "y": 0.7769,
+        "w": 0.078,
+        "h": 0.1219
+      },
+      "px": {
+        "x": 168,
+        "y": 822,
+        "w": 116,
+        "h": 129
+      },
+      "aspect": 0.8992,
+      "palette": [
+        {
+          "hex": "#cdc7c6",
+          "coverage": 0.4465
+        },
+        {
+          "hex": "#4b4a4a",
+          "coverage": 0.2659
+        },
+        {
+          "hex": "#17191d",
+          "coverage": 0.191
+        },
+        {
+          "hex": "#3f7cd3",
+          "coverage": 0.0518
+        },
+        {
+          "hex": "#615d45",
+          "coverage": 0.0448
+        }
+      ],
+      "detail": {
+        "energy": 16.9674
+      },
+      "medium": "raster",
+      "plate": "assets/plates/thumb-garage.png",
+      "text": null
+    },
+    {
+      "id": "thumb-living",
+      "kind": "image",
+      "note": "portrait thumbnail of a contemporary living room",
+      "grid": null,
+      "box": {
+        "x": 0.2024,
+        "y": 0.7769,
+        "w": 0.0773,
+        "h": 0.1219
+      },
+      "px": {
+        "x": 301,
+        "y": 822,
+        "w": 115,
+        "h": 129
+      },
+      "aspect": 0.8915,
+      "palette": [
+        {
+          "hex": "#998b7d",
+          "coverage": 0.5096
+        },
+        {
+          "hex": "#685a4e",
+          "coverage": 0.2135
+        },
+        {
+          "hex": "#11131c",
+          "coverage": 0.1414
+        },
+        {
+          "hex": "#37342e",
+          "coverage": 0.0886
+        },
+        {
+          "hex": "#cfbea8",
+          "coverage": 0.0469
+        }
+      ],
+      "detail": {
+        "energy": 13.0105
+      },
+      "medium": "raster",
+      "plate": "assets/plates/thumb-living.png",
+      "text": null
+    },
+    {
+      "id": "thumb-kitchen",
+      "kind": "image",
+      "note": "portrait thumbnail of a contemporary kitchen",
+      "grid": null,
+      "bleed": true,
+      "box": {
+        "x": 0.2919,
+        "y": 0.7769,
+        "w": 0.0767,
+        "h": 0.1219
+      },
+      "px": {
+        "x": 434,
+        "y": 822,
+        "w": 114,
+        "h": 129
+      },
+      "aspect": 0.8837,
+      "palette": [
+        {
+          "hex": "#5b4938",
+          "coverage": 0.3016
+        },
+        {
+          "hex": "#a38e7b",
+          "coverage": 0.2475
+        },
+        {
+          "hex": "#0e1113",
+          "coverage": 0.2258
+        },
+        {
+          "hex": "#866a4e",
+          "coverage": 0.1268
+        },
+        {
+          "hex": "#c8c5c2",
+          "coverage": 0.0982
+        }
+      ],
+      "detail": {
+        "energy": 12.7882
+      },
+      "medium": "raster",
+      "plate": "assets/plates/thumb-kitchen.png",
+      "text": null
+    },
+    {
+      "id": "thumb-exterior",
+      "kind": "image",
+      "note": "portrait thumbnail of an exterior garden",
+      "grid": null,
+      "box": {
+        "x": 0.3786,
+        "y": 0.7769,
+        "w": 0.0794,
+        "h": 0.1219
+      },
+      "px": {
+        "x": 563,
+        "y": 822,
+        "w": 118,
+        "h": 129
+      },
+      "aspect": 0.9147,
+      "palette": [
+        {
+          "hex": "#8f8a88",
+          "coverage": 0.2936
+        },
+        {
+          "hex": "#3c3e27",
+          "coverage": 0.2796
+        },
+        {
+          "hex": "#3d3a3a",
+          "coverage": 0.2151
+        },
+        {
+          "hex": "#535729",
+          "coverage": 0.1117
+        },
+        {
+          "hex": "#e4d9d1",
+          "coverage": 0.1001
+        }
+      ],
+      "detail": {
+        "energy": 17.3486
+      },
+      "medium": "raster",
+      "plate": "assets/plates/thumb-exterior.png",
+      "text": null
+    },
+    {
+      "id": "thumb-bedroom",
+      "kind": "image",
+      "note": "portrait thumbnail of a modern bedroom",
+      "grid": null,
+      "bleed": true,
+      "box": {
+        "x": 0.4681,
+        "y": 0.7769,
+        "w": 0.0773,
+        "h": 0.1219
+      },
+      "px": {
+        "x": 696,
+        "y": 822,
+        "w": 115,
+        "h": 129
+      },
+      "aspect": 0.8915,
+      "palette": [
+        {
+          "hex": "#60584e",
+          "coverage": 0.2594
+        },
+        {
+          "hex": "#4a444b",
+          "coverage": 0.2553
+        },
+        {
+          "hex": "#13151a",
+          "coverage": 0.2072
+        },
+        {
+          "hex": "#908172",
+          "coverage": 0.1599
+        },
+        {
+          "hex": "#bcb3aa",
+          "coverage": 0.1183
+        }
+      ],
+      "detail": {
+        "energy": 13.8086
+      },
+      "medium": "raster",
+      "plate": "assets/plates/thumb-bedroom.png",
+      "text": null
+    },
+    {
+      "id": "thumb-labels",
+      "kind": "text",
+      "note": "six numbered room labels below the thumbnails",
+      "grid": null,
+      "box": {
+        "x": 0.0229,
+        "y": 0.9045,
+        "w": 0.5239,
+        "h": 0.0246
+      },
+      "px": {
+        "x": 34,
+        "y": 957,
+        "w": 779,
+        "h": 26
+      },
+      "aspect": 29.9615,
+      "palette": [
+        {
+          "hex": "#081624",
+          "coverage": 0.9294
+        },
+        {
+          "hex": "#a9aab9",
+          "coverage": 0.0288
+        },
+        {
+          "hex": "#313745",
+          "coverage": 0.0161
+        },
+        {
+          "hex": "#d2d4d6",
+          "coverage": 0.0144
+        },
+        {
+          "hex": "#646672",
+          "coverage": 0.0113
+        }
+      ],
+      "detail": {
+        "energy": 29.2068
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      },
+      "type": {
+        "comp": {
+          "lines": 1,
+          "glyphs": 35,
+          "capHeightPx": 9.7,
+          "inkIsDark": false,
+          "allCaps": false,
+          "advance": 0.7761,
+          "advTall": 0.7589,
+          "advX": 0.8623,
+          "gap": 0.0345,
+          "xRatio": 0.7447,
+          "stemW": 0.211,
+          "contrast": 1.1902,
+          "serif": null,
+          "densTall": 0.5172,
+          "densX": 0.6521,
+          "weight": 0.5172
+        },
+        "widthClass": "wide",
+        "weightClass": "medium"
+      }
+    },
+    {
+      "id": "add-photos",
+      "kind": "control",
+      "note": "code-rendered add photos control with dashed border",
+      "grid": null,
+      "codeDrawn": true,
+      "box": {
+        "x": 0.5562,
+        "y": 0.7769,
+        "w": 0.076,
+        "h": 0.1238
+      },
+      "px": {
+        "x": 827,
+        "y": 822,
+        "w": 113,
+        "h": 131
+      },
+      "aspect": 0.8626,
+      "palette": [
+        {
+          "hex": "#091828",
+          "coverage": 0.9544
+        },
+        {
+          "hex": "#21394c",
+          "coverage": 0.018
+        },
+        {
+          "hex": "#5e606e",
+          "coverage": 0.012
+        },
+        {
+          "hex": "#a0a7b1",
+          "coverage": 0.0084
+        },
+        {
+          "hex": "#d7d7e1",
+          "coverage": 0.0072
+        }
+      ],
+      "detail": {
+        "energy": 7.6395
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      }
+    },
+    {
+      "id": "form-panel",
+      "kind": "chrome",
+      "note": "right operational panel on dark navy surface",
+      "grid": null,
+      "container": true,
+      "box": {
+        "x": 0.649,
+        "y": 0.1068,
+        "w": 0.3362,
+        "h": 0.8459
+      },
+      "px": {
+        "x": 965,
+        "y": 113,
+        "w": 500,
+        "h": 895
+      },
+      "aspect": 0.5587,
+      "palette": [
+        {
+          "hex": "#081725",
+          "coverage": 0.8838
+        },
+        {
+          "hex": "#094cf8",
+          "coverage": 0.0583
+        },
+        {
+          "hex": "#f4f4f5",
+          "coverage": 0.0326
+        },
+        {
+          "hex": "#223247",
+          "coverage": 0.0165
+        },
+        {
+          "hex": "#49566b",
+          "coverage": 0.0088
+        }
+      ],
+      "detail": {
+        "energy": 23.5376
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": true,
+        "rules": false
+      }
+    },
+    {
+      "id": "new-label",
+      "kind": "text",
+      "note": "small tracked label nova vistoria",
+      "grid": null,
+      "box": {
+        "x": 0.6725,
+        "y": 0.1399,
+        "w": 0.0975,
+        "h": 0.0236
+      },
+      "px": {
+        "x": 1000,
+        "y": 148,
+        "w": 145,
+        "h": 25
+      },
+      "aspect": 5.8,
+      "palette": [
+        {
+          "hex": "#081624",
+          "coverage": 0.8151
+        },
+        {
+          "hex": "#667791",
+          "coverage": 0.0548
+        },
+        {
+          "hex": "#9ca8c5",
+          "coverage": 0.0525
+        },
+        {
+          "hex": "#273649",
+          "coverage": 0.0525
+        },
+        {
+          "hex": "#48526e",
+          "coverage": 0.0251
+        }
+      ],
+      "detail": {
+        "energy": 27.9997
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      },
+      "type": {
+        "comp": {
+          "lines": 1,
+          "glyphs": 13,
+          "capHeightPx": 10.8,
+          "inkIsDark": false,
+          "allCaps": true,
+          "advance": 0.5884,
+          "advTall": 0.5884,
+          "advX": null,
+          "gap": 0.3716,
+          "xRatio": null,
+          "stemW": 0.1971,
+          "contrast": 1.0291,
+          "serif": null,
+          "densTall": 0.5364,
+          "densX": null,
+          "weight": 0.5364
+        },
+        "widthClass": "condensed",
+        "weightClass": "medium"
+      }
+    },
+    {
+      "id": "stepper",
+      "kind": "control",
+      "note": "four-step progress rail with first step active",
+      "grid": null,
+      "box": {
+        "x": 0.6772,
+        "y": 0.1767,
+        "w": 0.2784,
+        "h": 0.051
+      },
+      "px": {
+        "x": 1007,
+        "y": 187,
+        "w": 414,
+        "h": 54
+      },
+      "aspect": 7.6667,
+      "palette": [
+        {
+          "hex": "#091828",
+          "coverage": 0.8846
+        },
+        {
+          "hex": "#e9eb56",
+          "coverage": 0.0725
+        },
+        {
+          "hex": "#273848",
+          "coverage": 0.0185
+        },
+        {
+          "hex": "#161c3c",
+          "coverage": 0.0169
+        },
+        {
+          "hex": "#7f93b6",
+          "coverage": 0.0074
+        }
+      ],
+      "detail": {
+        "energy": 19.2527
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      }
+    },
+    {
+      "id": "stage-label",
+      "kind": "text",
+      "note": "small tracked label etapa 1 de 4",
+      "grid": null,
+      "box": {
+        "x": 0.6725,
+        "y": 0.2524,
+        "w": 0.1015,
+        "h": 0.0208
+      },
+      "px": {
+        "x": 1000,
+        "y": 267,
+        "w": 151,
+        "h": 22
+      },
+      "aspect": 6.8636,
+      "palette": [
+        {
+          "hex": "#081522",
+          "coverage": 0.848
+        },
+        {
+          "hex": "#929dbc",
+          "coverage": 0.0784
+        },
+        {
+          "hex": "#3c425e",
+          "coverage": 0.027
+        },
+        {
+          "hex": "#687890",
+          "coverage": 0.0245
+        },
+        {
+          "hex": "#c3ccea",
+          "coverage": 0.0221
+        }
+      ],
+      "detail": {
+        "energy": 28.2013
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      },
+      "type": {
+        "comp": {
+          "lines": 1,
+          "glyphs": 9,
+          "capHeightPx": 11.1,
+          "inkIsDark": false,
+          "allCaps": true,
+          "advance": 0.6892,
+          "advTall": 0.6892,
+          "advX": null,
+          "gap": 0.3896,
+          "xRatio": null,
+          "stemW": 0.1989,
+          "contrast": 1.0869,
+          "serif": 0.4808,
+          "densTall": 0.5449,
+          "densX": null,
+          "weight": 0.5449
+        },
+        "widthClass": "normal",
+        "weightClass": "medium"
+      }
+    },
+    {
+      "id": "headline",
+      "kind": "text",
+      "note": "large balanced heading asking which property to document",
+      "grid": null,
+      "snap": false,
+      "box": {
+        "x": 0.6725,
+        "y": 0.2921,
+        "w": 0.2569,
+        "h": 0.173
+      },
+      "px": {
+        "x": 1000,
+        "y": 309,
+        "w": 382,
+        "h": 183
+      },
+      "aspect": 2.0874,
+      "palette": [
+        {
+          "hex": "#081622",
+          "coverage": 0.7344
+        },
+        {
+          "hex": "#f5f5f6",
+          "coverage": 0.2018
+        },
+        {
+          "hex": "#091636",
+          "coverage": 0.0224
+        },
+        {
+          "hex": "#bbbec6",
+          "coverage": 0.0216
+        },
+        {
+          "hex": "#818891",
+          "coverage": 0.0198
+        }
+      ],
+      "detail": {
+        "energy": 62.4398
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      },
+      "type": {
+        "comp": {
+          "lines": 2,
+          "glyphs": 19,
+          "capHeightPx": 47.6,
+          "inkIsDark": false,
+          "allCaps": false,
+          "advance": 0.617,
+          "advTall": 0.1702,
+          "advX": 0.6226,
+          "gap": 0.1038,
+          "xRatio": 0.697,
+          "stemW": 0.1586,
+          "contrast": 1.1804,
+          "serif": 1.0069,
+          "densTall": 0.8656,
+          "densX": 0.5483,
+          "weight": 0.8656
+        },
+        "widthClass": "normal",
+        "weightClass": "black",
+        "chosen": {
+          "family": "Merriweather Sans",
+          "weight": 400,
+          "fontSizePx": 68,
+          "source": "catalog",
+          "estimatedSize": true,
+          "stamp": "8952481af447"
+        }
+      }
+    },
+    {
+      "id": "intro",
+      "kind": "text",
+      "note": "two-line explanatory paragraph about address and guided route",
+      "grid": null,
+      "box": {
+        "x": 0.6725,
+        "y": 0.4868,
+        "w": 0.2522,
+        "h": 0.0775
+      },
+      "px": {
+        "x": 1000,
+        "y": 515,
+        "w": 375,
+        "h": 82
+      },
+      "aspect": 4.5732,
+      "palette": [
+        {
+          "hex": "#081523",
+          "coverage": 0.8463
+        },
+        {
+          "hex": "#abbedc",
+          "coverage": 0.0582
+        },
+        {
+          "hex": "#7482a1",
+          "coverage": 0.0414
+        },
+        {
+          "hex": "#414a69",
+          "coverage": 0.0284
+        },
+        {
+          "hex": "#283646",
+          "coverage": 0.0257
+        }
+      ],
+      "detail": {
+        "energy": 51.2926
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      },
+      "type": {
+        "comp": {
+          "lines": 3,
+          "glyphs": 81,
+          "capHeightPx": 14.7,
+          "inkIsDark": false,
+          "allCaps": false,
+          "advance": 0.6178,
+          "advTall": 0.3685,
+          "advX": 0.6365,
+          "gap": 0.102,
+          "xRatio": 0.7078,
+          "stemW": 0.1479,
+          "contrast": 1.1226,
+          "serif": 0.6203,
+          "densTall": 0.4815,
+          "densX": 0.5175,
+          "weight": 0.4815
+        },
+        "widthClass": "normal",
+        "weightClass": "medium"
+      }
+    },
+    {
+      "id": "form-card",
+      "kind": "chrome",
+      "note": "quiet inset form surface with thin border",
+      "grid": null,
+      "container": true,
+      "box": {
+        "x": 0.6617,
+        "y": 0.5851,
+        "w": 0.3107,
+        "h": 0.3431
+      },
+      "px": {
+        "x": 984,
+        "y": 619,
+        "w": 462,
+        "h": 363
+      },
+      "aspect": 1.2727,
+      "palette": [
+        {
+          "hex": "#091829",
+          "coverage": 0.7976
+        },
+        {
+          "hex": "#094cf8",
+          "coverage": 0.1555
+        },
+        {
+          "hex": "#0a1a4a",
+          "coverage": 0.0187
+        },
+        {
+          "hex": "#8593a6",
+          "coverage": 0.015
+        },
+        {
+          "hex": "#3b4759",
+          "coverage": 0.0132
+        }
+      ],
+      "detail": {
+        "energy": 16.1623
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": true,
+        "rules": false
+      }
+    },
+    {
+      "id": "form-icon",
+      "kind": "control",
+      "note": "blue location icon tile",
+      "grid": null,
+      "box": {
+        "x": 0.6772,
+        "y": 0.6068,
+        "w": 0.0343,
+        "h": 0.0482
+      },
+      "px": {
+        "x": 1007,
+        "y": 642,
+        "w": 51,
+        "h": 51
+      },
+      "aspect": 1,
+      "palette": [
+        {
+          "hex": "#081c4e",
+          "coverage": 0.507
+        },
+        {
+          "hex": "#08213d",
+          "coverage": 0.4056
+        },
+        {
+          "hex": "#0c59e7",
+          "coverage": 0.0385
+        },
+        {
+          "hex": "#0a339b",
+          "coverage": 0.035
+        },
+        {
+          "hex": "#082478",
+          "coverage": 0.014
+        }
+      ],
+      "detail": {
+        "energy": 2.7482
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      }
+    },
+    {
+      "id": "form-title",
+      "kind": "text",
+      "note": "identify the property heading",
+      "grid": null,
+      "box": {
+        "x": 0.7209,
+        "y": 0.6078,
+        "w": 0.1466,
+        "h": 0.0274
+      },
+      "px": {
+        "x": 1072,
+        "y": 643,
+        "w": 218,
+        "h": 29
+      },
+      "aspect": 7.5172,
+      "palette": [
+        {
+          "hex": "#091626",
+          "coverage": 0.7507
+        },
+        {
+          "hex": "#f2f2f3",
+          "coverage": 0.1387
+        },
+        {
+          "hex": "#6f7280",
+          "coverage": 0.0406
+        },
+        {
+          "hex": "#bfc1cd",
+          "coverage": 0.0378
+        },
+        {
+          "hex": "#303749",
+          "coverage": 0.0322
+        }
+      ],
+      "detail": {
+        "energy": 67.8807
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      },
+      "type": {
+        "comp": {
+          "lines": 1,
+          "glyphs": 18,
+          "capHeightPx": 17,
+          "inkIsDark": false,
+          "allCaps": false,
+          "advance": 0.6161,
+          "advTall": 0.2054,
+          "advX": 0.6601,
+          "gap": 0.1174,
+          "xRatio": 0.6948,
+          "stemW": 0.1736,
+          "contrast": 1.1717,
+          "serif": null,
+          "densTall": 0.7282,
+          "densX": 0.588,
+          "weight": 0.7282
+        },
+        "widthClass": "normal",
+        "weightClass": "black"
+      }
+    },
+    {
+      "id": "form-help",
+      "kind": "text",
+      "note": "short form guidance paragraph",
+      "grid": null,
+      "box": {
+        "x": 0.7209,
+        "y": 0.6389,
+        "w": 0.2098,
+        "h": 0.0425
+      },
+      "px": {
+        "x": 1072,
+        "y": 676,
+        "w": 312,
+        "h": 45
+      },
+      "aspect": 6.9333,
+      "palette": [
+        {
+          "hex": "#091829",
+          "coverage": 0.8085
+        },
+        {
+          "hex": "#808fa7",
+          "coverage": 0.1032
+        },
+        {
+          "hex": "#4c5971",
+          "coverage": 0.0554
+        },
+        {
+          "hex": "#a9b9d2",
+          "coverage": 0.0187
+        },
+        {
+          "hex": "#29354c",
+          "coverage": 0.0142
+        }
+      ],
+      "detail": {
+        "energy": 39.2513
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      },
+      "type": {
+        "comp": {
+          "lines": 2,
+          "glyphs": 49,
+          "capHeightPx": 11.9,
+          "inkIsDark": false,
+          "allCaps": false,
+          "advance": 0.6071,
+          "advTall": 0.2786,
+          "advX": 0.6238,
+          "gap": 0.0828,
+          "xRatio": 0.6883,
+          "stemW": 0.1658,
+          "contrast": 1.1116,
+          "serif": 0.2838,
+          "densTall": 0.5999,
+          "densX": 0.5607,
+          "weight": 0.5999
+        },
+        "widthClass": "normal",
+        "weightClass": "bold"
+      }
+    },
+    {
+      "id": "field-label",
+      "kind": "text",
+      "note": "address field label",
+      "grid": null,
+      "box": {
+        "x": 0.6772,
+        "y": 0.6985,
+        "w": 0.111,
+        "h": 0.0227
+      },
+      "px": {
+        "x": 1007,
+        "y": 739,
+        "w": 165,
+        "h": 24
+      },
+      "aspect": 6.875,
+      "palette": [
+        {
+          "hex": "#091727",
+          "coverage": 0.7826
+        },
+        {
+          "hex": "#e5e6e8",
+          "coverage": 0.0847
+        },
+        {
+          "hex": "#606571",
+          "coverage": 0.0664
+        },
+        {
+          "hex": "#abafb6",
+          "coverage": 0.0481
+        },
+        {
+          "hex": "#303a3e",
+          "coverage": 0.0183
+        }
+      ],
+      "detail": {
+        "energy": 45.6961
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      },
+      "type": {
+        "comp": {
+          "lines": 1,
+          "glyphs": 12,
+          "capHeightPx": 11.3,
+          "inkIsDark": false,
+          "allCaps": false,
+          "advance": 0.676,
+          "advTall": 0.6613,
+          "advX": 0.676,
+          "gap": 0.0882,
+          "xRatio": 0.7207,
+          "stemW": 0.197,
+          "contrast": 1.0782,
+          "serif": null,
+          "densTall": 0.5965,
+          "densX": 0.6002,
+          "weight": 0.5965
+        },
+        "widthClass": "normal",
+        "weightClass": "bold"
+      }
+    },
+    {
+      "id": "address-input",
+      "kind": "control",
+      "note": "dark address input with visible border",
+      "grid": null,
+      "box": {
+        "x": 0.6772,
+        "y": 0.725,
+        "w": 0.2818,
+        "h": 0.052
+      },
+      "px": {
+        "x": 1007,
+        "y": 767,
+        "w": 419,
+        "h": 55
+      },
+      "aspect": 7.6182,
+      "palette": [
+        {
+          "hex": "#081727",
+          "coverage": 0.8786
+        },
+        {
+          "hex": "#28374b",
+          "coverage": 0.0822
+        },
+        {
+          "hex": "#787d8a",
+          "coverage": 0.0264
+        },
+        {
+          "hex": "#485363",
+          "coverage": 0.0121
+        },
+        {
+          "hex": "#182828",
+          "coverage": 0.0008
+        }
+      ],
+      "detail": {
+        "energy": 16.1517
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      }
+    },
+    {
+      "id": "primary-action",
+      "kind": "control",
+      "note": "full-width cobalt create draft button with arrow",
+      "grid": null,
+      "box": {
+        "x": 0.6772,
+        "y": 0.7902,
+        "w": 0.2824,
+        "h": 0.0614
+      },
+      "px": {
+        "x": 1007,
+        "y": 836,
+        "w": 420,
+        "h": 65
+      },
+      "aspect": 6.4615,
+      "palette": [
+        {
+          "hex": "#094cf8",
+          "coverage": 0.9255
+        },
+        {
+          "hex": "#0a3fae",
+          "coverage": 0.0443
+        },
+        {
+          "hex": "#e7f0f8",
+          "coverage": 0.0133
+        },
+        {
+          "hex": "#326ff8",
+          "coverage": 0.0087
+        },
+        {
+          "hex": "#bbd4f8",
+          "coverage": 0.0083
+        }
+      ],
+      "detail": {
+        "energy": 11.4823
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      }
+    },
+    {
+      "id": "form-foot",
+      "kind": "text",
+      "note": "helper text about opening the 12 item route",
+      "grid": null,
+      "box": {
+        "x": 0.6772,
+        "y": 0.8639,
+        "w": 0.2791,
+        "h": 0.0255
+      },
+      "px": {
+        "x": 1007,
+        "y": 914,
+        "w": 415,
+        "h": 27
+      },
+      "aspect": 15.3704,
+      "palette": [
+        {
+          "hex": "#091626",
+          "coverage": 0.8622
+        },
+        {
+          "hex": "#3f4d5d",
+          "coverage": 0.0596
+        },
+        {
+          "hex": "#808da3",
+          "coverage": 0.0451
+        },
+        {
+          "hex": "#616a87",
+          "coverage": 0.0169
+        },
+        {
+          "hex": "#303656",
+          "coverage": 0.0161
+        }
+      ],
+      "detail": {
+        "energy": 36.5309
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "surface": {
+        "flat": false,
+        "rules": false
+      },
+      "type": {
+        "comp": {
+          "lines": 1,
+          "glyphs": 49,
+          "capHeightPx": 10.4,
+          "inkIsDark": false,
+          "allCaps": false,
+          "advance": 0.4812,
+          "advTall": 0.3208,
+          "advX": 0.6095,
+          "gap": 0.0962,
+          "xRatio": 0.7231,
+          "stemW": 0.1905,
+          "contrast": 1.114,
+          "serif": 0.4846,
+          "densTall": 0.6043,
+          "densX": 0.5591,
+          "weight": 0.6043
+        },
+        "widthClass": "normal",
+        "weightClass": "bold"
+      }
+    }
+  ],
+  "compSha256": "daa6a4d8a1edcc6fbed6b44da74fbecd3a8aa7c3efa0df818422395fa20b0399",
+  "regionsSource": {
+    "path": ".impeccable\\build\\regions.json",
+    "sha256": "9db6d461ce04d4d1d7a5e4bce5140ddbbd62da0cfc688a38b3b861de906c14e5"
+  }
+}

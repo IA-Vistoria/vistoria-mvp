@@ -1,0 +1,43 @@
+{
+  "regions": [
+    { "id": "header", "kind": "chrome", "pixelBox": { "x": 0, "y": 0, "w": 1487, "h": 106 }, "note": "deep navy application header with subtle bottom rule", "container": true },
+    { "id": "brand", "kind": "plate", "pixelBox": { "x": 34, "y": 18, "w": 212, "h": 59 }, "note": "Vistor.IA logo lockup in mineral white and turquoise" },
+    { "id": "nav-home", "kind": "control", "pixelBox": { "x": 293, "y": 20, "w": 85, "h": 66 }, "note": "home navigation item with outline icon and label" },
+    { "id": "nav-new", "kind": "control", "pixelBox": { "x": 402, "y": 20, "w": 141, "h": 69 }, "note": "active new inspection navigation item with underline" },
+    { "id": "nav-reports", "kind": "control", "pixelBox": { "x": 565, "y": 20, "w": 130, "h": 66 }, "note": "reports navigation item with document icon" },
+    { "id": "account", "kind": "control", "pixelBox": { "x": 1164, "y": 20, "w": 203, "h": 56 }, "note": "signed-in user identity and role" },
+    { "id": "logout", "kind": "control", "pixelBox": { "x": 1407, "y": 19, "w": 58, "h": 55 }, "note": "outlined square logout control" },
+
+    { "id": "evidence-panel", "kind": "chrome", "pixelBox": { "x": 20, "y": 113, "w": 932, "h": 895 }, "note": "framed evidence workspace on navy surface", "container": true },
+    { "id": "facade-photo", "kind": "image", "pixelBox": { "x": 30, "y": 121, "w": 914, "h": 676 }, "note": "sunlit contemporary house facade photograph inside a camera viewport", "bleed": true },
+    { "id": "photo-mode", "kind": "control", "pixelBox": { "x": 87, "y": 155, "w": 157, "h": 31 }, "note": "dark caption tag reading fachada principal" },
+    { "id": "photo-count", "kind": "control", "pixelBox": { "x": 848, "y": 155, "w": 65, "h": 31 }, "note": "code-rendered count control showing 1 of 12", "codeDrawn": true },
+    { "id": "photo-caption", "kind": "text", "pixelBox": { "x": 91, "y": 725, "w": 365, "h": 44 }, "note": "caption identifying the facade view" },
+    { "id": "photo-expand", "kind": "control", "pixelBox": { "x": 876, "y": 723, "w": 48, "h": 45 }, "note": "fullscreen icon button" },
+
+    { "id": "thumb-facade", "kind": "image", "pixelBox": { "x": 34, "y": 822, "w": 121, "h": 129 }, "note": "portrait thumbnail of the house facade", "bleed": true },
+    { "id": "thumb-garage", "kind": "image", "pixelBox": { "x": 168, "y": 822, "w": 116, "h": 129 }, "note": "portrait thumbnail of a modern garage" },
+    { "id": "thumb-living", "kind": "image", "pixelBox": { "x": 301, "y": 822, "w": 115, "h": 129 }, "note": "portrait thumbnail of a contemporary living room" },
+    { "id": "thumb-kitchen", "kind": "image", "pixelBox": { "x": 434, "y": 822, "w": 114, "h": 129 }, "note": "portrait thumbnail of a contemporary kitchen", "bleed": true },
+    { "id": "thumb-exterior", "kind": "image", "pixelBox": { "x": 563, "y": 822, "w": 118, "h": 129 }, "note": "portrait thumbnail of an exterior garden" },
+    { "id": "thumb-bedroom", "kind": "image", "pixelBox": { "x": 696, "y": 822, "w": 115, "h": 129 }, "note": "portrait thumbnail of a modern bedroom", "bleed": true },
+    { "id": "thumb-labels", "kind": "text", "pixelBox": { "x": 34, "y": 957, "w": 779, "h": 26 }, "note": "six numbered room labels below the thumbnails" },
+    { "id": "add-photos", "kind": "control", "pixelBox": { "x": 827, "y": 822, "w": 113, "h": 131 }, "note": "code-rendered add photos control with dashed border", "codeDrawn": true },
+
+    { "id": "form-panel", "kind": "chrome", "pixelBox": { "x": 965, "y": 113, "w": 500, "h": 895 }, "note": "right operational panel on dark navy surface", "container": true },
+    { "id": "new-label", "kind": "text", "pixelBox": { "x": 1000, "y": 148, "w": 145, "h": 25 }, "note": "small tracked label nova vistoria" },
+    { "id": "stepper", "kind": "control", "pixelBox": { "x": 1007, "y": 187, "w": 414, "h": 54 }, "note": "four-step progress rail with first step active" },
+    { "id": "stage-label", "kind": "text", "pixelBox": { "x": 1000, "y": 267, "w": 151, "h": 22 }, "note": "small tracked label etapa 1 de 4" },
+    { "id": "headline", "kind": "text", "pixelBox": { "x": 1000, "y": 309, "w": 382, "h": 183 }, "note": "large balanced heading asking which property to document", "snap": false },
+    { "id": "intro", "kind": "text", "pixelBox": { "x": 1000, "y": 515, "w": 375, "h": 82 }, "note": "two-line explanatory paragraph about address and guided route" },
+
+    { "id": "form-card", "kind": "chrome", "pixelBox": { "x": 984, "y": 619, "w": 462, "h": 363 }, "note": "quiet inset form surface with thin border", "container": true },
+    { "id": "form-icon", "kind": "control", "pixelBox": { "x": 1007, "y": 642, "w": 51, "h": 51 }, "note": "blue location icon tile" },
+    { "id": "form-title", "kind": "text", "pixelBox": { "x": 1072, "y": 643, "w": 218, "h": 29 }, "note": "identify the property heading" },
+    { "id": "form-help", "kind": "text", "pixelBox": { "x": 1072, "y": 676, "w": 312, "h": 45 }, "note": "short form guidance paragraph" },
+    { "id": "field-label", "kind": "text", "pixelBox": { "x": 1007, "y": 739, "w": 165, "h": 24 }, "note": "address field label" },
+    { "id": "address-input", "kind": "control", "pixelBox": { "x": 1007, "y": 767, "w": 419, "h": 55 }, "note": "dark address input with visible border" },
+    { "id": "primary-action", "kind": "control", "pixelBox": { "x": 1007, "y": 836, "w": 420, "h": 65 }, "note": "full-width cobalt create draft button with arrow" },
+    { "id": "form-foot", "kind": "text", "pixelBox": { "x": 1007, "y": 914, "w": 415, "h": 27 }, "note": "helper text about opening the 12 item route" }
+  ]
+}

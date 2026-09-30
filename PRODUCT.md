@@ -1,0 +1,65 @@
+# Product
+
+<!-- impeccable:product-schema 1 -->
+
+## Platform
+
+web
+
+## Users
+
+O usuário principal é a pessoa que recebe, confere ou documenta um imóvel e precisa organizar uma vistoria sem conhecimento técnico especializado. O uso acontece em deslocamento entre ambientes, frequentemente pelo celular, com atenção dividida, iluminação variável e conexão possivelmente instável.
+
+## Product Purpose
+
+O Vistor.IA orienta a captura de evidências fotográficas, organiza a análise visual da IA, permite que o usuário confirme ou corrija o contexto e gera um Relatório de vistoria por IA rastreável. O sucesso é o usuário concluir esse percurso com evidências preservadas, limitações explícitas e um documento compreensível.
+
+## Positioning
+
+O produto mantém um rastro verificável entre foto, achado sugerido pela IA, decisão humana e trecho do relatório. A IA organiza e sugere; o usuário conserva o controle sobre o que entra no documento.
+
+## Operating Context
+
+- Captura móvel em ambientes internos e externos.
+- Upload de JPEG, PNG ou WebP para um roteiro de 12 itens.
+- Processamento assíncrono com retomada posterior.
+- Revisão de achados um a um antes da geração do relatório.
+- Consulta, impressão e compartilhamento do documento final.
+
+## Capabilities and Constraints
+
+- O fluxo público cria somente usuários clientes.
+- A jornada principal contém início, nova vistoria, captura guiada, análise, revisão e relatório.
+- A interface consome os contratos existentes de `/api/auth` e `/api/vistorias` sem alterá-los neste redesign.
+- Estados legados de engenharia podem permanecer no código por compatibilidade, mas não orientam a jornada principal do MVP.
+- A IA aponta indícios visuais; o produto não promete diagnóstico, conformidade normativa, validade jurídica ou certificação profissional.
+- Fotos e progresso confirmados devem permanecer recuperáveis após falhas de upload ou análise.
+
+## Brand Commitments
+
+- Nome: **Vistor.IA**.
+- Categoria comunicada pela marca: vistoria de imóveis assistida por inteligência artificial, culminando em relatório.
+- Direção visual aprovada: **Lente Operacional**, escura, fotográfica, precisa e voltada ao trabalho de campo.
+- Marca aprovada: estrutura de imóvel, enquadramento de varredura e nós de IA; branco mineral e turquesa como cores da assinatura.
+- Amarelo-lima é reservado ao progresso e à ação contextual, não ao logotipo.
+- Linguagem direta, profissional e acessível, sem tom jurídico ou promessas técnicas indevidas.
+
+## Evidence on Hand
+
+- Conceito visual aprovado: `C:/Users/vine/.codex/generated_images/01a0eff1-ef3a-74d0-8fd7-dd0494576084/exec-1be9f796-2054-4264-8c51-a7bfd4861639.png`.
+- Protótipo navegável anterior: `prototipo/VistorIA-prototipo-navegavel.html`.
+- Especificação de produto: `docs/superpowers/specs/2026-09-30-interface-ia-first-design.md`.
+- Implementação funcional e testes em `app/frontend`.
+- Não existem depoimentos, métricas comerciais ou certificações autorizadas; não devem ser fabricados.
+
+## Product Principles
+
+1. Evidência antes da conclusão.
+2. IA explicável, corrigível e limitada.
+3. Uma decisão importante por tela.
+4. Progresso real, sem sucesso fabricado.
+5. Continuidade entre captura, revisão e relatório.
+
+## Accessibility & Inclusion
+
+A interface deve alcançar WCAG 2.2 AA, manter foco visível, alvos de toque de ao menos 44 px, labels persistentes, mensagens de erro anunciadas e alternativa à câmera pela galeria. O layout precisa permanecer utilizável em 390, 768 e 1440 px, com zoom do navegador e preferência por movimento reduzido.
