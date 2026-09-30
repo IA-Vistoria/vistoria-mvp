@@ -168,14 +168,14 @@ O MVP atual combina uma interface genérica com um protocolo fixo de 12 itens t�
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| ROTEIRO-01 | P1: Configurar roteiro | Design | In Design |
-| ROTEIRO-02 | P1: Editar roteiro | Design | In Design |
-| CAPTURA-01 | P1: Captura estruturada | Design | In Design |
-| ENVIO-01 | P1: Coleta completa | Design | In Design |
-| RELATORIO-01 | P1: Revisão e relatório | Design | In Design |
-| UI-01 | P2: Interface acessível | Design | In Design |
+| ROTEIRO-01 | P1: Configurar roteiro | Implementation | In Progress |
+| ROTEIRO-02 | P1: Editar roteiro | Implementation | Planned |
+| CAPTURA-01 | P1: Captura estruturada | Implementation | In Progress |
+| ENVIO-01 | P1: Coleta completa | Implementation | Planned |
+| RELATORIO-01 | P1: Revisão e relatório | Implementation | Planned |
+| UI-01 | P2: Interface acessível | Implementation | Planned |
 
-**Coverage:** 6 total, 0 mapped to tasks, 6 unmapped.
+**Coverage:** 6 total, 6 mapped to tasks, 0 unmapped.
 
 ---
 

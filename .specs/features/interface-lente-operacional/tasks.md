@@ -67,6 +67,7 @@ T7 → T8
 **Depends on**: None
 **Reuses**: `Vistoria`, `ImagemVistoria`, Flyway e Testcontainers existentes.
 **Requirement**: ROTEIRO-01, CAPTURA-01
+**Status**: Complete
 
 **Tools**:
 
@@ -74,10 +75,10 @@ T7 → T8
 
 **Done when**:
 
-- [ ] O agregado aceita de 1 a 30 ambientes ordenados e rejeita nomes duplicados.
-- [ ] Imagem nova referencia ambiente e categoria; leitura legada continua possível.
-- [ ] Migration executa no PostgreSQL de integração sem editar migrations antigas.
-- [ ] Gate full passa com todos os testes anteriores e ao menos 6 novos cenários.
+- [x] O agregado aceita de 1 a 30 ambientes ordenados e rejeita nomes duplicados.
+- [x] Imagem nova referencia ambiente e categoria; leitura legada continua possível.
+- [x] Migration executa no PostgreSQL de integração sem editar migrations antigas.
+- [x] Gate full passa com todos os testes anteriores e ao menos 6 novos cenários.
 
 **Tests**: unit + integration
 **Gate**: full

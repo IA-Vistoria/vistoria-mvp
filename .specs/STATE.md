@@ -29,10 +29,10 @@
 ## Handoff
 
 - **feature**: `interface-lente-operacional`
-- **phase**: Especificação e tarefas revisadas
-- **completed**: Paleta revisada e fluxo adaptativo definidos pelo usuário
-- **in_progress**: Validação estrutural da especificação
-- **next_step**: Validar spec e tasks, registrar o plano e executar T1
+- **phase**: Implementação da rota estruturada
+- **completed**: T1 — domínio, persistência e migration V8 do roteiro adaptativo
+- **in_progress**: T2 — contratos de criação e edição do roteiro
+- **next_step**: Implementar `POST /api/vistorias` atômico e `PUT /api/vistorias/{id}/roteiro`
 - **blockers**: Nenhum
-- **uncommitted_files**: `.specs/`, `.impeccable/`, `assets/`, `app/frontend/src/components/brand/`
+- **uncommitted_files**: `.impeccable/build/`, `.impeccable/review/`, `assets/`, `app/frontend/src/components/brand/`
 - **branch**: `codex/especifica-interface-ia-first`

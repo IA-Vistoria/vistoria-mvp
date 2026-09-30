@@ -22,6 +22,14 @@ public class ImagemVistoria {
     @Column(nullable = false, length = 100)
     private String protocoloItem;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ambiente_id")
+    private AmbienteVistoria ambiente;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private CategoriaEvidencia categoria;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataUpload;
 
@@ -32,6 +40,28 @@ public class ImagemVistoria {
         this.vistoria = vistoria;
         this.url = url;
         this.protocoloItem = protocoloItem;
+        this.dataUpload = dataUpload;
+    }
+
+    public ImagemVistoria(
+            Vistoria vistoria,
+            AmbienteVistoria ambiente,
+            CategoriaEvidencia categoria,
+            String url,
+            LocalDateTime dataUpload) {
+        if (ambiente == null || categoria == null) {
+            throw new RoteiroVistoriaInvalidoException(
+                    "Ambiente e categoria são obrigatórios para uma evidência nova.");
+        }
+        if (ambiente.getVistoria() != vistoria) {
+            throw new RoteiroVistoriaInvalidoException(
+                    "O ambiente da evidência deve pertencer à vistoria.");
+        }
+        this.vistoria = vistoria;
+        this.ambiente = ambiente;
+        this.categoria = categoria;
+        this.url = url;
+        this.protocoloItem = ambiente.getTipo().name() + "_" + categoria.name();
         this.dataUpload = dataUpload;
     }
 
@@ -65,6 +95,14 @@ public class ImagemVistoria {
 
     public void setProtocoloItem(String protocoloItem) {
         this.protocoloItem = protocoloItem;
+    }
+
+    public AmbienteVistoria getAmbiente() {
+        return ambiente;
+    }
+
+    public CategoriaEvidencia getCategoria() {
+        return categoria;
     }
 
     public LocalDateTime getDataUpload() {

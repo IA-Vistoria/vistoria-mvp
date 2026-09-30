@@ -4,6 +4,10 @@ import br.com.vistoriapredial.usuario.domain.PerfilEnum;
 import br.com.vistoriapredial.usuario.domain.Usuario;
 import br.com.vistoriapredial.usuario.persistence.UsuarioRepository;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
+import br.com.vistoriapredial.vistoria.domain.AmbienteVistoria;
+import br.com.vistoriapredial.vistoria.domain.CategoriaEvidencia;
+import br.com.vistoriapredial.vistoria.domain.TipoAmbiente;
+import br.com.vistoriapredial.vistoria.domain.TipoImovel;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
 import jakarta.persistence.EntityManager;
@@ -34,6 +38,37 @@ class VistoriaRepositoryTest {
 
     @Autowired
     private EntityManagerFactory entityManagerFactory;
+
+    @Test
+    void shouldSaveAdaptiveRouteAndStructuredEvidence() {
+        Usuario cliente = usuarioRepository.save(new Usuario(
+                "Cliente", "cliente-roteiro@test.com", "hash", PerfilEnum.ROLE_CLIENTE, null));
+        Vistoria vistoria = new Vistoria();
+        vistoria.setCliente(cliente);
+        AmbienteVistoria sala = AmbienteVistoria.criar(TipoAmbiente.SALA, "Sala", 0);
+        AmbienteVistoria escritorio = AmbienteVistoria.criar(
+                TipoAmbiente.ESCRITORIO, "Escritório", 1);
+        vistoria.configurarRoteiro(TipoImovel.APARTAMENTO, List.of(sala, escritorio));
+        vistoria.getImagens().add(new ImagemVistoria(
+                vistoria,
+                sala,
+                CategoriaEvidencia.VISAO_GERAL,
+                "uploads/sala-geral.jpg",
+                LocalDateTime.now()));
+
+        Long id = vistoriaRepository.saveAndFlush(vistoria).getId();
+        entityManager.clear();
+
+        Vistoria persisted = vistoriaRepository.findById(id).orElseThrow();
+        assertThat(persisted.getTipoImovel()).isEqualTo(TipoImovel.APARTAMENTO);
+        assertThat(persisted.getAmbientes())
+                .extracting(AmbienteVistoria::getNome)
+                .containsExactly("Sala", "Escritório");
+        assertThat(persisted.getImagens()).singleElement().satisfies(imagem -> {
+            assertThat(imagem.getAmbiente().getNome()).isEqualTo("Sala");
+            assertThat(imagem.getCategoria()).isEqualTo(CategoriaEvidencia.VISAO_GERAL);
+        });
+    }
 
     @Test
     void shouldSaveVistoriaWithImagens() {

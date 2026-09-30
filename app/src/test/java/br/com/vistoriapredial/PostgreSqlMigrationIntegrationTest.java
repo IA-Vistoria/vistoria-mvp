@@ -24,7 +24,45 @@ class PostgreSqlMigrationIntegrationTest {
             MigrateResult result = flyway.migrate();
 
             assertThat(result.success).isTrue();
-            assertThat(result.targetSchemaVersion).isEqualTo("7");
+            assertThat(result.targetSchemaVersion).isEqualTo("8");
+
+            try (var connection = postgres.createConnection("");
+                 var statement = connection.prepareStatement("""
+                         SELECT column_name, is_nullable, data_type
+                           FROM information_schema.columns
+                          WHERE table_schema = 'public'
+                            AND table_name = 'tb_ambiente_vistoria'
+                          ORDER BY ordinal_position
+                         """);
+                 var columns = statement.executeQuery()) {
+                Map<String, String> nullability = new HashMap<>();
+                while (columns.next()) {
+                    nullability.put(columns.getString("column_name"), columns.getString("is_nullable"));
+                }
+                assertThat(nullability)
+                        .containsEntry("vistoria_id", "NO")
+                        .containsEntry("tipo", "NO")
+                        .containsEntry("nome", "NO")
+                        .containsEntry("ordem", "NO");
+            }
+
+            try (var connection = postgres.createConnection("");
+                 var statement = connection.prepareStatement("""
+                         SELECT column_name, is_nullable
+                           FROM information_schema.columns
+                          WHERE table_schema = 'public'
+                            AND table_name = 'tb_imagem_vistoria'
+                            AND column_name IN ('ambiente_id', 'categoria')
+                         """);
+                 var columns = statement.executeQuery()) {
+                Map<String, String> nullability = new HashMap<>();
+                while (columns.next()) {
+                    nullability.put(columns.getString("column_name"), columns.getString("is_nullable"));
+                }
+                assertThat(nullability)
+                        .containsEntry("ambiente_id", "YES")
+                        .containsEntry("categoria", "YES");
+            }
 
             try (var connection = postgres.createConnection("");
                  var statement = connection.prepareStatement("""
