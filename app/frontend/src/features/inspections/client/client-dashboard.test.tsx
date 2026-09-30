@@ -82,6 +82,26 @@ describe("ClientDashboard", () => {
     );
   });
 
+  it("explica o fluxo do produto antes de apresentar a próxima ação", async () => {
+    vi.mocked(listMyInspections).mockResolvedValue(page([draftInspection]));
+
+    render(<ClientDashboard />);
+
+    const heading = await screen.findByRole("heading", { name: "Acompanhe suas vistorias" });
+    expect(screen.getByText(/continue registros em andamento, revise as observações da IA/i)).toBeDefined();
+    expect(screen.queryByText("O próximo passo, sem ruído.")).toBeNull();
+
+    const flow = screen.getByRole("region", { name: "Da coleta ao relatório" });
+    expect(within(flow).getByText("Defina os ambientes")).toBeDefined();
+    expect(within(flow).getByText("Registre as fotos")).toBeDefined();
+    expect(within(flow).getByText("Revise a análise")).toBeDefined();
+    expect(within(flow).getByText("Acesse o relatório")).toBeDefined();
+
+    const nextAction = screen.getByTestId("next-action");
+    expect(heading.compareDocumentPosition(flow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(flow.compareDocumentPosition(nextAction) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("mostra o progresso real dos ambientes sem mencionar protocolo fixo", async () => {
     vi.mocked(listMyInspections).mockResolvedValue(page([{
       ...draftInspection,

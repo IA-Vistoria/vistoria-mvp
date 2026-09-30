@@ -5,13 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getSession, setSession } from "@/lib/auth";
 import { DashboardShell } from "./DashboardShell";
 
-const { replace, searchParamsGet } = vi.hoisted(() => ({
+const { replace, searchParamsGet, pathnameState } = vi.hoisted(() => ({
   replace: vi.fn(),
   searchParamsGet: vi.fn(),
+  pathnameState: { current: "/client" },
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/client",
+  usePathname: () => pathnameState.current,
   useRouter: () => ({ replace }),
   useSearchParams: () => ({ get: searchParamsGet }),
 }));
@@ -21,6 +22,7 @@ describe("DashboardShell", () => {
     replace.mockReset();
     searchParamsGet.mockReset();
     searchParamsGet.mockReturnValue(null);
+    pathnameState.current = "/client";
     setSession({
       token: "jwt",
       tipo: "Bearer",
@@ -94,5 +96,24 @@ describe("DashboardShell", () => {
     const navigation = screen.getByRole("navigation", { name: "Navegação principal" });
     expect(within(navigation).getByRole("link", { name: "Relatórios" }).className).toContain("is-active");
     expect(within(navigation).getByRole("link", { name: "Início" }).className).not.toContain("is-active");
+  });
+
+  it("leva a área principal ao topo quando a rota muda", async () => {
+    const { rerender } = render(
+      <DashboardShell role="ROLE_CLIENTE">
+        <p>Conteúdo inicial</p>
+      </DashboardShell>,
+    );
+    const main = screen.getByRole("main");
+    main.scrollTop = 420;
+
+    pathnameState.current = "/client/vistorias/42";
+    rerender(
+      <DashboardShell role="ROLE_CLIENTE">
+        <p>Conteúdo da vistoria</p>
+      </DashboardShell>,
+    );
+
+    await vi.waitFor(() => expect(main.scrollTop).toBe(0));
   });
 });

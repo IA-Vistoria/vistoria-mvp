@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 import { getSession, removeSession, type UserRole } from "@/lib/auth";
 import { BrandMark } from "@/components/brand/BrandMark";
@@ -26,6 +27,13 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
   const session = getSession();
   const engineer = role === "ROLE_ENGENHEIRO";
   const reportsActive = !engineer && pathname === "/client" && searchParams.get("filtro") === "relatorios";
+  const contentRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+    contentRef.current.scrollTop = 0;
+    contentRef.current.scrollLeft = 0;
+  }, [pathname, reportsActive]);
 
   function logout() {
     removeSession();
@@ -74,7 +82,7 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
         </div>
       </header>
 
-      <main className="app-content">{children}</main>
+      <main className="app-content" ref={contentRef}>{children}</main>
 
       {!engineer ? (
         <nav className="mobile-nav" aria-label="Navegação móvel">

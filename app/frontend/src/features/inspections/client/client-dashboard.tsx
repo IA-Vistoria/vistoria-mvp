@@ -56,6 +56,42 @@ interface ClientDashboardProps {
   view?: "overview" | "reports";
 }
 
+const FLOW_STEPS = [
+  { title: "Defina os ambientes", description: "Inclua somente os espaços que existem no imóvel." },
+  { title: "Registre as fotos", description: "Envie uma visão geral por ambiente e detalhes quando precisar." },
+  { title: "Revise a análise", description: "Confirme, corrija ou rejeite cada observação feita pela IA." },
+  { title: "Acesse o relatório", description: "Consulte as evidências junto das decisões que você registrou." },
+];
+
+function DashboardIntroduction({ showAction = true }: { showAction?: boolean }) {
+  return (
+    <>
+      <header className="page-heading dashboard-heading">
+        <div>
+          <h1>Acompanhe suas vistorias</h1>
+          <p>Continue registros em andamento, revise as observações da IA e acesse relatórios concluídos.</p>
+        </div>
+        {showAction ? <Link className="button button--primary" href="/client/vistorias/nova"><Plus size={18} />Nova vistoria</Link> : null}
+      </header>
+
+      <section className="dashboard-flow" aria-labelledby="dashboard-flow-title">
+        <div className="dashboard-flow__intro">
+          <h2 id="dashboard-flow-title">Da coleta ao relatório</h2>
+          <p>Você mantém o controle do começo ao fim. A IA organiza indícios, mas nenhuma observação entra no relatório sem sua revisão.</p>
+        </div>
+        <ol>
+          {FLOW_STEPS.map((step, index) => (
+            <li key={step.title}>
+              <span aria-hidden="true">{index + 1}</span>
+              <div><strong>{step.title}</strong><small>{step.description}</small></div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </>
+  );
+}
+
 export function ClientDashboard({ view = "overview" }: ClientDashboardProps) {
   const [page, setPage] = useState(0);
   const [data, setData] = useState<PageResponse<Inspection> | null>(null);
@@ -126,12 +162,15 @@ export function ClientDashboard({ view = "overview" }: ClientDashboardProps) {
       );
     }
     return (
-      <AsyncState
-        eyebrow="Sua primeira vistoria"
-        title="Nenhuma vistoria iniciada"
-        description="Transforme fotos, contexto e relatório em um registro claro do imóvel. Você começa pelo endereço e avança no seu ritmo."
-        action={<Link className="button button--primary" href="/client/vistorias/nova"><Plus size={18} />Iniciar primeira vistoria</Link>}
-      />
+      <div className="dashboard-page">
+        <DashboardIntroduction showAction={false} />
+        <AsyncState
+          eyebrow="Sua primeira vistoria"
+          title="Nenhuma vistoria iniciada"
+          description="Transforme fotos, contexto e relatório em um registro claro do imóvel. Você começa pelo endereço e avança no seu ritmo."
+          action={<Link className="button button--primary" href="/client/vistorias/nova"><Plus size={18} />Iniciar primeira vistoria</Link>}
+        />
+      </div>
     );
   }
 
@@ -192,14 +231,7 @@ export function ClientDashboard({ view = "overview" }: ClientDashboardProps) {
 
   return (
     <div className="dashboard-page">
-      <header className="page-heading dashboard-heading">
-        <div>
-          <p className="eyebrow">Visão geral</p>
-          <h1>O próximo passo, sem ruído.</h1>
-          <p>Capture evidências, confirme o contexto e acompanhe seu Relatório de vistoria por IA.</p>
-        </div>
-        <Link className="button button--primary" href="/client/vistorias/nova"><Plus size={18} />Nova vistoria</Link>
-      </header>
+      <DashboardIntroduction />
 
       <section className="next-action-card" data-testid="next-action" aria-labelledby="next-action-title">
         <div className="next-action-card__icon" aria-hidden="true">
