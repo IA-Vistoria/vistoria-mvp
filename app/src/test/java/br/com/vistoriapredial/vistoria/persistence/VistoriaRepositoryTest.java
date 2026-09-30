@@ -6,6 +6,7 @@ import br.com.vistoriapredial.usuario.persistence.UsuarioRepository;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
 import br.com.vistoriapredial.vistoria.domain.AmbienteVistoria;
 import br.com.vistoriapredial.vistoria.domain.CategoriaEvidencia;
+import br.com.vistoriapredial.vistoria.domain.ItemRoteiroVistoria;
 import br.com.vistoriapredial.vistoria.domain.TipoAmbiente;
 import br.com.vistoriapredial.vistoria.domain.TipoImovel;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
@@ -68,6 +69,36 @@ class VistoriaRepositoryTest {
             assertThat(imagem.getAmbiente().getNome()).isEqualTo("Sala");
             assertThat(imagem.getCategoria()).isEqualTo(CategoriaEvidencia.VISAO_GERAL);
         });
+    }
+
+    @Test
+    void shouldPersistRouteReorderingWithoutBreakingUniqueOrderConstraint() {
+        Usuario cliente = usuarioRepository.save(new Usuario(
+                "Cliente", "cliente-reordena@test.com", "hash", PerfilEnum.ROLE_CLIENTE, null));
+        Vistoria vistoria = new Vistoria();
+        vistoria.setCliente(cliente);
+        vistoria.configurarRoteiro(TipoImovel.APARTAMENTO, List.of(
+                AmbienteVistoria.criar(TipoAmbiente.SALA, "Sala", 0),
+                AmbienteVistoria.criar(TipoAmbiente.QUARTO, "Quarto", 1)));
+        Long id = vistoriaRepository.saveAndFlush(vistoria).getId();
+        entityManager.clear();
+
+        Vistoria persistida = vistoriaRepository.findById(id).orElseThrow();
+        AmbienteVistoria sala = persistida.getAmbientes().getFirst();
+        AmbienteVistoria quarto = persistida.getAmbientes().getLast();
+        Long versaoOriginal = persistida.getVersion();
+        persistida.atualizarRoteiro(TipoImovel.APARTAMENTO, List.of(
+                new ItemRoteiroVistoria(quarto.getId(), quarto.getTipo(), quarto.getNome()),
+                new ItemRoteiroVistoria(sala.getId(), sala.getTipo(), sala.getNome())));
+
+        vistoriaRepository.saveAndFlush(persistida);
+        entityManager.clear();
+
+        Vistoria reordenada = vistoriaRepository.findById(id).orElseThrow();
+        assertThat(reordenada.getVersion()).isGreaterThan(versaoOriginal);
+        assertThat(reordenada.getAmbientes())
+                .extracting(AmbienteVistoria::getNome)
+                .containsExactly("Quarto", "Sala");
     }
 
     @Test

@@ -24,7 +24,7 @@ class PostgreSqlMigrationIntegrationTest {
             MigrateResult result = flyway.migrate();
 
             assertThat(result.success).isTrue();
-            assertThat(result.targetSchemaVersion).isEqualTo("8");
+            assertThat(result.targetSchemaVersion).isEqualTo("9");
 
             try (var connection = postgres.createConnection("");
                  var statement = connection.prepareStatement("""
@@ -90,6 +90,21 @@ class PostgreSqlMigrationIntegrationTest {
                 assertThat(columns.getString("is_nullable")).isEqualTo("NO");
                 assertThat(columns.getString("column_default")).contains("0");
                 assertThat(columns.getString("data_type")).isEqualTo("bigint");
+            }
+
+            try (var connection = postgres.createConnection("");
+                 var statement = connection.prepareStatement("""
+                         SELECT is_nullable, column_default, data_type
+                           FROM information_schema.columns
+                          WHERE table_schema = 'public'
+                            AND table_name = 'tb_vistoria'
+                            AND column_name = 'roteiro_revisao'
+                         """);
+                 var columns = statement.executeQuery()) {
+                assertThat(columns.next()).isTrue();
+                assertThat(columns.getString("is_nullable")).isEqualTo("NO");
+                assertThat(columns.getString("column_default")).contains("0");
+                assertThat(columns.getString("data_type")).isEqualTo("integer");
             }
 
             try (var connection = postgres.createConnection("");

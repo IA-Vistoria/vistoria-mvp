@@ -15,6 +15,10 @@ import br.com.vistoriapredial.vistoria.application.exception.VistoriaNotFoundExc
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
+import br.com.vistoriapredial.vistoria.domain.AmbienteVistoria;
+import br.com.vistoriapredial.vistoria.domain.RoteiroVistoriaConflitoException;
+import br.com.vistoriapredial.vistoria.domain.TipoAmbiente;
+import br.com.vistoriapredial.vistoria.domain.TipoImovel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -85,13 +89,18 @@ class VistoriaControllerTest {
         Vistoria v = new Vistoria();
         v.setCliente(cliente);
         v.setStatus(VistoriaStatus.EM_RASCUNHO);
+        v.configurarRoteiro(TipoImovel.APARTAMENTO, List.of(
+                AmbienteVistoria.criar(TipoAmbiente.SALA, "Sala", 0)));
         ReflectionTestUtils.setField(v, "id", 10L);
+        ReflectionTestUtils.setField(v, "version", 0L);
 
         when(vistoriaService.criarVistoria(any(), any())).thenReturn(v);
 
         String payload = """
                 {
-                    "endereco": "Rua 1"
+                    "endereco": "Rua 1",
+                    "tipoImovel": "APARTAMENTO",
+                    "ambientes": [{"tipo":"SALA","nome":"Sala"}]
                 }
                 """;
 
@@ -99,7 +108,10 @@ class VistoriaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(10));
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.version").value(0))
+                .andExpect(jsonPath("$.tipoImovel").value("APARTAMENTO"))
+                .andExpect(jsonPath("$.ambientes[0].nome").value("Sala"));
     }
 
     @Test
@@ -107,9 +119,81 @@ class VistoriaControllerTest {
     void shouldRejectAddressLargerThanPersistenceLimit() throws Exception {
         mockMvc.perform(post("/api/vistorias")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"endereco\":\"" + "a".repeat(256) + "\"}"))
+                        .content("{\"endereco\":\"" + "a".repeat(256)
+                                + "\",\"tipoImovel\":\"CASA\",\"ambientes\":[{\"tipo\":\"SALA\",\"nome\":\"Sala\"}]}"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldRejectCreationWithoutRooms() throws Exception {
+        mockMvc.perform(post("/api/vistorias")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"endereco":"Rua 1","tipoImovel":"CASA","ambientes":[]}
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errors[0].pointer").value("#/ambientes"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldPointToInvalidRoomNameInsideRoute() throws Exception {
+        mockMvc.perform(post("/api/vistorias")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"endereco":"Rua 1","tipoImovel":"CASA","ambientes":[
+                                  {"tipo":"SALA","nome":"A"}
+                                ]}
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errors[0].pointer").value("#/ambientes/0/nome"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldUpdateInspectionRoute() throws Exception {
+        Vistoria vistoria = new Vistoria();
+        vistoria.setCliente(cliente);
+        vistoria.setStatus(VistoriaStatus.EM_RASCUNHO);
+        vistoria.configurarRoteiro(TipoImovel.CASA, List.of(
+                AmbienteVistoria.criar(TipoAmbiente.SALA, "Sala integrada", 0)));
+        ReflectionTestUtils.setField(vistoria, "id", 10L);
+        ReflectionTestUtils.setField(vistoria, "version", 4L);
+        when(vistoriaService.atualizarRoteiro(eq(10L), eq(cliente), any())).thenReturn(vistoria);
+
+        mockMvc.perform(put("/api/vistorias/10/roteiro")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version":3,"tipoImovel":"CASA","ambientes":[
+                                  {"id":11,"tipo":"SALA","nome":"Sala integrada"}
+                                ]}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(4))
+                .andExpect(jsonPath("$.ambientes[0].nome").value("Sala integrada"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldReturnConflictWhenRouteWouldRemoveEvidence() throws Exception {
+        when(vistoriaService.atualizarRoteiro(eq(10L), eq(cliente), any()))
+                .thenThrow(new RoteiroVistoriaConflitoException(
+                        "O ambiente Sala possui evidências e não pode ser removido."));
+
+        mockMvc.perform(put("/api/vistorias/10/roteiro")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version":3,"tipoImovel":"CASA","ambientes":[
+                                  {"id":12,"tipo":"QUARTO","nome":"Quarto"}
+                                ]}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:route-conflict"));
     }
 
     @Test

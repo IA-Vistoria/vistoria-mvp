@@ -41,6 +41,10 @@ public final class ProblemTypes {
             URI.create("urn:vistoria:problem:incomplete-review");
     public static final URI INVALID_REVIEW =
             URI.create("urn:vistoria:problem:invalid-review");
+    public static final URI INVALID_ROUTE =
+            URI.create("urn:vistoria:problem:invalid-route");
+    public static final URI ROUTE_CONFLICT =
+            URI.create("urn:vistoria:problem:route-conflict");
     public static final URI INTERNAL_ERROR =
             URI.create("urn:vistoria:problem:internal-error");
 

@@ -11,6 +11,8 @@ import br.com.vistoriapredial.vistoria.application.exception.VistoriaNotFoundExc
 import br.com.vistoriapredial.vistoria.application.exception.FindingNotFoundException;
 import br.com.vistoriapredial.vistoria.application.exception.IncompleteReviewException;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidReviewException;
+import br.com.vistoriapredial.vistoria.domain.RoteiroVistoriaConflitoException;
+import br.com.vistoriapredial.vistoria.domain.RoteiroVistoriaInvalidoException;
 import br.com.vistoriapredial.usuario.application.exception.EngineerRegistrationDeniedException;
 import br.com.vistoriapredial.usuario.application.exception.UsuarioConflictException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -226,6 +228,35 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         );
     }
 
+    @ExceptionHandler(RoteiroVistoriaInvalidoException.class)
+    public ResponseEntity<ProblemDetail> handleRoteiroInvalido(
+            RoteiroVistoriaInvalidoException exception,
+            HttpServletRequest request) {
+        ProblemDetail problem = createProblem(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ProblemTypes.INVALID_ROUTE,
+                "Roteiro inválido",
+                exception.getMessage(),
+                URI.create(request.getRequestURI()));
+        problem.setProperty("errors", List.of(
+                new ValidationError(exception.getMessage(), "#/ambientes")));
+        return ResponseEntity.unprocessableEntity()
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(problem);
+    }
+
+    @ExceptionHandler(RoteiroVistoriaConflitoException.class)
+    public ResponseEntity<ProblemDetail> handleRoteiroConflito(
+            RoteiroVistoriaConflitoException exception,
+            HttpServletRequest request) {
+        return createResponse(
+                HttpStatus.CONFLICT,
+                ProblemTypes.ROUTE_CONFLICT,
+                "Roteiro não pode ser alterado",
+                exception.getMessage(),
+                URI.create(request.getRequestURI()));
+    }
+
     @Override
     protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
             MaxUploadSizeExceededException exception,
@@ -380,7 +411,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private String toJsonPointer(String field) {
-        return Stream.of(field.split("\\."))
+        String normalized = field.replaceAll("\\[(\\d+)]", ".$1");
+        return Stream.of(normalized.split("\\."))
                 .map(this::escapeJsonPointerToken)
                 .collect(Collectors.joining("/", "#/", ""));
     }

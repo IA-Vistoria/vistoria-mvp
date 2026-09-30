@@ -21,9 +21,14 @@ public class VistoriaResponseMapper {
         AnaliseVistoria analysis = parseAnalysis(vistoria);
         return new VistoriaResponseDto(
                 vistoria.getId(),
+                vistoria.getVersion(),
                 vistoria.getCliente().getId(),
                 vistoria.getStatus(),
                 vistoria.getEndereco(),
+                vistoria.getTipoImovel(),
+                vistoria.getAmbientes().stream()
+                        .map(AmbienteVistoriaResponseDto::from)
+                        .toList(),
                 vistoria.getDataCriacao(),
                 vistoria.getDataConclusao(),
                 vistoria.getImagens().stream()

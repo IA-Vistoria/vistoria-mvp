@@ -30,9 +30,9 @@
 
 - **feature**: `interface-lente-operacional`
 - **phase**: Implementação da rota estruturada
-- **completed**: T1 — domínio, persistência e migration V8 do roteiro adaptativo
-- **in_progress**: T2 — contratos de criação e edição do roteiro
-- **next_step**: Implementar `POST /api/vistorias` atômico e `PUT /api/vistorias/{id}/roteiro`
+- **completed**: T1 — domínio e persistência do roteiro; T2 — criação e edição atômica com migrations V8/V9
+- **in_progress**: T3 — upload estruturado e regra de completude
+- **next_step**: Associar upload a ambiente/categoria e exigir uma visão geral por ambiente antes do envio
 - **blockers**: Nenhum
 - **uncommitted_files**: `.impeccable/build/`, `.impeccable/review/`, `assets/`, `app/frontend/src/components/brand/`
 - **branch**: `codex/especifica-interface-ia-first`

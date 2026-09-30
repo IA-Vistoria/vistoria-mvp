@@ -54,8 +54,19 @@ public class VistoriaController {
             @RequestBody @Valid CriarVistoriaRequestDto request,
             Authentication auth) {
         Usuario cliente = getUsuario(auth);
-        Vistoria v = vistoriaService.criarVistoria(cliente, request.endereco());
+        Vistoria v = vistoriaService.criarVistoria(cliente, request.toCommand());
         return ResponseEntity.status(HttpStatus.CREATED).body(responseMapper.toResponse(v));
+    }
+
+    @PutMapping("/{id}/roteiro")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<VistoriaResponseDto> atualizarRoteiro(
+            @PathVariable Long id,
+            @RequestBody @Valid AtualizarRoteiroRequestDto request,
+            Authentication auth) {
+        Usuario cliente = getUsuario(auth);
+        Vistoria vistoria = vistoriaService.atualizarRoteiro(id, cliente, request.toCommand());
+        return ResponseEntity.ok(responseMapper.toResponse(vistoria));
     }
 
     @GetMapping("/minhas")

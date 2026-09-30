@@ -92,6 +92,7 @@ T7 → T8
 **Depends on**: T1
 **Reuses**: `VistoriaService`, `VistoriaController`, `ProblemDetail` e `@Version`.
 **Requirement**: ROTEIRO-01, ROTEIRO-02
+**Status**: Complete
 
 **Tools**:
 
@@ -99,10 +100,10 @@ T7 → T8
 
 **Done when**:
 
-- [ ] `POST /api/vistorias` persiste tipo e ambientes atomicamente.
-- [ ] `PUT /api/vistorias/{id}/roteiro` adiciona, renomeia, reordena e remove somente ambientes sem evidência.
-- [ ] Validação retorna `422`; estado ou remoção insegura retorna `409`.
-- [ ] Gate full passa com todos os testes anteriores e ao menos 8 novos cenários.
+- [x] `POST /api/vistorias` persiste tipo e ambientes atomicamente.
+- [x] `PUT /api/vistorias/{id}/roteiro` adiciona, renomeia, reordena e remove somente ambientes sem evidência.
+- [x] Validação retorna `422`; estado ou remoção insegura retorna `409`.
+- [x] Gate full passa com todos os testes anteriores e ao menos 8 novos cenários.
 
 **Tests**: unit + MockMvc
 **Gate**: full

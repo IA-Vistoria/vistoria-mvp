@@ -115,4 +115,81 @@ class VistoriaRoteiroTest {
         assertThat(imagem.getCategoria()).isNull();
         assertThat(imagem.getProtocoloItem()).isEqualTo("SALA_PAREDES_REVESTIMENTOS");
     }
+
+    @Test
+    void deveAdicionarRenomearReordenarERemoverAmbienteSemEvidencia() {
+        Vistoria vistoria = new Vistoria();
+        vistoria.setStatus(VistoriaStatus.EM_RASCUNHO);
+        AmbienteVistoria sala = AmbienteVistoria.criar(TipoAmbiente.SALA, "Sala", 0);
+        AmbienteVistoria quarto = AmbienteVistoria.criar(TipoAmbiente.QUARTO, "Quarto", 1);
+        vistoria.configurarRoteiro(TipoImovel.APARTAMENTO, List.of(sala, quarto));
+        definirId(sala, 11L);
+        definirId(quarto, 12L);
+
+        vistoria.atualizarRoteiro(TipoImovel.APARTAMENTO, List.of(
+                new ItemRoteiroVistoria(12L, TipoAmbiente.QUARTO, "Suíte"),
+                new ItemRoteiroVistoria(null, TipoAmbiente.ESCRITORIO, "Escritório")));
+
+        assertThat(vistoria.getAmbientes())
+                .extracting(AmbienteVistoria::getNome)
+                .containsExactly("Suíte", "Escritório");
+        assertThat(vistoria.getAmbientes())
+                .extracting(AmbienteVistoria::getOrdem)
+                .containsExactly(0, 1);
+    }
+
+    @Test
+    void deveRejeitarRemocaoDeAmbienteComEvidencia() {
+        Vistoria vistoria = new Vistoria();
+        vistoria.setStatus(VistoriaStatus.EM_RASCUNHO);
+        AmbienteVistoria sala = AmbienteVistoria.criar(TipoAmbiente.SALA, "Sala", 0);
+        AmbienteVistoria quarto = AmbienteVistoria.criar(TipoAmbiente.QUARTO, "Quarto", 1);
+        vistoria.configurarRoteiro(TipoImovel.APARTAMENTO, List.of(sala, quarto));
+        definirId(sala, 11L);
+        definirId(quarto, 12L);
+        vistoria.getImagens().add(new ImagemVistoria(
+                vistoria, sala, CategoriaEvidencia.VISAO_GERAL,
+                "uploads/sala.jpg", LocalDateTime.now()));
+
+        assertThatThrownBy(() -> vistoria.atualizarRoteiro(TipoImovel.APARTAMENTO, List.of(
+                new ItemRoteiroVistoria(12L, TipoAmbiente.QUARTO, "Quarto"))))
+                .isInstanceOf(RoteiroVistoriaConflitoException.class)
+                .hasMessageContaining("Sala");
+    }
+
+    @Test
+    void deveRejeitarEdicaoDoRoteiroForaDoRascunho() {
+        Vistoria vistoria = new Vistoria();
+        vistoria.setStatus(VistoriaStatus.AGUARDANDO_IA);
+        AmbienteVistoria sala = AmbienteVistoria.criar(TipoAmbiente.SALA, "Sala", 0);
+        vistoria.configurarRoteiro(TipoImovel.CASA, List.of(sala));
+
+        assertThatThrownBy(() -> vistoria.atualizarRoteiro(TipoImovel.CASA, List.of(
+                new ItemRoteiroVistoria(null, TipoAmbiente.SALA, "Sala"))))
+                .isInstanceOf(RoteiroVistoriaConflitoException.class)
+                .hasMessageContaining("rascunho");
+    }
+
+    @Test
+    void deveRejeitarIdentificadorDeAmbienteQueNaoPertenceAoRoteiro() {
+        Vistoria vistoria = new Vistoria();
+        vistoria.setStatus(VistoriaStatus.EM_RASCUNHO);
+        vistoria.configurarRoteiro(TipoImovel.CASA, List.of(
+                AmbienteVistoria.criar(TipoAmbiente.SALA, "Sala", 0)));
+
+        assertThatThrownBy(() -> vistoria.atualizarRoteiro(TipoImovel.CASA, List.of(
+                new ItemRoteiroVistoria(999L, TipoAmbiente.SALA, "Sala"))))
+                .isInstanceOf(RoteiroVistoriaInvalidoException.class)
+                .hasMessageContaining("não pertence");
+    }
+
+    private void definirId(AmbienteVistoria ambiente, Long id) {
+        try {
+            var field = AmbienteVistoria.class.getDeclaredField("id");
+            field.setAccessible(true);
+            field.set(ambiente, id);
+        } catch (ReflectiveOperationException exception) {
+            throw new AssertionError(exception);
+        }
+    }
 }

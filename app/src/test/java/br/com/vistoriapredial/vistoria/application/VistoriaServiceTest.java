@@ -51,6 +51,10 @@ import br.com.vistoriapredial.vistoria.application.exception.InvalidReviewExcept
 import br.com.vistoriapredial.vistoria.application.review.DecisaoRevisao;
 import br.com.vistoriapredial.vistoria.application.review.RevisaoAchadoStore;
 import br.com.vistoriapredial.vistoria.application.review.RevisarAchadoCommand;
+import br.com.vistoriapredial.vistoria.application.command.AmbienteRoteiroCommand;
+import br.com.vistoriapredial.vistoria.application.command.CriarVistoriaCommand;
+import br.com.vistoriapredial.vistoria.domain.TipoAmbiente;
+import br.com.vistoriapredial.vistoria.domain.TipoImovel;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import java.time.Clock;
 import java.time.Instant;
@@ -101,12 +105,16 @@ class VistoriaServiceTest {
     void shouldCreateVistoriaIfCliente() {
         when(vistoriaRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
-        Vistoria result = vistoriaService.criarVistoria(cliente, "Endereço Teste");
+        Vistoria result = vistoriaService.criarVistoria(cliente, new CriarVistoriaCommand(
+                "Endereço Teste",
+                TipoImovel.CASA,
+                List.of(new AmbienteRoteiroCommand(null, TipoAmbiente.SALA, "Sala"))));
         
         assertNotNull(result);
         assertEquals(cliente, result.getCliente());
         assertEquals(VistoriaStatus.EM_RASCUNHO, result.getStatus());
         assertEquals("Endereço Teste", result.getEndereco());
+        assertThat(result.getAmbientes()).hasSize(1);
     }
 
     @Test

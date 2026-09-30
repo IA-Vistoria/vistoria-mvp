@@ -5,8 +5,11 @@ import br.com.vistoriapredial.storage.StoredFile;
 import br.com.vistoriapredial.usuario.domain.PerfilEnum;
 import br.com.vistoriapredial.usuario.domain.Usuario;
 import br.com.vistoriapredial.vistoria.domain.ImagemVistoria;
+import br.com.vistoriapredial.vistoria.domain.AmbienteVistoria;
 import br.com.vistoriapredial.vistoria.domain.Vistoria;
 import br.com.vistoriapredial.vistoria.domain.VistoriaStatus;
+import br.com.vistoriapredial.vistoria.application.command.AtualizarRoteiroCommand;
+import br.com.vistoriapredial.vistoria.application.command.CriarVistoriaCommand;
 import br.com.vistoriapredial.vistoria.persistence.VistoriaRepository;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidEvidenceException;
 import br.com.vistoriapredial.vistoria.application.exception.EvidenceAccessDeniedException;
@@ -26,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -41,6 +45,7 @@ import br.com.vistoriapredial.vistoria.application.review.RevisarAchadoCommand;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 @Service
 public class VistoriaService {
@@ -73,15 +78,38 @@ public class VistoriaService {
     // Fluxo Cliente
 
     @Transactional
-    public Vistoria criarVistoria(Usuario cliente, String endereco) {
+    public Vistoria criarVistoria(Usuario cliente, CriarVistoriaCommand command) {
         if (cliente.getPerfil() != PerfilEnum.ROLE_CLIENTE) {
             throw new IllegalArgumentException("Somente clientes podem criar vistorias");
         }
         Vistoria vistoria = new Vistoria();
         vistoria.setCliente(cliente);
-        vistoria.setEndereco(endereco);
+        vistoria.setEndereco(command.endereco());
         vistoria.setStatus(VistoriaStatus.EM_RASCUNHO);
+        vistoria.configurarRoteiro(
+                command.tipoImovel(),
+                IntStream.range(0, command.ambientes().size())
+                        .mapToObj(indice -> AmbienteVistoria.criar(
+                                command.ambientes().get(indice).tipo(),
+                                command.ambientes().get(indice).nome(),
+                                indice))
+                        .toList());
         return vistoriaRepository.save(vistoria);
+    }
+
+    @Transactional
+    public Vistoria atualizarRoteiro(
+            Long vistoriaId,
+            Usuario cliente,
+            AtualizarRoteiroCommand command) {
+        Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
+        if (!Objects.equals(vistoria.getVersion(), command.version())) {
+            throw new StaleInspectionException();
+        }
+        vistoria.atualizarRoteiro(
+                command.tipoImovel(),
+                command.ambientes().stream().map(item -> item.toDomain()).toList());
+        return salvarComControleConcorrencia(vistoria);
     }
 
     @Transactional(readOnly = true)
@@ -275,6 +303,7 @@ public class VistoriaService {
         if (!vistoria.getCliente().getId().equals(cliente.getId())) {
             throw new VistoriaAccessDeniedException();
         }
+        vistoria.getAmbientes().size();
         return vistoria;
     }
 
@@ -283,6 +312,7 @@ public class VistoriaService {
         Vistoria vistoria = vistoriaRepository.findById(vistoriaId)
                 .orElseThrow(VistoriaNotFoundException::new);
         autorizarAcessoAVistoria(vistoria, usuario);
+        vistoria.getAmbientes().size();
         return vistoria;
     }
 
@@ -322,6 +352,7 @@ public class VistoriaService {
         }
         Map<Long, Vistoria> porId = vistoriaRepository.findByIdIn(ids).stream()
                 .collect(Collectors.toMap(Vistoria::getId, Function.identity()));
+        vistoriaRepository.findWithAmbientesByIdIn(ids);
         List<Vistoria> comImagens = ids.stream().map(porId::get).toList();
         return new PageImpl<>(comImagens, pagina.getPageable(), pagina.getTotalElements());
     }
@@ -354,7 +385,8 @@ public class VistoriaService {
         vistoria.setParecerEngenheiro(parecer);
         vistoria.setStatus(VistoriaStatus.CONCLUIDA);
         vistoria.setDataConclusao(LocalDateTime.now());
-        
+
+        vistoria.getAmbientes().size();
         return salvarComControleConcorrencia(vistoria);
     }
 
@@ -374,7 +406,8 @@ public class VistoriaService {
         vistoria.setEngenheiro(engenheiro);
         vistoria.setParecerEngenheiro("Devolvido: " + motivo);
         vistoria.setStatus(VistoriaStatus.DEVOLVIDA_CLIENTE);
-        
+
+        vistoria.getAmbientes().size();
         return salvarComControleConcorrencia(vistoria);
     }
 

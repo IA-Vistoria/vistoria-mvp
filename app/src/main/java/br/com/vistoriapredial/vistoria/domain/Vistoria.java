@@ -5,9 +5,12 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -51,6 +54,9 @@ public class Vistoria {
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_imovel", length = 20)
     private TipoImovel tipoImovel;
+
+    @Column(name = "roteiro_revisao", nullable = false)
+    private int roteiroRevisao;
 
     @OneToMany(mappedBy = "vistoria", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordem ASC")
@@ -163,6 +169,82 @@ public class Vistoria {
     }
 
     public void configurarRoteiro(TipoImovel tipoImovel, List<AmbienteVistoria> ambientes) {
+        validarRoteiro(tipoImovel, ambientes);
+        substituirAmbientes(tipoImovel, ambientes);
+    }
+
+    public void atualizarRoteiro(TipoImovel tipoImovel, List<ItemRoteiroVistoria> itens) {
+        if (status != VistoriaStatus.EM_RASCUNHO) {
+            throw new RoteiroVistoriaConflitoException(
+                    "O roteiro só pode ser alterado enquanto a vistoria está em rascunho.");
+        }
+        if (itens == null) {
+            throw new RoteiroVistoriaInvalidoException("O roteiro é obrigatório.");
+        }
+
+        Map<Long, AmbienteVistoria> atuaisPorId = new HashMap<>();
+        for (AmbienteVistoria ambiente : ambientes) {
+            if (ambiente.getId() != null) {
+                atuaisPorId.put(ambiente.getId(), ambiente);
+            }
+        }
+
+        Set<Long> idsMantidos = new HashSet<>();
+        List<AtualizacaoAmbiente> atualizacoes = new ArrayList<>();
+        List<AmbienteVistoria> estadoFinal = new ArrayList<>();
+        for (int ordem = 0; ordem < itens.size(); ordem++) {
+            ItemRoteiroVistoria item = itens.get(ordem);
+            if (item == null) {
+                throw new RoteiroVistoriaInvalidoException(
+                        "O roteiro não pode conter um ambiente vazio.");
+            }
+            AmbienteVistoria dados = AmbienteVistoria.criar(item.tipo(), item.nome(), ordem);
+            if (item.id() == null) {
+                atualizacoes.add(new AtualizacaoAmbiente(null, dados));
+                estadoFinal.add(dados);
+                continue;
+            }
+            if (!idsMantidos.add(item.id())) {
+                throw new RoteiroVistoriaInvalidoException(
+                        "Um ambiente não pode aparecer mais de uma vez no roteiro.");
+            }
+            AmbienteVistoria existente = atuaisPorId.get(item.id());
+            if (existente == null) {
+                throw new RoteiroVistoriaInvalidoException(
+                        "O ambiente informado não pertence a esta vistoria.");
+            }
+            atualizacoes.add(new AtualizacaoAmbiente(existente, dados));
+            estadoFinal.add(dados);
+        }
+
+        validarRoteiro(tipoImovel, estadoFinal);
+        ambientes.stream()
+                .filter(ambiente -> ambiente.getId() != null && !idsMantidos.contains(ambiente.getId()))
+                .filter(this::possuiEvidencia)
+                .findFirst()
+                .ifPresent(ambiente -> {
+                    throw new RoteiroVistoriaConflitoException(
+                            "O ambiente " + ambiente.getNome()
+                                    + " possui evidências e não pode ser removido.");
+                });
+
+        List<AmbienteVistoria> reconciliados = new ArrayList<>();
+        for (AtualizacaoAmbiente atualizacao : atualizacoes) {
+            AmbienteVistoria ambiente = atualizacao.existente();
+            if (ambiente == null) {
+                ambiente = atualizacao.dados();
+            } else {
+                ambiente.atualizar(
+                        atualizacao.dados().getTipo(),
+                        atualizacao.dados().getNome(),
+                        atualizacao.dados().getOrdem());
+            }
+            reconciliados.add(ambiente);
+        }
+        substituirAmbientes(tipoImovel, reconciliados);
+    }
+
+    private void validarRoteiro(TipoImovel tipoImovel, List<AmbienteVistoria> ambientes) {
         if (tipoImovel == null) {
             throw new RoteiroVistoriaInvalidoException("O tipo do imóvel é obrigatório.");
         }
@@ -187,14 +269,37 @@ public class Vistoria {
                         "Os ambientes do roteiro devem possuir nomes diferentes.");
             }
         }
+    }
 
+    private void substituirAmbientes(
+            TipoImovel tipoImovel,
+            List<AmbienteVistoria> ambientes) {
         this.tipoImovel = tipoImovel;
+        this.roteiroRevisao++;
         this.ambientes.clear();
         for (int indice = 0; indice < ambientes.size(); indice++) {
             AmbienteVistoria ambiente = ambientes.get(indice);
             ambiente.associar(this, indice);
             this.ambientes.add(ambiente);
         }
+    }
+
+    private boolean possuiEvidencia(AmbienteVistoria ambiente) {
+        return imagens.stream().anyMatch(imagem -> {
+            AmbienteVistoria ambienteDaImagem = imagem.getAmbiente();
+            if (ambienteDaImagem == ambiente) {
+                return true;
+            }
+            return ambienteDaImagem != null
+                    && ambienteDaImagem.getId() != null
+                    && Objects.equals(ambienteDaImagem.getId(), ambiente.getId());
+        });
+    }
+
+    private record AtualizacaoAmbiente(
+            AmbienteVistoria existente,
+            AmbienteVistoria dados
+    ) {
     }
 
     public LocalDateTime getDataCriacao() {

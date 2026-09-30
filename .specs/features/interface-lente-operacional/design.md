@@ -42,7 +42,7 @@ graph TD
 
 | System | Integration Method |
 | --- | --- |
-| Banco | Migration V8 cria ambientes e adiciona tipo/categoria sem apagar colunas legadas. |
+| Banco | Migration V8 cria ambientes e adiciona tipo/categoria; V9 viabiliza reordenação atômica e versionada sem apagar colunas legadas. |
 | API | DTOs imutáveis para criação/roteiro; multipart recebe `ambienteId` e `categoria`. |
 | IA | O provedor continua recebendo imagens; ambiente e categoria permanecem no agregado e no relatório. |
 | Storage | Ordem atual de armazenar, persistir e compensar falha é mantida. |
