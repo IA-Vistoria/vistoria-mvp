@@ -231,10 +231,36 @@ describe("InspectionWorkflow", () => {
     const user = userEvent.setup();
     render(<InspectionWorkflow inspectionId={10} />);
 
-    await user.click(await screen.findByRole("button", { name: "Reenviar para análise" }));
+    const retryButton = await screen.findByRole("button", { name: "Reenviar para análise" });
+    expect(screen.queryByLabelText("Tirar foto de Sala — Piso")).toBeNull();
+    expect(screen.queryByLabelText("Escolher da galeria para Sala — Piso")).toBeNull();
+
+    await user.click(retryButton);
 
     expect(submitInspection).toHaveBeenCalledWith(10);
     expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
+  });
+
+  it("libera nova tentativa quando o polling informa falha da IA", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(getMyInspection)
+        .mockResolvedValueOnce(withEvidence)
+        .mockResolvedValueOnce({ ...withEvidence, status: "FALHA_IA" });
+      vi.mocked(submitInspection).mockResolvedValue({ ...withEvidence, status: "AGUARDANDO_IA" });
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      render(<InspectionWorkflow inspectionId={10} />);
+
+      await user.click(await screen.findByRole("button", { name: "Enviar para análise da IA" }));
+      expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
+
+      await vi.advanceTimersByTimeAsync(4000);
+      await user.click(await screen.findByRole("button", { name: "Reenviar para análise" }));
+
+      await waitFor(() => expect(submitInspection).toHaveBeenCalledTimes(2));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("mantém acompanhamento sem upload enquanto a IA processa", async () => {

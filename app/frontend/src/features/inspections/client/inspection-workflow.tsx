@@ -104,7 +104,10 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
     const poll = async () => {
       try {
         const loaded = await getMyInspection(inspectionId, controller.signal);
-        if (active) setInspection(loaded);
+        if (active) {
+          if (loaded.status === "FALHA_IA") submitLock.current = false;
+          setInspection(loaded);
+        }
       } catch {
         if (!controller.signal.aborted) {
           // A tela preserva o último estado confirmado e tenta novamente.
@@ -240,7 +243,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
     );
   }
 
-  const editable = ["EM_RASCUNHO", "DEVOLVIDA_CLIENTE", "FALHA_IA"].includes(inspection.status);
+  const editable = ["EM_RASCUNHO", "DEVOLVIDA_CLIENTE"].includes(inspection.status);
   const progress = calculateProgress(inspection.imagens);
 
   return (
