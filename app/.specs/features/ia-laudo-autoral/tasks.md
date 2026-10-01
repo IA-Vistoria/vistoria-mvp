@@ -12,7 +12,7 @@ As tarefas de interface usam `product-design:audit` e
 é feita por um Verifier independente após a última tarefa.
 
 **Design**: `.specs/features/ia-laudo-autoral/design.md`  
-**Status**: In Progress — approved by user on 30 September 2026
+**Status**: Complete — independent local validation PASS on 30 September 2026
 
 ## Baseline verificado
 

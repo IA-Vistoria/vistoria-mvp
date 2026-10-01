@@ -208,20 +208,20 @@ ART ou diagnóstico definitivo.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| IAR-01 | Provedor real sem sucesso simulado | Execute | Implementing |
-| IAR-02 | Contrato por ambiente | Execute | Implementing |
-| IAR-03 | Resultado automatizado | Execute | Implementing |
-| IAR-04 | Manifestação separada | Execute | Implementing |
-| IAR-05 | Relatório completo | Execute | Implementing |
-| IAR-06 | Validação e observabilidade | Execute | Implementing |
+| IAR-01 | Provedor real sem sucesso simulado | Validate | Verified locally |
+| IAR-02 | Contrato por ambiente | Validate | Verified locally |
+| IAR-03 | Resultado automatizado | Validate | Verified locally |
+| IAR-04 | Manifestação separada | Validate | Verified locally |
+| IAR-05 | Relatório completo | Validate | Verified locally |
+| IAR-06 | Validação e observabilidade | Validate | Verified locally; OCI smoke blocked externally |
 
-**Coverage:** 6 total, 6 mapped to tasks, 6 implementing.
+**Coverage:** 6 total, 6 mapped to tasks, 6 verified locally.
 
 ## Success Criteria
 
-- [ ] Uma imagem de mofo não recebe o mesmo resultado de uma imagem sem indício no smoke test controlado do OCI.
-- [ ] Nenhuma indisponibilidade do OCI produz achado `mock`, relatório ou aprovação.
-- [ ] Todo achado exibido identifica ambiente e evidência de origem.
-- [ ] O relatório fica disponível pela conclusão da IA, independentemente de manifestação do cliente.
-- [ ] Uma contestação aparece no relatório sem modificar a conclusão original.
-- [ ] Suítes backend e frontend, build, lint e migration PostgreSQL têm evidência atual; a validação OCI real registra PASS ou bloqueio externo comprovado, nunca sucesso presumido.
+- [ ] Uma imagem de mofo não recebe o mesmo resultado de uma imagem sem indício no smoke test controlado do OCI. **Bloqueado externamente até o smoke autorizado.**
+- [x] Nenhuma indisponibilidade do OCI produz achado `mock`, relatório ou aprovação.
+- [x] Todo achado exibido identifica ambiente e evidência de origem.
+- [x] O relatório fica disponível pela conclusão da IA, independentemente de manifestação do cliente.
+- [x] Uma contestação aparece no relatório sem modificar a conclusão original.
+- [x] Suítes backend e frontend, build, lint e migration PostgreSQL têm evidência atual; a validação OCI real registra PASS ou bloqueio externo comprovado, nunca sucesso presumido.

@@ -80,10 +80,10 @@
 ## Handoff
 
 - **Feature**: `.specs/features/ia-laudo-autoral`
-- **Phase / Task**: Validate — T1 a T19 implementadas; verificação independente pendente
-- **Completed**: contrato v2 autoral, adaptador OCI via SDK oficial, conclusão automatizada por ambiente, manifestação separada, relatório explicável e jornada responsiva; 281 testes backend e 130 frontend verdes; lint, build, PostgreSQL e UAT local aprovados
-- **In-progress**: verificação independente da feature e registro final em `validation.md`
-- **Next step**: concluir a verificação independente e solicitar autorização explícita antes do push
+- **Phase / Task**: Complete — T1 a T19 concluídas; verificação independente em `validation.md` com PASS local
+- **Completed**: contrato v2 autoral, adaptador OCI via SDK oficial, conclusão automatizada por ambiente, manifestação separada, relatório explicável, health check seguro e jornada responsiva; 283 testes backend e 130 frontend verdes; lint, build, PostgreSQL e UAT local aprovados
+- **In-progress**: nenhum trabalho funcional local desta feature
+- **Next step**: solicitar autorização explícita antes do push e executar o smoke OCI somente com credenciais, cota e autorização próprias
 - **Blockers**: smoke real da OCI não executado; depende de credenciais, cota disponível e autorização explícita para uma chamada externa com possível custo
 - **Uncommitted files**: ver `git status` no momento da leitura — este documento não substitui a checagem real
 - **Branch**: `codex/especifica-interface-ia-first`
