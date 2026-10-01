@@ -49,7 +49,7 @@ const draft: Inspection = {
   dataConclusao: null,
   imagens: [],
   analiseIa: null,
-  revisoes: [],
+  manifestacoes: [],
 };
 
 const withOverview: Inspection = { ...draft, imagens: [overview] };

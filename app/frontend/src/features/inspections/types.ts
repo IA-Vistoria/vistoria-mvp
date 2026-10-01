@@ -80,25 +80,64 @@ export interface Evidence {
   conteudoUrl: string;
 }
 
+export type AiResult =
+  | "APROVADO"
+  | "APROVADO_COM_RESSALVAS"
+  | "NAO_APROVADO"
+  | "INCONCLUSIVO";
+
+export type AiEvidenceQuality = "SUFICIENTE" | "INSUFICIENTE";
+export type AiFindingSeverity = "BAIXA" | "MEDIA" | "ALTA" | "CRITICA";
+export type AiFindingConfidence = "BAIXA" | "MEDIA" | "ALTA";
+
+export interface AiExecutionMetadata {
+  provider: string;
+  modelo: string;
+  versaoPrompt: string;
+  identificadorAnalise: string;
+  concluidaEm: string;
+}
+
+export interface AiEnvironmentContext {
+  id: number;
+  nome: string;
+  categoria: EvidenceCategory;
+}
+
+export interface AiEnvironmentResult {
+  id: number;
+  nome: string;
+  resultado: AiResult;
+  motivoResultado: string;
+}
+
 export interface AiFinding {
   indice: number;
+  criterio?: string | null;
   area: string | null;
   tipo: string | null;
   descricao: string | null;
   evidencia: string | null;
+  impacto?: string | null;
   gravidade: string | null;
+  gravidadeNormalizada?: AiFindingSeverity | null;
   confianca: string | null;
+  confiancaNormalizada?: AiFindingConfidence | null;
   recomendacao: string | null;
   localizacao: string | null;
 }
 
 export interface AiImageAnalysis {
   imagemId: number;
+  storagePath?: string | null;
   identificadorAnalise: string | null;
+  ambiente?: AiEnvironmentContext | null;
   resumoGeral: string | null;
   limitacoes: string[];
+  orientacaoNovaCaptura?: string | null;
   qualidade: {
     utilizavel: boolean;
+    nivel?: AiEvidenceQuality | null;
     problemas: string[];
   };
   achados: AiFinding[];
@@ -106,10 +145,20 @@ export interface AiImageAnalysis {
 
 export interface AiAnalysis {
   version: number;
+  execucao?: AiExecutionMetadata | null;
   imagens: AiImageAnalysis[];
+  ambientes?: AiEnvironmentResult[];
+  resultadoGeral?: AiResult | null;
+  motivoResultadoGeral?: string | null;
 }
 
-export type ReviewDecision = "CONFIRMADO" | "CORRIGIDO" | "REJEITADO";
+export type ReviewDecision =
+  | "CONCORDO"
+  | "CONTESTO"
+  | "CONTEXTO_ADICIONAL"
+  | "CONFIRMADO"
+  | "CORRIGIDO"
+  | "REJEITADO";
 
 export interface FindingReview {
   imagemId: number;
@@ -140,7 +189,7 @@ export interface Inspection {
   dataConclusao: string | null;
   imagens: Evidence[];
   analiseIa: AiAnalysis | null;
-  revisoes: FindingReview[];
+  manifestacoes: FindingReview[];
 }
 
 /** Contrato isolado das telas antigas, sem uso na jornada pública do MVP. */

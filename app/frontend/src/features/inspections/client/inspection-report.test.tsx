@@ -50,7 +50,7 @@ const report: Inspection = {
       },
     ],
   },
-  revisoes: [
+  manifestacoes: [
     { imagemId: 14, indiceAchado: 0, decisao: "CONFIRMADO", contexto: "A marca já existia na entrega das chaves.", tipoCorrigido: null, revisadoEm: "2026-09-21T10:00:00Z" },
     { imagemId: 14, indiceAchado: 1, decisao: "REJEITADO", contexto: "Era um fio solto diante da parede.", tipoCorrigido: null, revisadoEm: "2026-09-21T10:02:00Z" },
     { imagemId: 15, indiceAchado: 0, decisao: "CORRIGIDO", contexto: "A marca é superficial e não mudou desde a pintura.", tipoCorrigido: "Mancha de acabamento", revisadoEm: "2026-09-21T10:04:00Z" },

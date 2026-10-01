@@ -29,7 +29,7 @@ type ShareFeedback = { tone: "success" | "error"; message: string } | null;
 function acceptedEntries(inspection: Inspection): ReportEntry[] {
   return (inspection.analiseIa?.imagens ?? []).flatMap((analysis) =>
     analysis.achados.flatMap((finding) => {
-      const review = inspection.revisoes.find(
+      const review = inspection.manifestacoes.find(
         (item) => item.imagemId === analysis.imagemId && item.indiceAchado === finding.indice,
       );
       return review && review.decisao !== "REJEITADO" ? [{ analysis, finding, review }] : [];
@@ -57,7 +57,7 @@ function referenceFor(entry: ReportEntry) {
 export function InspectionReport({ inspection }: { inspection: Inspection }) {
   const [shareFeedback, setShareFeedback] = useState<ShareFeedback>(null);
   const entries = acceptedEntries(inspection);
-  const rejectedCount = inspection.revisoes.filter((review) => review.decisao === "REJEITADO").length;
+  const rejectedCount = inspection.manifestacoes.filter((review) => review.decisao === "REJEITADO").length;
   const completedAt = formatDate(inspection.dataConclusao);
   const evidenceGroups = groupEvidenceByEnvironment(inspection);
   const evidenceOrder = new Map(inspection.imagens.map((evidence, index) => [evidence.id, index + 1]));

@@ -63,7 +63,7 @@ function flattenFindings(inspection: Inspection): FindingEntry[] {
 }
 
 function hasReview(inspection: Inspection, entry: FindingEntry) {
-  return inspection.revisoes.some(
+  return inspection.manifestacoes.some(
     (review) => review.imagemId === entry.analysis.imagemId && review.indiceAchado === entry.finding.indice,
   );
 }
@@ -75,7 +75,7 @@ function firstPendingIndex(inspection: Inspection, entries: FindingEntry[]) {
 
 function savedReview(inspection: Inspection, entry: FindingEntry | null) {
   if (!entry) return null;
-  return inspection.revisoes.find(
+  return inspection.manifestacoes.find(
     (review) => review.imagemId === entry.analysis.imagemId && review.indiceAchado === entry.finding.indice,
   ) ?? null;
 }

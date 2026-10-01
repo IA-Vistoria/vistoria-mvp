@@ -488,7 +488,7 @@ manter VLM opt-in e definir variáveis Oracle sem placeholders utilizáveis.
 
 ### T15: Tipar e normalizar a análise v2 no frontend
 
-**Status**: Pending  
+**Status**: Complete
 **What**: Atualizar os tipos e helpers para resultado geral, ambientes,
 execução, novos campos de achado e compatibilidade v1 em português.  
 **Where**: `frontend/src/features/inspections/types.ts`  
@@ -503,11 +503,11 @@ execução, novos campos de achado e compatibilidade v1 em português.
 
 **Done when**:
 
-- [ ] Tipos fechados representam os quatro resultados e todos os metadados v2.
-- [ ] Helper localiza análise e resultado pelo ambiente/imagem corretos.
-- [ ] Taxonomia nunca exibe `stain` cru quando existe rótulo conhecido.
-- [ ] Dados v1 têm fallback legível, sem fabricar resultado aprovado.
-- [ ] Pelo menos 8 testes unitários passam.
+- [x] Tipos fechados representam os quatro resultados e todos os metadados v2.
+- [x] Helper localiza análise e resultado pelo ambiente/imagem corretos.
+- [x] Taxonomia nunca exibe `stain` cru quando existe rótulo conhecido.
+- [x] Dados v1 têm fallback legível, sem fabricar resultado aprovado.
+- [x] Pelo menos 8 testes unitários passam.
 
 **Tests**: unit TypeScript  
 **Gate**: Frontend focused  

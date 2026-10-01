@@ -37,7 +37,7 @@ const pending: LegacyInspection = {
   dataCriacao: "2026-09-19T09:00:00",
   dataConclusao: null,
   analiseIa: null,
-  revisoes: [],
+  manifestacoes: [],
   imagens: [
     { id: 3, ambienteId: null, ambienteNome: null, categoria: null, protocoloItem: "SALA_PAREDES_REVESTIMENTOS", dataUpload: "2026-09-19T09:10:00", conteudoUrl: "/api/foto/3" },
   ],

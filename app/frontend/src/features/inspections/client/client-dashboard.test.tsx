@@ -41,7 +41,7 @@ const draftInspection: Inspection = {
   dataConclusao: null,
   imagens: [],
   analiseIa: null,
-  revisoes: [],
+  manifestacoes: [],
 };
 
 describe("ClientDashboard", () => {

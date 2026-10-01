@@ -1,3 +1,10 @@
+import type {
+  AiAnalysis,
+  AiEnvironmentResult,
+  AiImageAnalysis,
+  AiResult,
+} from "../types";
+
 export interface AiAreaFinding {
   area: string | null;
   issueType: string | null;
@@ -81,6 +88,45 @@ export function issueTypeLabel(issueType: string | null): string {
     missing_part: "Parte faltante",
     insufficient_evidence: "Evidência insuficiente",
     other_visual_issue: "Outro problema visual",
+    UMIDADE_OU_MOFO_APARENTE: "Umidade ou mofo aparente",
+    FISSURA_OU_TRINCA_APARENTE: "Fissura ou trinca aparente",
+    DESCASCAMENTO_OU_DESPLACAMENTO: "Descascamento ou desplacamento",
+    MANCHA_APARENTE: "Mancha aparente",
+    OUTRO_INDICIO_VISUAL: "Outro indício visual",
   };
   return labels[issueType] ?? issueType;
+}
+
+export function aiResultLabel(result: AiResult | null | undefined): string {
+  const labels: Record<AiResult, string> = {
+    APROVADO: "Aprovado na análise visual",
+    APROVADO_COM_RESSALVAS: "Aprovado com ressalvas",
+    NAO_APROVADO: "Não aprovado na análise visual",
+    INCONCLUSIVO: "Análise inconclusiva",
+  };
+  return result ? labels[result] : "Resultado não disponível — análise anterior";
+}
+
+export function findImageAnalysis(
+  analysis: AiAnalysis | null,
+  imageId: number,
+): AiImageAnalysis | null {
+  return analysis?.imagens.find((image) => image.imagemId === imageId) ?? null;
+}
+
+export function findEnvironmentResult(
+  analysis: AiAnalysis | null,
+  environmentId: number | null,
+  environmentName?: string | null,
+): AiEnvironmentResult | null {
+  const environments = analysis?.ambientes ?? [];
+  if (environmentId !== null) {
+    const byId = environments.find((environment) => environment.id === environmentId);
+    if (byId) return byId;
+  }
+  const normalizedName = environmentName?.trim().toLocaleLowerCase("pt-BR");
+  if (!normalizedName) return null;
+  return environments.find(
+    (environment) => environment.nome.trim().toLocaleLowerCase("pt-BR") === normalizedName,
+  ) ?? null;
 }

@@ -73,7 +73,7 @@ const inspection: Inspection = {
       },
     ],
   },
-  revisoes: [],
+  manifestacoes: [],
 };
 
 const adaptiveInspection: Inspection = {
@@ -108,7 +108,7 @@ describe("InspectionReview", () => {
   });
 
   it("retoma no primeiro achado sem revisão e mantém a foto dominante vinculada", () => {
-    render(<InspectionReview inspection={{ ...inspection, revisoes: [review()] }} onChange={vi.fn()} onRefresh={vi.fn()} />);
+    render(<InspectionReview inspection={{ ...inspection, manifestacoes: [review()] }} onChange={vi.fn()} onRefresh={vi.fn()} />);
 
     expect(screen.getByText("Achado 2 de 2")).toBeDefined();
     expect(screen.getByRole("heading", { name: "Fissura aparente" })).toBeDefined();
@@ -180,7 +180,7 @@ describe("InspectionReview", () => {
 
   it("persiste a decisão uma vez antes de avançar para o próximo achado", async () => {
     const saved = review();
-    vi.mocked(reviewFinding).mockResolvedValue({ ...inspection, revisoes: [saved] });
+    vi.mocked(reviewFinding).mockResolvedValue({ ...inspection, manifestacoes: [saved] });
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<InspectionReview inspection={inspection} onChange={onChange} onRefresh={vi.fn()} />);
@@ -226,7 +226,7 @@ describe("InspectionReview", () => {
       status: 409,
       detail: "A vistoria mudou em outra sessão.",
     }));
-    const latest = { ...inspection, revisoes: [review()] };
+    const latest = { ...inspection, manifestacoes: [review()] };
     const onRefresh = vi.fn().mockResolvedValue(latest);
     const user = userEvent.setup();
     render(<InspectionReview inspection={inspection} onChange={vi.fn()} onRefresh={onRefresh} />);
@@ -242,7 +242,7 @@ describe("InspectionReview", () => {
 
   it("só conclui depois de todas as revisões persistidas", async () => {
     const completeReviews = [review(), review({ indiceAchado: 1, decisao: "REJEITADO" })];
-    const reviewed = { ...inspection, revisoes: completeReviews };
+    const reviewed = { ...inspection, manifestacoes: completeReviews };
     const completed = { ...reviewed, status: "RELATORIO_DISPONIVEL" as const, dataConclusao: "2026-09-21T11:00:00" };
     vi.mocked(completeReport).mockResolvedValue(completed);
     const onChange = vi.fn();
