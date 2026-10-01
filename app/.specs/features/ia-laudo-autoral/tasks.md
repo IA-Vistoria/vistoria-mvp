@@ -515,7 +515,7 @@ execução, novos campos de achado e compatibilidade v1 em português.
 
 ### T16: Redesenhar a tela de resultado e manifestação
 
-**Status**: Pending  
+**Status**: Complete
 **What**: Substituir a decisão obrigatória por navegação clara do resultado da
 IA por ambiente, com feedback opcional que não altera a conclusão.  
 **Where**: `frontend/src/features/inspections/client/inspection-review.tsx`  
@@ -530,12 +530,12 @@ IA por ambiente, com feedback opcional que não altera a conclusão.
 
 **Done when**:
 
-- [ ] Cabeçalho e navegação deixam explícitos ambiente, evidência e resultado.
-- [ ] Observação mostra o que foi visto, motivo, impacto, confiança e recomendação.
-- [ ] Concordar, contestar e adicionar contexto são opcionais.
-- [ ] Contestação não remove nem renomeia o achado.
-- [ ] Teclado, foco, erro e conflito permanecem acessíveis.
-- [ ] Pelo menos 10 testes de componente novos/atualizados passam.
+- [x] Cabeçalho e navegação deixam explícitos ambiente, evidência e resultado.
+- [x] Observação mostra o que foi visto, motivo, impacto, confiança e recomendação.
+- [x] Concordar, contestar e adicionar contexto são opcionais.
+- [x] Contestação não remove nem renomeia o achado.
+- [x] Teclado, foco, erro e conflito permanecem acessíveis.
+- [x] Pelo menos 10 testes de componente novos/atualizados passam.
 
 **Tests**: component  
 **Gate**: Frontend full  

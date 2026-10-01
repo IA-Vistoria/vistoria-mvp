@@ -15,7 +15,7 @@ export interface ReviewFindingRequest {
   indiceAchado: number;
   decisao: ReviewDecision;
   contexto: string;
-  tipoCorrigido: string | null;
+  tipoCorrigido?: string | null;
 }
 
 export const listMyInspections = (page = 0, size = 10, status?: InspectionStatus) => {
