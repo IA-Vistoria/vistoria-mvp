@@ -75,17 +75,17 @@ export function AuthForm({ mode }: AuthFormProps) {
           <p className="eyebrow">Da coleta ao documento</p>
           <h1>Relatório de vistoria por IA</h1>
           <p>
-            Um fluxo claro para registrar o imóvel real, orientar as fotos e revisar cada indício
-            antes de gerar o relatório.
+            Um fluxo claro para registrar o imóvel real, orientar as fotos e receber uma análise
+            visual explicada antes de gerar o relatório.
           </p>
           <ol className="auth-journey" aria-label="Como funciona">
             <li><ListChecks aria-hidden="true" size={20} /><span><strong>Registre os ambientes reais</strong><small>O roteiro se adapta ao imóvel, não o contrário.</small></span></li>
             <li><Camera aria-hidden="true" size={20} /><span><strong>Envie fotos guiadas</strong><small>Uma visão geral por ambiente e detalhes quando necessário.</small></span></li>
-            <li><FileCheck2 aria-hidden="true" size={20} /><span><strong>Revise e gere o relatório</strong><small>Você confirma o contexto antes do documento final.</small></span></li>
+            <li><FileCheck2 aria-hidden="true" size={20} /><span><strong>Receba o resultado da IA</strong><small>Cada ambiente recebe uma conclusão, um motivo e recomendações claras.</small></span></li>
           </ol>
           <div className="auth-proof">
             <ShieldCheck aria-hidden="true" size={24} />
-            <span>Cada conclusão permanece ligada à foto e ao contexto que você confirmou.</span>
+            <span>Sua manifestação é opcional e não altera a conclusão automatizada.</span>
           </div>
         </div>
         <p className="auth-story__foot">Organização visual. Decisões transparentes.</p>

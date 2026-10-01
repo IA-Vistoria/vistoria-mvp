@@ -89,6 +89,7 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
   const [routeDraft, setRouteDraft] = useState<EnvironmentDraft[]>([]);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [savingRoute, setSavingRoute] = useState(false);
+  const [reportView, setReportView] = useState<"report" | "analysis">("report");
   const submitLock = useRef(false);
   const routeFirstInputRef = useRef<HTMLInputElement>(null);
   const polledStatus = inspection?.status;
@@ -254,7 +255,10 @@ export function InspectionWorkflow({ inspectionId }: { inspectionId: number }) {
     return <AsyncState role="alert" title="Não foi possível abrir a vistoria" description="Tente carregar novamente sem criar outro rascunho." action={<button className="button button--secondary" onClick={() => void reload()}>Tentar novamente</button>} />;
   }
   if (!inspection) return <AsyncState title="Carregando roteiro" description="Buscando os ambientes e as evidências já salvas." />;
-  if (inspection.status === "RELATORIO_DISPONIVEL") return <div className="workflow-page workflow-page--report"><WorkflowBackHeader inspection={inspection} /><InspectionReport inspection={inspection} /></div>;
+  if (inspection.status === "RELATORIO_DISPONIVEL" && reportView === "analysis") {
+    return <div className="workflow-page"><WorkflowBackHeader inspection={inspection} /><InspectionReview inspection={inspection} onChange={setInspection} onRefresh={() => getMyInspection(inspection.id)} onOpenReport={() => setReportView("report")} /></div>;
+  }
+  if (inspection.status === "RELATORIO_DISPONIVEL") return <div className="workflow-page workflow-page--report"><WorkflowBackHeader inspection={inspection} /><InspectionReport inspection={inspection} onOpenAnalysis={() => setReportView("analysis")} /></div>;
   if (inspection.status === "CONCLUIDA") return <div className="workflow-page"><WorkflowBackHeader inspection={inspection} /><InspectionResults inspection={inspection} /></div>;
   if (inspection.status === "REVISAO_PENDENTE") return <div className="workflow-page"><WorkflowBackHeader inspection={inspection} /><InspectionReview inspection={inspection} onChange={setInspection} onRefresh={() => getMyInspection(inspection.id)} /></div>;
   if (inspection.status === "AGUARDANDO_IA") {
@@ -373,7 +377,7 @@ function AdaptiveWorkspace(props: AdaptiveWorkspaceProps) {
           <span className="mono">VISTORIA {String(inspection.id).padStart(4, "0")}</span>
         </div>
         <section className="workflow-progress" aria-label="Progresso da documentação">
-          <div><strong>{completedCount} de {environments.length} ambientes com visão geral</strong><span>Somente fotos confirmadas contam como concluídas.</span></div>
+          <div><strong>{completedCount} de {environments.length} ambientes com visão geral</strong><span>Somente visões gerais salvas contam como concluídas.</span></div>
           <progress value={completedCount} max={environments.length}>{completedCount} de {environments.length}</progress>
         </section>
         <nav className="environment-navigation" aria-label="Ambientes do roteiro">
@@ -434,7 +438,7 @@ function AdaptiveWorkspace(props: AdaptiveWorkspaceProps) {
           <li className={completedCount === environments.length ? "is-complete" : ""}><CheckCircle2 size={18} />{completedCount} de {environments.length} visões gerais</li>
           <li className="is-informative"><Sparkles size={18} />{detailCount} fotos de detalhe opcionais</li>
         </ul>
-        <section className="next-steps"><Info size={22} /><div><h2>Depois do envio</h2><ol><li><strong>A IA organiza indícios</strong><span>Você pode sair durante a análise.</span></li><li><strong>Você confirma o contexto</strong><span>Nenhuma observação vira conclusão sozinha.</span></li><li><strong>O relatório é montado</strong><span>Foto, ambiente e decisão permanecem ligados.</span></li></ol></div></section>
+        <section className="next-steps"><Info size={22} /><div><h2>Depois do envio</h2><ol><li><strong>A IA analisa as evidências</strong><span>Você pode sair durante o processamento.</span></li><li><strong>A IA define o resultado</strong><span>Cada ambiente recebe uma conclusão e um motivo.</span></li><li><strong>Você recebe o relatório</strong><span>Se discordar, registre uma manifestação sem alterar a análise original.</span></li></ol></div></section>
         <div className="professional-warning"><AlertTriangle size={19} /><p><strong>Limite claro</strong>A análise visual não substitui avaliação técnica profissional.</p></div>
         {editable ? <div className="workflow-submit">
           {submitError ? <p className="item-error" role="alert">{submitError}</p> : null}
@@ -472,7 +476,7 @@ function CaptureCategory({ environment, category, title, description, evidence, 
           <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} aria-label={`Tirar ${categoryLabel} de ${environment.nome}`} aria-invalid={errorId ? true : undefined} aria-describedby={errorId} onChange={(event) => onChoose(environment.id, category, event)} />
         </label>
         <label className="capture-action">
-          <Images aria-hidden="true" size={22} /><span><strong>Escolher da galeria</strong><small>JPEG, PNG ou WebP · até 10 MB</small></span>
+          <Images aria-hidden="true" size={22} /><span><strong>Escolher da galeria</strong><small>JPEG, PNG ou WebP · até 7 MB</small></span>
           <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} aria-label={`Escolher ${categoryLabel} de ${environment.nome} da galeria`} aria-invalid={errorId ? true : undefined} aria-describedby={errorId} onChange={(event) => onChoose(environment.id, category, event)} />
         </label>
         {retryFile ? <button className="retry-link" type="button" disabled={busy} onClick={() => void onRetry(environment.id, category, retryFile)}><RefreshCw size={15} />Tentar novamente</button> : null}

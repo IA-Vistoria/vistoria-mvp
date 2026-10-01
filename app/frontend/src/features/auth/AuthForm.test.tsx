@@ -145,7 +145,8 @@ describe("AuthForm", () => {
 
     expect(screen.getByText("Registre os ambientes reais")).toBeDefined();
     expect(screen.getByText("Envie fotos guiadas")).toBeDefined();
-    expect(screen.getByText("Revise e gere o relatório")).toBeDefined();
+    expect(screen.getByText("Receba o resultado da IA")).toBeDefined();
+    expect(screen.getByText(/manifestação é opcional e não altera a conclusão automatizada/i)).toBeDefined();
   });
 
   it.each([409, 422])("preserva campos não sensíveis após erro %s", async (status) => {

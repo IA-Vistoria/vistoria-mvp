@@ -44,6 +44,8 @@ describe("DashboardShell", () => {
     expect(screen.getAllByRole("link", { name: "Relatórios" }).length).toBeGreaterThan(0);
     expect(screen.getByText("Relatório de vistoria por IA")).toBeDefined();
     expect(screen.queryByText(/engenheir/i)).toBeNull();
+    expect(screen.getByRole("link", { name: "Pular para o conteúdo principal" }).getAttribute("href")).toBe("#main-content");
+    expect(screen.getByRole("main").getAttribute("id")).toBe("main-content");
   });
 
   it("encerra a sessão pela ação nomeada", async () => {

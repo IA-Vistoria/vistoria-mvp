@@ -241,6 +241,16 @@ describe("InspectionReport", () => {
     expect(screen.getByText(/não constitui laudo técnico, diagnóstico estrutural, conformidade normativa ou certificação profissional/i)).toBeDefined();
   });
 
+  it("oferece acesso opcional à análise detalhada sem alterar o relatório", async () => {
+    const onOpenAnalysis = vi.fn();
+    const user = userEvent.setup();
+    render(<InspectionReport inspection={report} onOpenAnalysis={onOpenAnalysis} />);
+
+    await user.click(screen.getByRole("button", { name: "Revisar análise ou registrar manifestação" }));
+
+    expect(onOpenAnalysis).toHaveBeenCalledTimes(1);
+  });
+
   it("abre a impressão com identificação, resultados, evidências e metadados presentes", async () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
     const user = userEvent.setup();

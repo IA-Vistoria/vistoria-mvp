@@ -64,6 +64,24 @@ const complete: Inspection = {
   })),
 };
 
+const reportReady: Inspection = {
+  ...complete,
+  status: "RELATORIO_DISPONIVEL",
+  dataConclusao: "2026-09-19T12:00:00Z",
+  analiseIa: {
+    version: 2,
+    resultadoGeral: "APROVADO",
+    motivoResultadoGeral: "Nenhum indício visual relevante foi identificado nas evidências utilizáveis.",
+    ambientes: environments.map((environment) => ({
+      id: environment.id,
+      nome: environment.nome,
+      resultado: "APROVADO" as const,
+      motivoResultado: "Nenhum indício visual relevante foi identificado.",
+    })),
+    imagens: [],
+  },
+};
+
 describe("InspectionWorkflow adaptativo", () => {
   beforeEach(() => {
     vi.mocked(getMyInspection).mockReset();
@@ -98,12 +116,13 @@ describe("InspectionWorkflow adaptativo", () => {
 
     expect(within(room).getByLabelText("Tirar visão geral de Sala")).toBeDefined();
     expect(within(room).getByLabelText("Escolher detalhe de Sala da galeria")).toBeDefined();
+    expect(within(room).getAllByText(/JPEG, PNG ou WebP · até 7 MB/i).length).toBeGreaterThan(0);
   });
 
   it.each([
     ["vazio", new File([], "vazio.jpg", { type: "image/jpeg" }), "não pode estar vazio"],
     ["tipo", new File(["texto"], "laudo.pdf", { type: "application/pdf" }), "JPEG, PNG ou WebP"],
-    ["tamanho", oversizedFile(), "10 MB"],
+    ["tamanho", oversizedFile(), "7 MB"],
   ])("rejeita arquivo %s sem chamar a API", async (_, file, message) => {
     render(<InspectionWorkflow inspectionId={10} />);
     const room = await screen.findByTestId("environment-capture-11");
@@ -245,6 +264,18 @@ describe("InspectionWorkflow adaptativo", () => {
 
     expect(submitInspection).toHaveBeenCalledWith(10);
     expect(await screen.findByText("Análise da IA em andamento")).toBeDefined();
+  });
+
+  it("abre a análise detalhada a partir do relatório e permite voltar ao documento", async () => {
+    vi.mocked(getMyInspection).mockResolvedValue(reportReady);
+    const user = userEvent.setup();
+    render(<InspectionWorkflow inspectionId={10} />);
+
+    await user.click(await screen.findByRole("button", { name: "Revisar análise ou registrar manifestação" }));
+    expect(await screen.findByRole("heading", { name: "Nenhum indício visual foi identificado" })).toBeDefined();
+
+    await user.click(screen.getByRole("button", { name: "Voltar ao relatório" }));
+    expect(await screen.findByRole("heading", { name: "Relatório de vistoria por IA" })).toBeDefined();
   });
 });
 

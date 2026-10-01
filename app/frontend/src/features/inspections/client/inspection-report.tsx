@@ -8,6 +8,7 @@ import {
   FileText,
   ImageIcon,
   MapPin,
+  MessageSquareMore,
   Printer,
   Share2,
   ShieldAlert,
@@ -37,6 +38,11 @@ interface ReportEntry {
 }
 
 type ShareFeedback = { tone: "success" | "error"; message: string } | null;
+
+interface InspectionReportProps {
+  inspection: Inspection;
+  onOpenAnalysis?: () => void;
+}
 
 const severityLabels: Record<string, string> = {
   BAIXA: "Gravidade baixa",
@@ -111,7 +117,7 @@ function severityCountLabel(severity: string, count: number) {
   return `${count} ${count === 1 ? "achado" : "achados"} de gravidade ${severity.toLocaleLowerCase("pt-BR")}`;
 }
 
-export function InspectionReport({ inspection }: { inspection: Inspection }) {
+export function InspectionReport({ inspection, onOpenAnalysis }: InspectionReportProps) {
   const [shareFeedback, setShareFeedback] = useState<ShareFeedback>(null);
   const entries = reportEntries(inspection);
   const completedAt = formatDate(inspection.dataConclusao);
@@ -163,6 +169,7 @@ export function InspectionReport({ inspection }: { inspection: Inspection }) {
           <small>Resultado automatizado preservado com suas evidências e manifestações</small>
         </div>
         <div className="report-actions__buttons">
+          {onOpenAnalysis ? <button className="button button--secondary" type="button" onClick={onOpenAnalysis}><MessageSquareMore aria-hidden="true" size={17} />Revisar análise ou registrar manifestação</button> : null}
           <button className="button button--secondary" type="button" onClick={() => window.print()}><Printer aria-hidden="true" size={17} />Imprimir ou salvar em PDF</button>
           <button className="button button--primary" type="button" onClick={() => void shareReport()}><Share2 aria-hidden="true" size={17} />Compartilhar relatório</button>
         </div>
@@ -188,7 +195,7 @@ export function InspectionReport({ inspection }: { inspection: Inspection }) {
           </dl>
         </header>
 
-        <section className="report-ai-summary" aria-labelledby="ai-summary-title">
+        <section className={`report-ai-summary report-ai-summary--${generalResult?.toLocaleLowerCase("pt-BR") ?? "legacy"}`} aria-labelledby="ai-summary-title">
           <div className="report-ai-summary__result">
             <span>Resultado do imóvel</span>
             <h2 id="ai-summary-title">{aiResultLabel(generalResult)}</h2>

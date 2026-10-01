@@ -30,6 +30,7 @@ interface InspectionReviewProps {
   inspection: Inspection;
   onChange: (inspection: Inspection) => void;
   onRefresh: () => Promise<Inspection>;
+  onOpenReport?: () => void;
 }
 
 interface FindingEntry {
@@ -87,7 +88,7 @@ function normalizedValue(value: string | null | undefined) {
   return value?.trim().toLocaleUpperCase("pt-BR") ?? "";
 }
 
-export function InspectionReview({ inspection, onChange, onRefresh }: InspectionReviewProps) {
+export function InspectionReview({ inspection, onChange, onRefresh, onOpenReport }: InspectionReviewProps) {
   const entries = useMemo(() => flattenFindings(inspection), [inspection]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [mode, setMode] = useState<ManifestationMode | null>(null);
@@ -191,6 +192,10 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
   }
 
   async function generateReport() {
+    if (onOpenReport) {
+      onOpenReport();
+      return;
+    }
     if (completionLock.current) return;
     completionLock.current = true;
     setCompleting(true);
@@ -216,7 +221,7 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
         <h1 id="review-empty-title">Nenhum indício visual foi identificado</h1>
         <p>A IA não registrou achados nas fotos. As evidências e os dados da execução permanecem no relatório.</p>
         {error ? <p className="item-error" id={REVIEW_ERROR_ID} ref={errorRef} role="alert" tabIndex={-1}>{error.message}</p> : null}
-        <button className="button button--primary" disabled={completing} onClick={() => void generateReport()}>{completing ? "Abrindo relatório..." : "Abrir relatório por IA"}<FileText aria-hidden="true" size={18} /></button>
+        <button className="button button--primary" disabled={completing} onClick={() => void generateReport()}>{onOpenReport ? "Voltar ao relatório" : completing ? "Abrindo relatório..." : "Abrir relatório por IA"}<FileText aria-hidden="true" size={18} /></button>
       </section>
     );
   }
@@ -249,7 +254,7 @@ export function InspectionReview({ inspection, onChange, onRefresh }: Inspection
       <div className="review-result-reason">
         <strong>Por que a IA chegou a este resultado</strong>
         <span>{generalReason}</span>
-        <button className="button button--primary" disabled={completing} onClick={() => void generateReport()}>{completing ? "Abrindo relatório..." : "Gerar relatório por IA"}<FileText aria-hidden="true" size={18} /></button>
+        <button className="button button--primary" disabled={completing} onClick={() => void generateReport()}>{onOpenReport ? "Voltar ao relatório" : completing ? "Abrindo relatório..." : "Gerar relatório por IA"}<FileText aria-hidden="true" size={18} /></button>
       </div>
 
       <div className="review-layout">

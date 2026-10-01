@@ -573,7 +573,7 @@ metadados.
 
 ### T18: Alinhar captura, estilos e responsividade
 
-**Status**: Pending  
+**Status**: Complete
 **What**: Atualizar limite visual para 7 MB e finalizar estilos dos novos
 resultados, manifestações e impressão sem overflow desktop/mobile.  
 **Where**: `frontend/src/features/inspections/client/inspection-workflow.tsx`  
@@ -588,11 +588,11 @@ resultados, manifestações e impressão sem overflow desktop/mobile.
 
 **Done when**:
 
-- [ ] Arquivo com mais de 7 MB é bloqueado antes do upload com mensagem correta.
-- [ ] Interface informa JPEG/PNG/WebP até 7 MB.
-- [ ] Resultado, relatório e manifestação não têm overflow em 375, 768 e 1440 px.
-- [ ] Foco e contraste passam na auditoria visual; impressão mantém hierarquia.
-- [ ] Testes do workflow, lint e build passam; total frontend não fica abaixo de 110.
+- [x] Arquivo com mais de 7 MB é bloqueado antes do upload com mensagem correta.
+- [x] Interface informa JPEG/PNG/WebP até 7 MB.
+- [x] Resultado, relatório e manifestação não têm overflow em 375, 768 e 1440 px.
+- [x] Foco e contraste passam na auditoria visual; impressão mantém hierarquia.
+- [x] Testes do workflow, lint e build passam; total frontend não fica abaixo de 110.
 
 **Tests**: component + build + UAT visual  
 **Gate**: Frontend full  

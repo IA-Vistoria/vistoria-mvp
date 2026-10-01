@@ -88,14 +88,14 @@ describe("ClientDashboard", () => {
     render(<ClientDashboard />);
 
     const heading = await screen.findByRole("heading", { name: "Acompanhe suas vistorias" });
-    expect(screen.getByText(/continue registros em andamento, revise as observações da IA/i)).toBeDefined();
+    expect(screen.getByText(/acompanhe o resultado da IA e acesse relatórios concluídos/i)).toBeDefined();
     expect(screen.queryByText("O próximo passo, sem ruído.")).toBeNull();
 
-    const flow = screen.getByRole("region", { name: "Da coleta ao relatório" });
+    const flow = screen.getByRole("region", { name: "Como o relatório é produzido" });
     expect(within(flow).getByText("Defina os ambientes")).toBeDefined();
     expect(within(flow).getByText("Registre as fotos")).toBeDefined();
-    expect(within(flow).getByText("Revise a análise")).toBeDefined();
-    expect(within(flow).getByText("Acesse o relatório")).toBeDefined();
+    expect(within(flow).getByText("Receba a análise da IA")).toBeDefined();
+    expect(within(flow).getByText("Consulte ou se manifeste")).toBeDefined();
 
     const nextAction = screen.getByTestId("next-action");
     expect(heading.compareDocumentPosition(flow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

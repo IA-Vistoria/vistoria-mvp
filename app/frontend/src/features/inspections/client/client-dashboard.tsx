@@ -59,8 +59,8 @@ interface ClientDashboardProps {
 const FLOW_STEPS = [
   { title: "Defina os ambientes", description: "Inclua somente os espaços que existem no imóvel." },
   { title: "Registre as fotos", description: "Envie uma visão geral por ambiente e detalhes quando precisar." },
-  { title: "Revise a análise", description: "Confirme, corrija ou rejeite cada observação feita pela IA." },
-  { title: "Acesse o relatório", description: "Consulte as evidências junto das decisões que você registrou." },
+  { title: "Receba a análise da IA", description: "Cada ambiente recebe uma conclusão, um motivo e os achados identificados." },
+  { title: "Consulte ou se manifeste", description: "O relatório preserva a análise original e qualquer manifestação opcional." },
 ];
 
 function DashboardIntroduction({ showAction = true }: { showAction?: boolean }) {
@@ -69,15 +69,15 @@ function DashboardIntroduction({ showAction = true }: { showAction?: boolean }) 
       <header className="page-heading dashboard-heading">
         <div>
           <h1>Acompanhe suas vistorias</h1>
-          <p>Continue registros em andamento, revise as observações da IA e acesse relatórios concluídos.</p>
+          <p>Continue registros em andamento, acompanhe o resultado da IA e acesse relatórios concluídos.</p>
         </div>
         {showAction ? <Link className="button button--primary" href="/client/vistorias/nova"><Plus size={18} />Nova vistoria</Link> : null}
       </header>
 
       <section className="dashboard-flow" aria-labelledby="dashboard-flow-title">
         <div className="dashboard-flow__intro">
-          <h2 id="dashboard-flow-title">Da coleta ao relatório</h2>
-          <p>Você mantém o controle do começo ao fim. A IA organiza indícios, mas nenhuma observação entra no relatório sem sua revisão.</p>
+          <h2 id="dashboard-flow-title">Como o relatório é produzido</h2>
+          <p>Você registra o imóvel e as evidências. A IA analisa as fotos, define o resultado e explica os motivos sem depender de aprovação humana.</p>
         </div>
         <ol>
           {FLOW_STEPS.map((step, index) => (

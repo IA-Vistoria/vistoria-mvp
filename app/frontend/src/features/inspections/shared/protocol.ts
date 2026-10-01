@@ -1,6 +1,6 @@
 import type { Evidence, ProtocolItemCode } from "../types";
 
-export const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024;
+export const MAX_EVIDENCE_BYTES = 7 * 1024 * 1024;
 export const ACCEPTED_EVIDENCE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export interface ProtocolItem {
@@ -116,7 +116,7 @@ export function calculateProgress(evidence: Evidence[]): number {
 
 export function validateEvidenceFile(file: File): string | null {
   if (file.size === 0) return "O arquivo não pode estar vazio.";
-  if (file.size > MAX_EVIDENCE_BYTES) return "A imagem deve ter no máximo 10 MB.";
+  if (file.size > MAX_EVIDENCE_BYTES) return "A imagem deve ter no máximo 7 MB.";
   if (!(ACCEPTED_EVIDENCE_TYPES as readonly string[]).includes(file.type)) {
     return "Envie uma imagem JPEG, PNG ou WebP.";
   }

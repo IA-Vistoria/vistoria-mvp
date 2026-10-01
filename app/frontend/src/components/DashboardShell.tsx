@@ -42,6 +42,7 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
 
   return (
     <div className={engineer ? "app-shell app-shell--workspace app-shell--engineer" : "app-shell app-shell--workspace app-shell--client"}>
+      <a className="skip-link" href="#main-content">Pular para o conteúdo principal</a>
       {engineer ? <aside className="main-sidebar" aria-label="Navegação legada">
         <Link href="/engineer"><BrandMark compact /></Link>
         <p className="main-sidebar__label">Área legada</p>
@@ -82,7 +83,7 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
         </div>
       </header>
 
-      <main className="app-content" ref={contentRef}>{children}</main>
+      <main className="app-content" id="main-content" ref={contentRef} tabIndex={-1}>{children}</main>
 
       {!engineer ? (
         <nav className="mobile-nav" aria-label="Navegação móvel">

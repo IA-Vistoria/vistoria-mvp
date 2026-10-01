@@ -165,6 +165,17 @@ describe("InspectionReview", () => {
     expect(completeReport).toHaveBeenCalledWith(31);
   });
 
+  it("volta ao relatório existente sem gerar outro documento", async () => {
+    const onOpenReport = vi.fn();
+    const user = userEvent.setup();
+    render(<InspectionReview inspection={inspection} onChange={vi.fn()} onRefresh={vi.fn()} onOpenReport={onOpenReport} />);
+
+    await user.click(screen.getByRole("button", { name: "Voltar ao relatório" }));
+
+    expect(onOpenReport).toHaveBeenCalledTimes(1);
+    expect(completeReport).not.toHaveBeenCalled();
+  });
+
   it("registra concordância sem exigir texto", async () => {
     const saved = manifestation();
     vi.mocked(reviewFinding).mockResolvedValue({ ...inspection, manifestacoes: [saved] });
