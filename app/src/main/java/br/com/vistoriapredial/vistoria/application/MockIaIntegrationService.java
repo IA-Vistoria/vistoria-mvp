@@ -3,6 +3,8 @@ package br.com.vistoriapredial.vistoria.application;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import br.com.vistoriapredial.vistoria.application.ia.SolicitacaoAnaliseIa;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,10 +20,13 @@ public class MockIaIntegrationService implements IaIntegrationService {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
-    public String analisarImagens(List<String> imageUrls) {
-        if (imageUrls == null || imageUrls.isEmpty()) {
-            throw new IllegalArgumentException("Nenhuma imagem fornecida para análise.");
+    public String analisar(SolicitacaoAnaliseIa solicitacao) {
+        if (solicitacao == null) {
+            throw new IllegalArgumentException("A solicitação de análise é obrigatória.");
         }
+        List<String> imageUrls = solicitacao.evidencias().stream()
+                .map(evidencia -> evidencia.storagePath())
+                .toList();
 
         if (imageUrls.stream().anyMatch(url -> url.contains("trigger-fail"))) {
             throw new RuntimeException("Simulated AI Failure");

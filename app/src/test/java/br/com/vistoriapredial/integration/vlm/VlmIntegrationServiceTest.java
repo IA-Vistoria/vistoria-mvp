@@ -19,6 +19,9 @@ import org.springframework.web.client.RestClient;
 
 import br.com.vistoriapredial.storage.StorageService;
 import br.com.vistoriapredial.storage.StoredFile;
+import br.com.vistoriapredial.vistoria.application.ia.EvidenciaAnaliseIa;
+import br.com.vistoriapredial.vistoria.application.ia.SolicitacaoAnaliseIa;
+import br.com.vistoriapredial.vistoria.domain.CategoriaEvidencia;
 
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -82,7 +85,7 @@ class VlmIntegrationServiceTest {
         VlmIntegrationService service = new VlmIntegrationService(
                 storageService, restClientBuilder.build(), "test-key");
 
-        String preLaudo = service.analisarImagens(List.of("uploads/foto.jpg"));
+        String preLaudo = service.analisar(solicitacao());
 
         assertTrue(preLaudo.contains("Há indícios visuais."));
         assertTrue(preLaudo.contains("possible_moisture"));
@@ -100,7 +103,17 @@ class VlmIntegrationServiceTest {
         VlmIntegrationService service = new VlmIntegrationService(
                 storageService, restClientBuilder.build(), "test-key");
 
-        assertThrows(IllegalStateException.class, () -> service.analisarImagens(List.of("uploads/foto.jpg")));
+        assertThrows(IllegalStateException.class, () -> service.analisar(solicitacao()));
         server.verify();
+    }
+
+    private SolicitacaoAnaliseIa solicitacao() {
+        return new SolicitacaoAnaliseIa(7L, List.of(new EvidenciaAnaliseIa(
+                1L,
+                10L,
+                "Sala",
+                CategoriaEvidencia.VISAO_GERAL,
+                "uploads/foto.jpg",
+                "image/jpeg")));
     }
 }

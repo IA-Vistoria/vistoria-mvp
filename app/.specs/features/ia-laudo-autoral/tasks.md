@@ -351,7 +351,7 @@ contexto do ambiente, data URI, schema JSON e falhas tipadas.
 
 ### T10: Orquestrar contexto, validação e persistência
 
-**Status**: Pending  
+**Status**: Complete  
 **What**: Fazer `VistoriaAnalysisProcessor` enviar a solicitação contextual,
 validar a resposta, registrar o documento v2 e concluir o relatório de forma
 idempotente e sem transação durante a rede.  
@@ -367,12 +367,12 @@ idempotente e sem transação durante a rede.
 
 **Done when**:
 
-- [ ] Cada evidência enviada conserva imagem, ambiente e categoria corretos.
-- [ ] A chamada externa ocorre fora de transação de banco.
-- [ ] Somente JSON validado é persistido e disponibiliza relatório.
-- [ ] Falha real termina em `FALHA_IA`; não há fallback nem documento parcial.
-- [ ] Execução duplicada não duplica ou sobrescreve relatório concluído.
-- [ ] Pelo menos 9 testes unitários cobrem os ramos e a suíte completa passa.
+- [x] Cada evidência enviada conserva imagem, ambiente e categoria corretos.
+- [x] A chamada externa ocorre fora de transação de banco.
+- [x] Somente JSON validado é persistido e disponibiliza relatório.
+- [x] Falha real termina em `FALHA_IA`; não há fallback nem documento parcial.
+- [x] Execução duplicada não duplica ou sobrescreve relatório concluído.
+- [x] Pelo menos 9 testes unitários cobrem os ramos e a suíte completa passa.
 
 **Tests**: unit  
 **Gate**: Backend full  

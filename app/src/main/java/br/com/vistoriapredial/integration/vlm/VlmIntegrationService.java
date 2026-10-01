@@ -21,6 +21,7 @@ import br.com.vistoriapredial.integration.vlm.dto.VlmHealthResponse;
 import br.com.vistoriapredial.storage.StorageService;
 import br.com.vistoriapredial.storage.StoredFile;
 import br.com.vistoriapredial.vistoria.application.IaIntegrationService;
+import br.com.vistoriapredial.vistoria.application.ia.SolicitacaoAnaliseIa;
 
 @Service
 @ConditionalOnProperty(name = "app.ia.provider", havingValue = "vlm")
@@ -56,10 +57,13 @@ public class VlmIntegrationService implements IaIntegrationService {
     }
 
     @Override
-    public String analisarImagens(List<String> imageUrls) {
-        if (imageUrls == null || imageUrls.isEmpty()) {
-            throw new IllegalArgumentException("Nenhuma imagem fornecida para análise.");
+    public String analisar(SolicitacaoAnaliseIa solicitacao) {
+        if (solicitacao == null) {
+            throw new IllegalArgumentException("A solicitação de análise é obrigatória.");
         }
+        List<String> imageUrls = solicitacao.evidencias().stream()
+                .map(evidencia -> evidencia.storagePath())
+                .toList();
 
         ensureModelReady();
 
