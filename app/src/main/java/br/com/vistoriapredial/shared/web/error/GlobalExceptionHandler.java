@@ -284,7 +284,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 HttpStatus.UNPROCESSABLE_ENTITY,
                 ProblemTypes.INVALID_EVIDENCE,
                 "Evidência inválida",
-                "O arquivo de evidência deve ter no máximo 10 MB.",
+                "O arquivo de evidência deve ter no máximo 7 MB.",
                 requestUri(request)
         );
 

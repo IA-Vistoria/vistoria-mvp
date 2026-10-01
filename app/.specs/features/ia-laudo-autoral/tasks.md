@@ -435,7 +435,7 @@ e aceitar manifestações opcionais mantendo ProblemDetail.
 
 ### T13: Alinhar o limite de evidência ao modelo
 
-**Status**: Pending  
+**Status**: Complete
 **What**: Reduzir o limite da evidência para 7 MB em validação e multipart,
 com erro claro e sem alterar os formatos aceitos.  
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/application/EvidenceFileValidator.java`  
@@ -450,10 +450,10 @@ com erro claro e sem alterar os formatos aceitos.
 
 **Done when**:
 
-- [ ] Arquivo com 7 MB é aceito e com 7 MB + 1 byte é rejeitado.
-- [ ] Mensagens e configuração multipart informam 7 MB.
-- [ ] JPEG, PNG e WebP válidos continuam aceitos.
-- [ ] Pelo menos 5 testes de upload/erro passam.
+- [x] Arquivo com 7 MB é aceito e com 7 MB + 1 byte é rejeitado.
+- [x] Mensagens e configuração multipart informam 7 MB.
+- [x] JPEG, PNG e WebP válidos continuam aceitos.
+- [x] Pelo menos 5 testes de upload/erro passam.
 
 **Tests**: unit + MockMvc  
 **Gate**: Backend full  

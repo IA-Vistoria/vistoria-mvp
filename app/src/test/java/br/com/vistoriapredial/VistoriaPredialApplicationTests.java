@@ -22,10 +22,10 @@ class VistoriaPredialApplicationTests {
     }
 
     @Test
-    void multipartRequestAllowsProtocolOverheadAboveTenMegabytes() {
+    void multipartRequestAllowsProtocolOverheadAboveSevenMegabytes() {
         assertThat(environment.getProperty("spring.servlet.multipart.max-file-size"))
-                .isEqualTo("10MB");
+                .isEqualTo("7MB");
         assertThat(environment.getProperty("spring.servlet.multipart.max-request-size"))
-                .isEqualTo("11MB");
+                .isEqualTo("8MB");
     }
 }

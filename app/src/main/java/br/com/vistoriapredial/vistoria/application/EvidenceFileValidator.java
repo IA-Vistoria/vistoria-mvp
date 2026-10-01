@@ -10,7 +10,7 @@ import java.io.IOException;
 @Component
 public class EvidenceFileValidator {
 
-    private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
+    private static final long MAX_FILE_SIZE = 7L * 1024 * 1024;
     private static final byte[] JPEG_SIGNATURE = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
     private static final byte[] PNG_SIGNATURE = {
             (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A
@@ -21,7 +21,7 @@ public class EvidenceFileValidator {
             throw new InvalidEvidenceException("O arquivo de evidência não pode estar vazio.");
         }
         if (file.getSize() > MAX_FILE_SIZE) {
-            throw new InvalidEvidenceException("O arquivo de evidência deve ter no máximo 10 MB.");
+            throw new InvalidEvidenceException("O arquivo de evidência deve ter no máximo 7 MB.");
         }
 
         String contentType = file.getContentType();

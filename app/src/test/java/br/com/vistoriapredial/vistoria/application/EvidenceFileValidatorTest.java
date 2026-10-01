@@ -39,14 +39,26 @@ class EvidenceFileValidatorTest {
     }
 
     @Test
-    void shouldRejectFileLargerThanTenMebibytes() {
-        byte[] content = new byte[10 * 1024 * 1024 + 1];
+    void shouldAcceptFileWithExactlySevenMebibytes() {
+        byte[] content = jpegWithSize(7 * 1024 * 1024);
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "limite.jpg", MediaType.IMAGE_JPEG_VALUE, content);
+
+        ValidatedEvidence result = validator.validate(file);
+
+        assertThat(result.extension()).isEqualTo(".jpg");
+        assertThat(result.mediaType()).isEqualTo(MediaType.IMAGE_JPEG);
+    }
+
+    @Test
+    void shouldRejectFileLargerThanSevenMebibytes() {
+        byte[] content = jpegWithSize(7 * 1024 * 1024 + 1);
         MockMultipartFile file = new MockMultipartFile(
                 "file", "grande.jpg", MediaType.IMAGE_JPEG_VALUE, content);
 
         assertThatThrownBy(() -> validator.validate(file))
                 .isInstanceOf(InvalidEvidenceException.class)
-                .hasMessageContaining("10 MB");
+                .hasMessageContaining("7 MB");
     }
 
     @Test
@@ -78,5 +90,13 @@ class EvidenceFileValidatorTest {
                 Arguments.of("image/webp",
                         new byte[] {'R', 'I', 'F', 'F', 0x00, 0x00, 0x00, 0x00, 'W', 'E', 'B', 'P'}, ".webp")
         );
+    }
+
+    private byte[] jpegWithSize(int size) {
+        byte[] content = new byte[size];
+        content[0] = (byte) 0xFF;
+        content[1] = (byte) 0xD8;
+        content[2] = (byte) 0xFF;
+        return content;
     }
 }
