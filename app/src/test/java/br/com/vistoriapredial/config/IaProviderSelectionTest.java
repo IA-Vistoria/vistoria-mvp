@@ -4,6 +4,9 @@ import br.com.vistoriapredial.integration.vlm.VlmConfiguration;
 import br.com.vistoriapredial.integration.vlm.VlmIntegrationService;
 import br.com.vistoriapredial.storage.StorageService;
 import br.com.vistoriapredial.vistoria.application.MockIaIntegrationService;
+import br.com.vistoriapredial.vistoria.application.analysis.AnaliseVistoriaDocumentFactory;
+import br.com.vistoriapredial.vistoria.application.analysis.ResultadoAnaliseCalculator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -80,8 +83,18 @@ class IaProviderSelectionTest {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @Import(MockIaIntegrationService.class)
+    @Import({
+            MockIaIntegrationService.class,
+            AnaliseVistoriaDocumentFactory.class,
+            ResultadoAnaliseCalculator.class,
+            TimeConfig.class
+    })
     static class MockProviderConfiguration {
+
+        @Bean
+        ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
     }
 
     @Configuration(proxyBeanMethods = false)
