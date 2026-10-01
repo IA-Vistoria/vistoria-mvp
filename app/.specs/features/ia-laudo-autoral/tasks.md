@@ -543,7 +543,8 @@ IA por ambiente, com feedback opcional que não altera a conclusão.
 
 ### T17: Completar o relatório autoral da IA
 
-**Status**: Pending  
+**Status**: Complete
+
 **What**: Reestruturar o relatório com resultado geral, motivo, resumo de
 gravidades, ambientes, evidências, achados completos, limitações, manifestação e
 metadados.  
@@ -559,12 +560,12 @@ metadados.
 
 **Done when**:
 
-- [ ] Resultado geral e motivo aparecem antes dos detalhes.
-- [ ] Cada ambiente possui resultado e somente suas próprias evidências/observações.
-- [ ] Achados contestados continuam presentes com manifestação separada.
-- [ ] Inconclusivo orienta nova captura; ausência de achado usa texto explícito.
-- [ ] Impressão preserva identificação, resultados, evidências, metadados e aviso de escopo.
-- [ ] Pelo menos 12 testes de componente novos/atualizados passam.
+- [x] Resultado geral e motivo aparecem antes dos detalhes.
+- [x] Cada ambiente possui resultado e somente suas próprias evidências/observações.
+- [x] Achados contestados continuam presentes com manifestação separada.
+- [x] Inconclusivo orienta nova captura; ausência de achado usa texto explícito.
+- [x] Impressão preserva identificação, resultados, evidências, metadados e aviso de escopo.
+- [x] Pelo menos 12 testes de componente novos/atualizados passam.
 
 **Tests**: component  
 **Gate**: Frontend full  
