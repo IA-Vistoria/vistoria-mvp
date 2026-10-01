@@ -110,4 +110,12 @@ describe("contrato visual da análise", () => {
   it("traduz a taxonomia v2 de umidade e mofo", () => {
     expect(issueTypeLabel("UMIDADE_OU_MOFO_APARENTE")).toBe("Umidade ou mofo aparente");
   });
+
+  it("traduz fissura aparente sem expor o identificador técnico", () => {
+    expect(issueTypeLabel("FISSURA_APARENTE")).toBe("Fissura aparente");
+  });
+
+  it("humaniza uma taxonomia futura ainda não mapeada", () => {
+    expect(issueTypeLabel("PINTURA_DESCASCADA")).toBe("Pintura descascada");
+  });
 });

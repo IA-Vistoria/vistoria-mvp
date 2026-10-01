@@ -89,12 +89,22 @@ export function issueTypeLabel(issueType: string | null): string {
     insufficient_evidence: "Evidência insuficiente",
     other_visual_issue: "Outro problema visual",
     UMIDADE_OU_MOFO_APARENTE: "Umidade ou mofo aparente",
+    FISSURA_APARENTE: "Fissura aparente",
     FISSURA_OU_TRINCA_APARENTE: "Fissura ou trinca aparente",
     DESCASCAMENTO_OU_DESPLACAMENTO: "Descascamento ou desplacamento",
     MANCHA_APARENTE: "Mancha aparente",
     OUTRO_INDICIO_VISUAL: "Outro indício visual",
   };
-  return labels[issueType] ?? issueType;
+  const mapped = labels[issueType];
+  if (mapped) return mapped;
+
+  const readable = issueType
+    .trim()
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("pt-BR");
+  return readable ? readable[0].toLocaleUpperCase("pt-BR") + readable.slice(1) : "Achado visual";
 }
 
 export function aiResultLabel(result: AiResult | null | undefined): string {
