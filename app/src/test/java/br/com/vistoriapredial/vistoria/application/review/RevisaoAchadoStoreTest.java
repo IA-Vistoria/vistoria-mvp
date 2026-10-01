@@ -13,6 +13,17 @@ class RevisaoAchadoStoreTest {
             JsonMapper.builder().findAndAddModules().build());
 
     @Test
+    void shouldExposeOptionalManifestationValuesWithoutRemovingLegacyValues() {
+        assertThat(DecisaoRevisao.valueOf("CONCORDO")).isEqualTo(DecisaoRevisao.valueOf("CONCORDO"));
+        assertThat(DecisaoRevisao.valueOf("CONTESTO")).isEqualTo(DecisaoRevisao.valueOf("CONTESTO"));
+        assertThat(DecisaoRevisao.valueOf("CONTEXTO_ADICIONAL"))
+                .isEqualTo(DecisaoRevisao.valueOf("CONTEXTO_ADICIONAL"));
+        assertThat(DecisaoRevisao.valueOf("CONFIRMADO")).isEqualTo(DecisaoRevisao.CONFIRMADO);
+        assertThat(DecisaoRevisao.valueOf("CORRIGIDO")).isEqualTo(DecisaoRevisao.CORRIGIDO);
+        assertThat(DecisaoRevisao.valueOf("REJEITADO")).isEqualTo(DecisaoRevisao.REJEITADO);
+    }
+
+    @Test
     void shouldWriteVersionedDocumentAndReplaceOnlyMatchingFinding() {
         String first = store.upsert(null, new RevisaoAchado(
                 20L, 0, DecisaoRevisao.CONFIRMADO, "Confirmado", null,

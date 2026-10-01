@@ -380,7 +380,7 @@ idempotente e sem transação durante a rede.
 
 ### T11: Transformar revisão em manifestação opcional
 
-**Status**: Pending  
+**Status**: Complete
 **What**: Alterar o caso de uso de revisão para concordância, contestação ou
 contexto opcional, permitido após o relatório e sem editar o achado da IA.  
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/application/VistoriaService.java`  
@@ -395,12 +395,12 @@ contexto opcional, permitido após o relatório e sem editar o achado da IA.
 
 **Done when**:
 
-- [ ] Novos valores representam concordância, contestação e contexto adicional.
-- [ ] Contestação exige 1–1000 caracteres; concordância pode ser breve.
-- [ ] Nenhuma ação altera tipo, gravidade, confiança ou resultado original.
-- [ ] Valores legados continuam legíveis.
-- [ ] Ownership e 403 continuam preservados.
-- [ ] Pelo menos 9 testes de aplicação passam.
+- [x] Novos valores representam concordância, contestação e contexto adicional.
+- [x] Contestação exige 1–1000 caracteres; concordância pode ser breve.
+- [x] Nenhuma ação altera tipo, gravidade, confiança ou resultado original.
+- [x] Valores legados continuam legíveis.
+- [x] Ownership e 403 continuam preservados.
+- [x] Pelo menos 9 testes de aplicação passam.
 
 **Tests**: unit  
 **Gate**: Backend quick  

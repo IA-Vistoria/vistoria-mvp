@@ -45,7 +45,6 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import br.com.vistoriapredial.vistoria.application.analysis.VistoriaSubmetidaEvent;
 import br.com.vistoriapredial.vistoria.application.analysis.PreLaudoParser;
 import br.com.vistoriapredial.vistoria.application.exception.FindingNotFoundException;
-import br.com.vistoriapredial.vistoria.application.exception.IncompleteReviewException;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidReviewException;
 import br.com.vistoriapredial.vistoria.application.review.DecisaoRevisao;
 import br.com.vistoriapredial.vistoria.application.review.RevisaoAchadoStore;
@@ -441,16 +440,17 @@ class VistoriaServiceTest {
     }
 
     @Test
-    void shouldUpsertReviewWithoutChangingOriginalAnalysis() {
+    void shouldUpsertOptionalManifestationAfterReportWithoutChangingOriginalAnalysis() {
         Vistoria vistoria = reviewableInspection(validAnalysisWithTwoFindings());
+        vistoria.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
         String originalAnalysis = vistoria.getPreLaudoIa();
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
         when(vistoriaRepository.saveAndFlush(vistoria)).thenReturn(vistoria);
 
         vistoriaService.revisarAchado(10L, cliente, new RevisarAchadoCommand(
-                20L, 0, DecisaoRevisao.CONFIRMADO, "  Marca já observada.  ", null));
+                20L, 0, DecisaoRevisao.CONCORDO, null, null));
         Vistoria updated = vistoriaService.revisarAchado(10L, cliente, new RevisarAchadoCommand(
-                20L, 0, DecisaoRevisao.CORRIGIDO, " É apenas uma sombra. ", " Sombra "));
+                20L, 0, DecisaoRevisao.CONTESTO, " É apenas uma sombra. ", " Sombra "));
 
         assertThat(updated.getPreLaudoIa()).isEqualTo(originalAnalysis);
         var reviews = new RevisaoAchadoStore(JsonMapper.builder().findAndAddModules().build())
@@ -458,9 +458,9 @@ class VistoriaServiceTest {
         assertThat(reviews).hasSize(1);
         assertThat(reviews.getFirst().imagemId()).isEqualTo(20L);
         assertThat(reviews.getFirst().indiceAchado()).isZero();
-        assertThat(reviews.getFirst().decisao()).isEqualTo(DecisaoRevisao.CORRIGIDO);
+        assertThat(reviews.getFirst().decisao()).isEqualTo(DecisaoRevisao.CONTESTO);
         assertThat(reviews.getFirst().contexto()).isEqualTo("É apenas uma sombra.");
-        assertThat(reviews.getFirst().tipoCorrigido()).isEqualTo("Sombra");
+        assertThat(reviews.getFirst().tipoCorrigido()).isNull();
         assertThat(reviews.getFirst().revisadoEm()).isEqualTo(Instant.parse("2026-09-30T12:00:00Z"));
     }
 
@@ -472,7 +472,7 @@ class VistoriaServiceTest {
                 reviewableInspection(validAnalysisWithTwoFindings())));
 
         assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, outroCliente,
-                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CONFIRMADO, "Confirmo.", null)))
+                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CONCORDO, null, null)))
                 .isInstanceOf(VistoriaAccessDeniedException.class);
     }
 
@@ -482,55 +482,70 @@ class VistoriaServiceTest {
                 reviewableInspection(validAnalysisWithTwoFindings())));
 
         assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, cliente,
-                new RevisarAchadoCommand(20L, 99, DecisaoRevisao.CONFIRMADO, "Confirmo.", null)))
+                new RevisarAchadoCommand(20L, 99, DecisaoRevisao.CONCORDO, null, null)))
                 .isInstanceOf(FindingNotFoundException.class);
     }
 
     @Test
-    void shouldRequireCorrectedTypeForCorrectedFinding() {
+    void shouldRequireJustificationForContest() {
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(
                 reviewableInspection(validAnalysisWithTwoFindings())));
 
         assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, cliente,
-                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CORRIGIDO, "Corrijo.", "  ")))
+                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CONTESTO, "  ", null)))
                 .isInstanceOf(InvalidReviewException.class)
-                .hasMessage("Informe o tipo corrigido do achado.");
+                .hasMessage("A contestação deve ter entre 1 e 1000 caracteres.");
     }
 
     @Test
-    void shouldRejectReviewOutsidePendingReviewState() {
+    void shouldRequireTextForAdditionalContext() {
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(
+                reviewableInspection(validAnalysisWithTwoFindings())));
+
+        assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, cliente,
+                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CONTEXTO_ADICIONAL, null, null)))
+                .isInstanceOf(InvalidReviewException.class)
+                .hasMessage("O contexto adicional deve ter entre 1 e 1000 caracteres.");
+    }
+
+    @Test
+    void shouldRejectManifestationTextAboveOneThousandCharacters() {
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(
+                reviewableInspection(validAnalysisWithTwoFindings())));
+
+        assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, cliente,
+                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CONTESTO, "x".repeat(1001), null)))
+                .isInstanceOf(InvalidReviewException.class)
+                .hasMessage("A contestação deve ter entre 1 e 1000 caracteres.");
+    }
+
+    @Test
+    void shouldRejectLegacyDecisionAsNewManifestation() {
+        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(
+                reviewableInspection(validAnalysisWithTwoFindings())));
+
+        assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, cliente,
+                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CORRIGIDO, "Sombra", "Sombra")))
+                .isInstanceOf(InvalidReviewException.class)
+                .hasMessage("Use uma manifestação de concordância, contestação ou contexto adicional.");
+    }
+
+    @Test
+    void shouldRejectManifestationBeforeReportOrLegacyReviewState() {
         Vistoria vistoria = reviewableInspection(validAnalysisWithTwoFindings());
-        vistoria.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
+        vistoria.setStatus(VistoriaStatus.AGUARDANDO_IA);
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
 
         assertThatThrownBy(() -> vistoriaService.revisarAchado(10L, cliente,
-                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CONFIRMADO, "Confirmo.", null)))
+                new RevisarAchadoCommand(20L, 0, DecisaoRevisao.CONCORDO, null, null)))
                 .isInstanceOf(StaleInspectionException.class);
     }
 
     @Test
-    void shouldBlockReportWhileAnyFindingHasNoReview() {
+    void shouldMakeLegacyPendingReportAvailableWithoutManifestation() {
         Vistoria vistoria = reviewableInspection(validAnalysisWithTwoFindings());
         when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
         when(vistoriaRepository.saveAndFlush(vistoria)).thenReturn(vistoria);
-        vistoriaService.revisarAchado(10L, cliente, new RevisarAchadoCommand(
-                20L, 0, DecisaoRevisao.CONFIRMADO, "Confirmo.", null));
-
-        assertThatThrownBy(() -> vistoriaService.concluirRelatorio(10L, cliente))
-                .isInstanceOf(IncompleteReviewException.class)
-                .hasMessage("Revise todos os achados antes de gerar o relatório.");
-        assertThat(vistoria.getStatus()).isEqualTo(VistoriaStatus.REVISAO_PENDENTE);
-    }
-
-    @Test
-    void shouldMakeReportAvailableWhenEveryFindingIsReviewed() {
-        Vistoria vistoria = reviewableInspection(validAnalysisWithTwoFindings());
-        when(vistoriaRepository.findById(10L)).thenReturn(Optional.of(vistoria));
-        when(vistoriaRepository.saveAndFlush(vistoria)).thenReturn(vistoria);
-        vistoriaService.revisarAchado(10L, cliente, new RevisarAchadoCommand(
-                20L, 0, DecisaoRevisao.CONFIRMADO, "Confirmo.", null));
-        vistoriaService.revisarAchado(10L, cliente, new RevisarAchadoCommand(
-                20L, 1, DecisaoRevisao.REJEITADO, "Não corresponde ao local.", null));
 
         Vistoria completed = vistoriaService.concluirRelatorio(10L, cliente);
 
@@ -538,6 +553,7 @@ class VistoriaServiceTest {
         assertThat(completed.getDataConclusao()).isEqualTo(
                 java.time.LocalDateTime.of(2026, 9, 30, 12, 0));
         assertThat(completed.getPreLaudoIa()).isEqualTo(validAnalysisWithTwoFindings());
+        assertThat(completed.getRevisaoUsuario()).isNull();
     }
 
     @Test

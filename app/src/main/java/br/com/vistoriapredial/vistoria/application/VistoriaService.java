@@ -38,9 +38,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import br.com.vistoriapredial.vistoria.application.analysis.VistoriaSubmetidaEvent;
-import br.com.vistoriapredial.vistoria.application.analysis.AnaliseVistoria;
 import br.com.vistoriapredial.vistoria.application.analysis.PreLaudoParser;
-import br.com.vistoriapredial.vistoria.application.exception.IncompleteReviewException;
 import br.com.vistoriapredial.vistoria.application.exception.InvalidReviewException;
 import br.com.vistoriapredial.vistoria.application.review.DecisaoRevisao;
 import br.com.vistoriapredial.vistoria.application.review.RevisaoAchado;
@@ -48,7 +46,6 @@ import br.com.vistoriapredial.vistoria.application.review.RevisaoAchadoStore;
 import br.com.vistoriapredial.vistoria.application.review.RevisarAchadoCommand;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Set;
 import java.util.stream.IntStream;
 
 @Service
@@ -235,7 +232,8 @@ public class VistoriaService {
             Usuario cliente,
             RevisarAchadoCommand command) {
         Vistoria vistoria = buscarPorIdEValidarCliente(vistoriaId, cliente);
-        if (vistoria.getStatus() != VistoriaStatus.REVISAO_PENDENTE) {
+        if (vistoria.getStatus() != VistoriaStatus.RELATORIO_DISPONIVEL
+                && vistoria.getStatus() != VistoriaStatus.REVISAO_PENDENTE) {
             throw new StaleInspectionException();
         }
         RevisarAchadoCommand normalized = validateReview(command);
@@ -261,17 +259,6 @@ public class VistoriaService {
         if (vistoria.getStatus() != VistoriaStatus.REVISAO_PENDENTE) {
             throw new StaleInspectionException();
         }
-        AnaliseVistoria analysis = preLaudoParser.parse(vistoria, vistoria.getPreLaudoIa());
-        Set<String> reviewed = reviewStore.read(vistoria.getRevisaoUsuario()).stream()
-                .map(review -> findingKey(review.imagemId(), review.indiceAchado()))
-                .collect(Collectors.toSet());
-        boolean incomplete = analysis.imagens().stream()
-                .flatMap(image -> image.achados().stream()
-                        .map(finding -> findingKey(image.imagemId(), finding.indice())))
-                .anyMatch(key -> !reviewed.contains(key));
-        if (incomplete) {
-            throw new IncompleteReviewException();
-        }
         vistoria.disponibilizarRelatorio(LocalDateTime.now(clock));
         return salvarComControleConcorrencia(vistoria);
     }
@@ -283,23 +270,34 @@ public class VistoriaService {
             throw new InvalidReviewException("A referência e a decisão do achado são obrigatórias.");
         }
         String context = trimToNull(command.contexto());
-        if (context == null || context.length() > 1000) {
-            throw new InvalidReviewException("O contexto deve ter entre 1 e 1000 caracteres.");
-        }
-        String correctedType = trimToNull(command.tipoCorrigido());
-        if (command.decisao() == DecisaoRevisao.CORRIGIDO
-                && (correctedType == null || correctedType.length() > 80)) {
-            throw new InvalidReviewException("Informe o tipo corrigido do achado.");
-        }
-        if (correctedType != null && correctedType.length() > 80) {
-            throw new InvalidReviewException("O tipo corrigido deve ter no máximo 80 caracteres.");
+        switch (command.decisao()) {
+            case CONCORDO -> context = validateOptionalContext(context);
+            case CONTESTO -> validateRequiredContext(
+                    context, "A contestação deve ter entre 1 e 1000 caracteres.");
+            case CONTEXTO_ADICIONAL -> validateRequiredContext(
+                    context, "O contexto adicional deve ter entre 1 e 1000 caracteres.");
+            default -> throw new InvalidReviewException(
+                    "Use uma manifestação de concordância, contestação ou contexto adicional.");
         }
         return new RevisarAchadoCommand(
                 command.imagemId(),
                 command.indiceAchado(),
                 command.decisao(),
                 context,
-                command.decisao() == DecisaoRevisao.CORRIGIDO ? correctedType : null);
+                null);
+    }
+
+    private String validateOptionalContext(String context) {
+        if (context != null && context.length() > 1000) {
+            throw new InvalidReviewException("O comentário deve ter no máximo 1000 caracteres.");
+        }
+        return context;
+    }
+
+    private void validateRequiredContext(String context, String message) {
+        if (context == null || context.length() > 1000) {
+            throw new InvalidReviewException(message);
+        }
     }
 
     private String trimToNull(String value) {
@@ -308,10 +306,6 @@ public class VistoriaService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private String findingKey(long imageId, int findingIndex) {
-        return imageId + ":" + findingIndex;
     }
 
     @Transactional(readOnly = true)
