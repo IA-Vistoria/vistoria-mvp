@@ -295,7 +295,7 @@ OCI SDK em versões compatíveis, sem alterar a stack Spring.
 
 ### T8: Configurar autenticação e cliente OCI
 
-**Status**: Pending  
+**Status**: Complete  
 **What**: Criar properties validadas e cliente OCI para config file local ou
 Instance Principal na VM, com região, compartment, modelo, timeouts e retry
 limitado.  
@@ -311,11 +311,11 @@ limitado.
 
 **Done when**:
 
-- [ ] `config_file` e `instance_principal` constroem o provider correto.
-- [ ] Região default é São Paulo; compartment e modelo são obrigatórios no provider OCI.
-- [ ] Retry não inclui 401/403/404 ou resposta inválida.
-- [ ] Health/config check não realiza chamada cobrada.
-- [ ] Pelo menos 8 testes unitários/contexto passam sem ler credenciais reais.
+- [x] `config_file` e `instance_principal` constroem o provider correto.
+- [x] Região default é São Paulo; compartment e modelo são obrigatórios no provider OCI.
+- [x] Retry não inclui 401/403/404 ou resposta inválida.
+- [x] Health/config check não realiza chamada cobrada.
+- [x] Pelo menos 8 testes unitários/contexto passam sem ler credenciais reais.
 
 **Tests**: unit + contexto  
 **Gate**: Backend full  
