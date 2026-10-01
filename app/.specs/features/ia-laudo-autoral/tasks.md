@@ -408,7 +408,7 @@ contexto opcional, permitido após o relatório e sem editar o achado da IA.
 
 ### T12: Expor análise v2 e manifestação na API
 
-**Status**: Pending  
+**Status**: Complete
 **What**: Atualizar DTOs, mapper e endpoints para devolver o resultado completo
 e aceitar manifestações opcionais mantendo ProblemDetail.  
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/web/`  
@@ -423,11 +423,11 @@ e aceitar manifestações opcionais mantendo ProblemDetail.
 
 **Done when**:
 
-- [ ] O GET expõe execução, resultado geral, ambientes, achados e manifestações separadas.
-- [ ] O relatório é retornado sem revisão obrigatória.
-- [ ] Contestação válida persiste; outro usuário recebe 403; referência inválida recebe 404/422 conforme contrato.
-- [ ] Valores v1 continuam serializáveis.
-- [ ] Pelo menos 10 testes MockMvc novos/atualizados passam.
+- [x] O GET expõe execução, resultado geral, ambientes, achados e manifestações separadas.
+- [x] O relatório é retornado sem revisão obrigatória.
+- [x] Contestação válida persiste; outro usuário recebe 403; referência inválida recebe 404/422 conforme contrato.
+- [x] Valores v1 continuam serializáveis.
+- [x] Pelo menos 10 testes MockMvc novos/atualizados passam.
 
 **Tests**: integração MockMvc  
 **Gate**: Backend full  

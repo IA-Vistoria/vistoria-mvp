@@ -20,6 +20,6 @@ public record VistoriaResponseDto(
         LocalDateTime dataConclusao,
         List<ImagemVistoriaResponseDto> imagens,
         AnaliseVistoria analiseIa,
-        List<RevisaoAchado> revisoes
+        List<RevisaoAchado> manifestacoes
 ) {
 }

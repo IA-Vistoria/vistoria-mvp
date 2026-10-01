@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
 import br.com.vistoriapredial.vistoria.application.exception.FindingNotFoundException;
-import br.com.vistoriapredial.vistoria.application.exception.IncompleteReviewException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -294,6 +293,60 @@ class VistoriaControllerTest {
                 .andExpect(jsonPath("$.analiseIa.imagens[0].achados[0].tipo").value("stain"))
                 .andExpect(jsonPath("$.preLaudoIa").doesNotExist())
                 .andExpect(jsonPath("$.imagens[0].storagePath").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldExposeCompleteV2AnalysisSeparatedFromManifestations() throws Exception {
+        Vistoria vistoria = analyzedV2InspectionResponse();
+        vistoria.setRevisaoUsuario("""
+                {"version":1,"revisoes":[{
+                  "imagemId":31,"indiceAchado":0,"decisao":"CONTESTO",
+                  "contexto":"A parede foi pintada ontem.","tipoCorrigido":null,
+                  "revisadoEm":"2026-09-30T20:10:00Z"
+                }]}
+                """);
+        when(vistoriaService.buscarVistoria(10L, cliente)).thenReturn(vistoria);
+
+        mockMvc.perform(get("/api/vistorias/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RELATORIO_DISPONIVEL"))
+                .andExpect(jsonPath("$.analiseIa.version").value(2))
+                .andExpect(jsonPath("$.analiseIa.execucao.provider").value("oci"))
+                .andExpect(jsonPath("$.analiseIa.execucao.modelo").value("google.gemini-2.5-flash"))
+                .andExpect(jsonPath("$.analiseIa.resultadoGeral").value("NAO_APROVADO"))
+                .andExpect(jsonPath("$.analiseIa.motivoResultadoGeral").isNotEmpty())
+                .andExpect(jsonPath("$.analiseIa.ambientes[0].id").value(8))
+                .andExpect(jsonPath("$.analiseIa.ambientes[0].resultado").value("NAO_APROVADO"))
+                .andExpect(jsonPath("$.analiseIa.imagens[0].imagemId").value(31))
+                .andExpect(jsonPath("$.analiseIa.imagens[0].ambiente.nome").value("Banheiro"))
+                .andExpect(jsonPath("$.analiseIa.imagens[0].achados[0].criterio")
+                        .value("Integridade aparente da parede"))
+                .andExpect(jsonPath("$.analiseIa.imagens[0].achados[0].impacto")
+                        .value("Pode indicar umidade persistente."))
+                .andExpect(jsonPath("$.manifestacoes[0].decisao").value("CONTESTO"))
+                .andExpect(jsonPath("$.manifestacoes[0].contexto").value("A parede foi pintada ontem."))
+                .andExpect(jsonPath("$.preLaudoIa").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldExposeLegacyManifestationWithoutChangingV1Analysis() throws Exception {
+        Vistoria vistoria = reviewableInspectionResponse();
+        vistoria.setRevisaoUsuario("""
+                {"version":1,"revisoes":[{
+                  "imagemId":20,"indiceAchado":0,"decisao":"CONFIRMADO",
+                  "contexto":"Registro anterior.","tipoCorrigido":null,
+                  "revisadoEm":"2026-09-30T12:00:00Z"
+                }]}
+                """);
+        when(vistoriaService.buscarVistoria(10L, cliente)).thenReturn(vistoria);
+
+        mockMvc.perform(get("/api/vistorias/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.analiseIa.version").value(1))
+                .andExpect(jsonPath("$.manifestacoes[0].decisao").value("CONFIRMADO"))
+                .andExpect(jsonPath("$.manifestacoes[0].contexto").value("Registro anterior."));
     }
 
     @Test
@@ -569,12 +622,13 @@ class VistoriaControllerTest {
 
     @Test
     @WithMockUser(username = "client@test.com", roles = "CLIENTE")
-    void shouldReviewFindingAndReturnPersistedReview() throws Exception {
+    void shouldRegisterAgreementWithoutMandatoryText() throws Exception {
         Vistoria vistoria = reviewableInspectionResponse();
+        vistoria.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
         vistoria.setRevisaoUsuario("""
                 {"version":1,"revisoes":[{
-                  "imagemId":20,"indiceAchado":0,"decisao":"CONFIRMADO",
-                  "contexto":"Marca antiga.","tipoCorrigido":null,
+                  "imagemId":20,"indiceAchado":0,"decisao":"CONCORDO",
+                  "contexto":null,"tipoCorrigido":null,
                   "revisadoEm":"2026-09-30T12:00:00Z"
                 }]}
                 """);
@@ -583,26 +637,102 @@ class VistoriaControllerTest {
         mockMvc.perform(put("/api/vistorias/10/revisao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"imagemId":20,"indiceAchado":0,"decisao":"CONFIRMADO",
-                                 "contexto":"Marca antiga."}
+                                {"imagemId":20,"indiceAchado":0,"decisao":"CONCORDO"}
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("REVISAO_PENDENTE"))
-                .andExpect(jsonPath("$.revisoes[0].imagemId").value(20))
-                .andExpect(jsonPath("$.revisoes[0].indiceAchado").value(0))
-                .andExpect(jsonPath("$.revisoes[0].decisao").value("CONFIRMADO"))
-                .andExpect(jsonPath("$.revisoes[0].contexto").value("Marca antiga."));
+                .andExpect(jsonPath("$.status").value("RELATORIO_DISPONIVEL"))
+                .andExpect(jsonPath("$.manifestacoes[0].imagemId").value(20))
+                .andExpect(jsonPath("$.manifestacoes[0].indiceAchado").value(0))
+                .andExpect(jsonPath("$.manifestacoes[0].decisao").value("CONCORDO"))
+                .andExpect(jsonPath("$.manifestacoes[0].contexto").doesNotExist());
     }
 
     @Test
     @WithMockUser(username = "client@test.com", roles = "CLIENTE")
-    void shouldRejectBlankReviewContextAtHttpBoundary() throws Exception {
+    void shouldRegisterContestWithJustification() throws Exception {
+        Vistoria vistoria = reviewableInspectionResponse();
+        vistoria.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
+        vistoria.setRevisaoUsuario("""
+                {"version":1,"revisoes":[{
+                  "imagemId":20,"indiceAchado":0,"decisao":"CONTESTO",
+                  "contexto":"A marca é uma sombra.","tipoCorrigido":null,
+                  "revisadoEm":"2026-09-30T12:00:00Z"
+                }]}
+                """);
+        when(vistoriaService.revisarAchado(eq(10L), eq(cliente), any())).thenReturn(vistoria);
+
         mockMvc.perform(put("/api/vistorias/10/revisao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"imagemId":20,"indiceAchado":0,"decisao":"REJEITADO",
-                                 "contexto":"   "}
+                                {"imagemId":20,"indiceAchado":0,"decisao":"CONTESTO",
+                                 "contexto":"A marca é uma sombra."}
                                 """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.manifestacoes[0].decisao").value("CONTESTO"))
+                .andExpect(jsonPath("$.manifestacoes[0].contexto").value("A marca é uma sombra."));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldRegisterAdditionalContextSeparately() throws Exception {
+        Vistoria vistoria = reviewableInspectionResponse();
+        vistoria.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
+        vistoria.setRevisaoUsuario("""
+                {"version":1,"revisoes":[{
+                  "imagemId":20,"indiceAchado":0,"decisao":"CONTEXTO_ADICIONAL",
+                  "contexto":"A parede foi reparada em agosto.","tipoCorrigido":null,
+                  "revisadoEm":"2026-09-30T12:00:00Z"
+                }]}
+                """);
+        when(vistoriaService.revisarAchado(eq(10L), eq(cliente), any())).thenReturn(vistoria);
+
+        mockMvc.perform(put("/api/vistorias/10/revisao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"imagemId":20,"indiceAchado":0,"decisao":"CONTEXTO_ADICIONAL",
+                                 "contexto":"A parede foi reparada em agosto."}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.manifestacoes[0].decisao").value("CONTEXTO_ADICIONAL"))
+                .andExpect(jsonPath("$.manifestacoes[0].contexto")
+                        .value("A parede foi reparada em agosto."));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldRejectNegativeFindingIndexAtHttpBoundary() throws Exception {
+        mockMvc.perform(put("/api/vistorias/10/revisao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"imagemId":20,"indiceAchado":-1,"decisao":"CONCORDO"}
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errors[0].pointer").value("#/indiceAchado"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldRejectMissingManifestationTypeAtHttpBoundary() throws Exception {
+        mockMvc.perform(put("/api/vistorias/10/revisao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"imagemId":20,"indiceAchado":0}
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errors[0].pointer").value("#/decisao"));
+    }
+
+    @Test
+    @WithMockUser(username = "client@test.com", roles = "CLIENTE")
+    void shouldRejectManifestationContextAboveLimitAtHttpBoundary() throws Exception {
+        mockMvc.perform(put("/api/vistorias/10/revisao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"imagemId":20,"indiceAchado":0,"decisao":"CONTESTO",
+                                 "contexto":"%s"}
+                                """.formatted("x".repeat(1001))))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.errors[0].pointer").value("#/contexto"));
@@ -617,8 +747,7 @@ class VistoriaControllerTest {
         mockMvc.perform(put("/api/vistorias/10/revisao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"imagemId":20,"indiceAchado":99,"decisao":"CONFIRMADO",
-                                 "contexto":"Confirmo."}
+                                {"imagemId":20,"indiceAchado":99,"decisao":"CONCORDO"}
                                 """))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
@@ -627,14 +756,18 @@ class VistoriaControllerTest {
 
     @Test
     @WithMockUser(username = "client@test.com", roles = "CLIENTE")
-    void shouldReturnConflictForIncompleteReview() throws Exception {
-        when(vistoriaService.concluirRelatorio(10L, cliente))
-                .thenThrow(new IncompleteReviewException());
+    void shouldReturnForbiddenWhenAnotherClientTriesToManifest() throws Exception {
+        when(vistoriaService.revisarAchado(eq(10L), eq(cliente), any()))
+                .thenThrow(new VistoriaAccessDeniedException());
 
-        mockMvc.perform(post("/api/vistorias/10/relatorio"))
-                .andExpect(status().isConflict())
+        mockMvc.perform(put("/api/vistorias/10/revisao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"imagemId":20,"indiceAchado":0,"decisao":"CONCORDO"}
+                                """))
+                .andExpect(status().isForbidden())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:incomplete-review"));
+                .andExpect(jsonPath("$.type").value("urn:vistoria:problem:forbidden"));
     }
 
     @Test
@@ -669,6 +802,44 @@ class VistoriaControllerTest {
         image.setUrl("uploads/a.jpg");
         image.setProtocoloItem("SALA_PAREDES_REVESTIMENTOS");
         vistoria.getImagens().add(image);
+        return vistoria;
+    }
+
+    private Vistoria analyzedV2InspectionResponse() {
+        Vistoria vistoria = new Vistoria();
+        vistoria.setCliente(cliente);
+        vistoria.setStatus(VistoriaStatus.RELATORIO_DISPONIVEL);
+        vistoria.configurarRoteiro(TipoImovel.APARTAMENTO, List.of(
+                AmbienteVistoria.criar(TipoAmbiente.BANHEIRO, "Banheiro", 0)));
+        AmbienteVistoria ambiente = vistoria.getAmbientes().getFirst();
+        ReflectionTestUtils.setField(ambiente, "id", 8L);
+        ImagemVistoria imagem = new ImagemVistoria(
+                vistoria, ambiente, CategoriaEvidencia.VISAO_GERAL,
+                "uploads/banheiro.webp", LocalDateTime.of(2026, 9, 30, 19, 0));
+        imagem.setId(31L);
+        vistoria.getImagens().add(imagem);
+        vistoria.setPreLaudoIa("""
+                {
+                  "version":2,
+                  "execution":{"provider":"oci","model":"google.gemini-2.5-flash",
+                    "promptVersion":"vistoria-visual-v2","analysisId":"ana-7",
+                    "completedAt":"2026-09-30T20:00:00Z"},
+                  "images":[{"imageId":31,"storagePath":"uploads/banheiro.webp",
+                    "environment":{"id":8,"name":"Banheiro","category":"VISAO_GERAL"},
+                    "imageQuality":"SUFICIENTE","summary":"Mofo aparente.",
+                    "limitations":["Sem medição de umidade."],"captureGuidance":null,
+                    "findings":[{"criterion":"Integridade aparente da parede","area":"parede",
+                      "type":"mofo_aparente","description":"Manchas escuras.",
+                      "evidence":"Distribuição extensa.","impact":"Pode indicar umidade persistente.",
+                      "severity":"ALTA","confidence":"ALTA","recommendation":"Avaliação presencial.",
+                      "location":"parede ao lado da porta"}]}],
+                  "environments":[{"id":8,"name":"Banheiro","result":"NAO_APROVADO",
+                    "resultReason":"Há indício visual de alta gravidade."}],
+                  "overallResult":"NAO_APROVADO",
+                  "overallReason":"Há indício visual de alta gravidade."
+                }
+                """);
+        ReflectionTestUtils.setField(vistoria, "id", 10L);
         return vistoria;
     }
 
