@@ -1,5 +1,6 @@
 package br.com.vistoriapredial.integration.oci.genai.config;
 
+import br.com.vistoriapredial.integration.oci.genai.OciGenAiChatClient;
 import com.oracle.bmc.ClientConfiguration;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.generativeaiinference.GenerativeAiInferenceClient;
@@ -66,6 +67,11 @@ public class OciGenAiConfiguration {
                 .region(properties.getRegion())
                 .configuration(clientConfiguration)
                 .build(authenticationDetailsProvider);
+    }
+
+    @Bean
+    OciGenAiChatClient ociGenAiChatClient(GenerativeAiInferenceClient client) {
+        return client::chat;
     }
 
     @Bean

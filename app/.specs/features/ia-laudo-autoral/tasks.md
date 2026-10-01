@@ -323,7 +323,7 @@ limitado.
 
 ### T9: Implementar a chamada multimodal ao Gemini via OCI
 
-**Status**: Pending  
+**Status**: Complete  
 **What**: Implementar `OciGenAiIntegrationService` com uma chamada por imagem,
 contexto do ambiente, data URI, schema JSON e falhas tipadas.  
 **Where**: `src/main/java/br/com/vistoriapredial/integration/oci/genai/OciGenAiIntegrationService.java`  
@@ -338,12 +338,12 @@ contexto do ambiente, data URI, schema JSON e falhas tipadas.
 
 **Done when**:
 
-- [ ] A mensagem contém ambiente, categoria, instrução em português e imagem.
-- [ ] O modelo default é `google.gemini-2.5-flash` via On-Demand Serving Mode.
-- [ ] JPEG, PNG e WebP até 7 MB são aceitos; demais entradas falham antes da rede.
-- [ ] 401/403/404/429/5xx, timeout, corpo vazio e schema inválido recebem categoria explícita.
-- [ ] Logs contêm IDs/modelo/duração, nunca imagem, data URI ou payload integral.
-- [ ] Pelo menos 14 testes com cliente fake passam e nenhuma chamada real ocorre.
+- [x] A mensagem contém ambiente, categoria, instrução em português e imagem.
+- [x] O modelo default é `google.gemini-2.5-flash` via On-Demand Serving Mode.
+- [x] JPEG, PNG e WebP até 7 MB são aceitos; demais entradas falham antes da rede.
+- [x] 401/403/404/429/5xx, timeout, corpo vazio e schema inválido recebem categoria explícita.
+- [x] Logs contêm IDs/modelo/duração, nunca imagem, data URI ou payload integral.
+- [x] Pelo menos 14 testes com cliente fake passam e nenhuma chamada real ocorre.
 
 **Tests**: unit com fake  
 **Gate**: Backend full  

@@ -1,0 +1,13 @@
+package br.com.vistoriapredial.integration.oci.genai;
+
+public enum OciGenAiFailureCategory {
+    OCI_AUTHENTICATION_FAILED,
+    OCI_AUTHORIZATION_FAILED,
+    OCI_MODEL_NOT_AVAILABLE,
+    OCI_QUOTA_EXCEEDED,
+    OCI_TEMPORARILY_UNAVAILABLE,
+    OCI_REQUEST_FAILED,
+    IA_INVALID_IMAGE,
+    IA_INVALID_RESPONSE,
+    IA_STORAGE_FAILURE
+}
