@@ -61,6 +61,16 @@ public class MockIaIntegrationService implements IaIntegrationService {
                 observacoes);
     }
 
+    @Override
+    public String provedor() {
+        return "mock";
+    }
+
+    @Override
+    public String modelo() {
+        return "fixture-visual-v2";
+    }
+
     private ObservacaoImagem criarCenario(EvidenciaAnaliseIa evidencia, int index) {
         return switch (index % 4) {
             case 0 -> cenarioUmidade(evidencia);

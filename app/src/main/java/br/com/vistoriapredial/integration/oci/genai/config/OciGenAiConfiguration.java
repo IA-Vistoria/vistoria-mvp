@@ -75,7 +75,9 @@ public class OciGenAiConfiguration {
     }
 
     @Bean
-    OciGenAiConfigCheck ociGenAiConfigCheck(OciGenAiProperties properties) {
-        return new OciGenAiConfigCheck(properties);
+    OciGenAiConfigCheck ociGenAiConfigCheck(
+            OciGenAiProperties properties,
+            AbstractAuthenticationDetailsProvider authenticationDetailsProvider) {
+        return new OciGenAiConfigCheck(properties, authenticationDetailsProvider);
     }
 }

@@ -21,6 +21,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -124,10 +128,32 @@ class VistoriaAnalysisProcessorTest {
 
     @Test
     void devePersistirFalhaSemDocumentoFabricadoQuandoProviderFalha() {
+        when(iaIntegrationService.provedor()).thenReturn("oci");
+        when(iaIntegrationService.modelo()).thenReturn("google.gemini-2.5-flash");
         when(iaIntegrationService.analisar(any()))
                 .thenThrow(new IllegalStateException("provider unavailable"));
 
-        processor.process(10L);
+        Logger logger = (Logger) LoggerFactory.getLogger(VistoriaAnalysisProcessor.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
+        try {
+            processor.process(10L);
+
+            String logs = appender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .reduce("", (left, right) -> left + "\n" + right);
+            assertThat(logs)
+                    .contains("provedor=oci")
+                    .contains("modelo=google.gemini-2.5-flash")
+                    .contains("categoria=FALHA_NAO_CLASSIFICADA")
+                    .contains("duracaoMs=")
+                    .doesNotContain("provider unavailable");
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
 
         assertThat(vistoria.getStatus()).isEqualTo(VistoriaStatus.FALHA_IA);
         assertThat(vistoria.getPreLaudoIa()).isNull();
@@ -208,7 +234,22 @@ class VistoriaAnalysisProcessorTest {
                 .thenReturn(Optional.of(vistoria), Optional.of(concluida));
         when(iaIntegrationService.analisar(any())).thenReturn(analiseValida());
 
-        processor.process(10L);
+        Logger logger = (Logger) LoggerFactory.getLogger(VistoriaAnalysisProcessor.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
+        try {
+            processor.process(10L);
+
+            assertThat(appender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage))
+                    .anyMatch(message -> message.contains("categoria=RESULTADO_DESCARTADO"))
+                    .noneMatch(message -> message.startsWith("Análise concluída"));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
 
         verify(repository, never()).saveAndFlush(any());
         assertThat(concluida.getPreLaudoIa()).isEqualTo("documento anterior");

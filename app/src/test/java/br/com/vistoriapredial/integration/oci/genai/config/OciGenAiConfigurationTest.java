@@ -166,7 +166,9 @@ class OciGenAiConfigurationTest {
 
     @Test
     void deveVerificarConfiguracaoSemPossuirClienteOuFazerChamada() {
-        OciGenAiConfigCheck check = new OciGenAiConfigCheck(propriedadesValidas());
+        OciGenAiConfigCheck check = new OciGenAiConfigCheck(
+                propriedadesValidas(),
+                mock(AbstractAuthenticationDetailsProvider.class));
 
         OciGenAiConfigCheck.Resultado result = check.verificar();
 
@@ -174,6 +176,8 @@ class OciGenAiConfigurationTest {
         assertThat(result.region()).isEqualTo("sa-saopaulo-1");
         assertThat(result.modelo()).isEqualTo("google.gemini-2.5-flash");
         assertThat(result.modoAutenticacao()).isEqualTo("config_file");
+        assertThat(result.autenticacaoDisponivel()).isTrue();
+        assertThat(result.chamadaExternaRealizada()).isFalse();
     }
 
     @Test

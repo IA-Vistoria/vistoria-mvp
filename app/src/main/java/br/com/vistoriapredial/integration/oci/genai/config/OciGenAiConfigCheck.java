@@ -1,11 +1,17 @@
 package br.com.vistoriapredial.integration.oci.genai.config;
 
+import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+
 public class OciGenAiConfigCheck {
 
     private final OciGenAiProperties properties;
+    private final AbstractAuthenticationDetailsProvider authenticationDetailsProvider;
 
-    public OciGenAiConfigCheck(OciGenAiProperties properties) {
+    public OciGenAiConfigCheck(
+            OciGenAiProperties properties,
+            AbstractAuthenticationDetailsProvider authenticationDetailsProvider) {
         this.properties = properties;
+        this.authenticationDetailsProvider = authenticationDetailsProvider;
     }
 
     public Resultado verificar() {
@@ -14,13 +20,17 @@ public class OciGenAiConfigCheck {
                 true,
                 properties.getRegion(),
                 properties.getModelId(),
-                properties.authModeLabel());
+                properties.authModeLabel(),
+                authenticationDetailsProvider != null,
+                false);
     }
 
     public record Resultado(
             boolean configurado,
             String region,
             String modelo,
-            String modoAutenticacao) {
+            String modoAutenticacao,
+            boolean autenticacaoDisponivel,
+            boolean chamadaExternaRealizada) {
     }
 }

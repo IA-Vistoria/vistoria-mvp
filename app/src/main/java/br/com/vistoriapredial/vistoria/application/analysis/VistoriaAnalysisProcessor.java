@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -43,6 +45,12 @@ public class VistoriaAnalysisProcessor {
     }
 
     public void process(Long vistoriaId) {
+        Instant inicio = clock.instant();
+        String provedor = valorSeguro(iaIntegrationService.provedor());
+        String modelo = valorSeguro(iaIntegrationService.modelo());
+        LOGGER.info(
+                "Análise iniciada: vistoria={}, analise=nao_disponivel, provedor={}, modelo={}, categoria=INICIADA, duracaoMs=0",
+                vistoriaId, provedor, modelo);
         AnalisePendente pendente;
         try {
             pendente = transactionTemplate.execute(status -> repository.findById(vistoriaId)
@@ -52,35 +60,70 @@ public class VistoriaAnalysisProcessor {
                             criarSolicitacao(vistoria)))
                     .orElse(null));
         } catch (RuntimeException exception) {
-            LOGGER.warn("Contexto inválido para análise na vistoria {}: {}", vistoriaId,
-                    exception.getClass().getSimpleName());
+            LOGGER.warn(
+                    "Análise falhou: vistoria={}, analise=nao_disponivel, provedor={}, modelo={}, categoria=CONTEXTO_INVALIDO, duracaoMs={}",
+                    vistoriaId, provedor, modelo, duracao(inicio));
             persistFailure(vistoriaId);
             return;
         }
         if (pendente == null) {
+            LOGGER.info(
+                    "Análise ignorada: vistoria={}, analise=nao_disponivel, provedor={}, modelo={}, categoria=EVENTO_IGNORADO, duracaoMs={}",
+                    vistoriaId, provedor, modelo, duracao(inicio));
             return;
         }
 
         String rawAnalysis;
+        AnaliseVistoria analise;
         try {
             rawAnalysis = iaIntegrationService.analisar(pendente.solicitacao());
-            parser.parse(pendente.snapshot(), rawAnalysis);
+            analise = parser.parse(pendente.snapshot(), rawAnalysis);
         } catch (RuntimeException exception) {
-            LOGGER.warn("Falha de análise na vistoria {}: {}", vistoriaId,
-                    exception.getClass().getSimpleName());
+            LOGGER.warn(
+                    "Análise falhou: vistoria={}, analise=nao_disponivel, provedor={}, modelo={}, categoria={}, duracaoMs={}",
+                    vistoriaId, provedor, modelo, categoriaFalha(exception), duracao(inicio));
             persistFailure(vistoriaId);
             return;
         }
 
-        transactionTemplate.execute(status -> {
-            repository.findById(vistoriaId)
+        Boolean persisted = transactionTemplate.execute(status -> repository.findById(vistoriaId)
                     .filter(vistoria -> vistoria.getStatus() == VistoriaStatus.AGUARDANDO_IA)
-                    .ifPresent(vistoria -> {
+                    .map(vistoria -> {
                         vistoria.registrarAnalise(rawAnalysis, LocalDateTime.now(clock));
                         repository.saveAndFlush(vistoria);
-                    });
-            return null;
-        });
+                        return true;
+                    })
+                    .orElse(false));
+        String analysisId = analise.execucao() == null
+                ? "nao_disponivel"
+                : valorSeguro(analise.execucao().identificadorAnalise());
+        String categoria = analise.resultadoGeral() == null
+                ? "RESULTADO_INDISPONIVEL"
+                : analise.resultadoGeral().name();
+        if (!Boolean.TRUE.equals(persisted)) {
+            LOGGER.info(
+                    "Análise descartada: vistoria={}, analise={}, provedor={}, modelo={}, categoria=RESULTADO_DESCARTADO, duracaoMs={}",
+                    vistoriaId, analysisId, provedor, modelo, duracao(inicio));
+            return;
+        }
+        LOGGER.info(
+                "Análise concluída: vistoria={}, analise={}, provedor={}, modelo={}, categoria={}, duracaoMs={}",
+                vistoriaId, analysisId, provedor, modelo, categoria, duracao(inicio));
+    }
+
+    private String categoriaFalha(RuntimeException exception) {
+        if (exception instanceof br.com.vistoriapredial.integration.oci.genai.OciGenAiIntegrationException oci) {
+            return oci.getCategoria().name();
+        }
+        return "FALHA_NAO_CLASSIFICADA";
+    }
+
+    private long duracao(Instant inicio) {
+        return Math.max(0, Duration.between(inicio, clock.instant()).toMillis());
+    }
+
+    private String valorSeguro(String valor) {
+        return valor == null || valor.isBlank() ? "nao_informado" : valor;
     }
 
     private SolicitacaoAnaliseIa criarSolicitacao(Vistoria vistoria) {

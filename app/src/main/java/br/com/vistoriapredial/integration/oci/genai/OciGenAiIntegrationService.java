@@ -114,6 +114,12 @@ public class OciGenAiIntegrationService implements IaIntegrationService {
         }
         Instant inicio = clock.instant();
         String analysisId = analysisIdSupplier.get();
+        LOGGER.info(
+                "Análise OCI iniciada: vistoria={}, analise={}, provedor={}, modelo={}, categoria=INICIADA, duracaoMs=0",
+                solicitacao.vistoriaId(),
+                analysisId,
+                PROVIDER,
+                properties.getModelId());
         try {
             List<AnaliseVistoriaDocumentFactory.ObservacaoImagem> observacoes =
                     new ArrayList<>(solicitacao.evidencias().size());
@@ -132,21 +138,43 @@ public class OciGenAiIntegrationService implements IaIntegrationService {
                             clock.instant()),
                     observacoes);
             LOGGER.info(
-                    "Análise OCI concluída: vistoria={}, analise={}, modelo={}, duracaoMs={}",
+                    "Análise OCI concluída: vistoria={}, analise={}, provedor={}, modelo={}, categoria={}, duracaoMs={}",
                     solicitacao.vistoriaId(),
                     analysisId,
+                    PROVIDER,
                     properties.getModelId(),
+                    categoriaResultado(document),
                     Duration.between(inicio, clock.instant()).toMillis());
             return document;
         } catch (OciGenAiIntegrationException exception) {
             LOGGER.warn(
-                    "Análise OCI falhou: vistoria={}, analise={}, modelo={}, categoria={}, duracaoMs={}",
+                    "Análise OCI falhou: vistoria={}, analise={}, provedor={}, modelo={}, categoria={}, duracaoMs={}",
                     solicitacao.vistoriaId(),
                     analysisId,
+                    PROVIDER,
                     properties.getModelId(),
                     exception.getCategoria(),
                     Duration.between(inicio, clock.instant()).toMillis());
             throw exception;
+        }
+    }
+
+    @Override
+    public String provedor() {
+        return PROVIDER;
+    }
+
+    @Override
+    public String modelo() {
+        return properties.getModelId();
+    }
+
+    private String categoriaResultado(String document) {
+        try {
+            String categoria = objectMapper.readTree(document).path("overallResult").asText();
+            return categoria.isBlank() ? "RESULTADO_INDISPONIVEL" : categoria;
+        } catch (JsonProcessingException exception) {
+            return "RESULTADO_INDISPONIVEL";
         }
     }
 

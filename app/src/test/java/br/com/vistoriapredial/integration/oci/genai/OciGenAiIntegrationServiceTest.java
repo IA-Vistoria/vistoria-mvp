@@ -32,6 +32,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -104,6 +108,33 @@ class OciGenAiIntegrationServiceTest {
                 .isEqualTo("Cozinha");
         assertThat(documento.path("execution").path("analysisId").asText())
                 .isEqualTo("analise-oci-123");
+    }
+
+    @Test
+    void deveRegistrarInicioEConclusaoComMetadadosSegurosECategoria() {
+        prepararSucesso(MediaType.IMAGE_JPEG, new byte[]{1, 2, 3});
+        Logger logger = (Logger) LoggerFactory.getLogger(OciGenAiIntegrationService.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            service.analisar(solicitacaoPadrao());
+
+            String logs = appender.list.stream()
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .reduce("", (left, right) -> left + "\n" + right);
+            assertThat(logs)
+                    .contains("Análise OCI iniciada")
+                    .contains("provedor=oci")
+                    .contains("modelo=google.gemini-2.5-flash")
+                    .contains("categoria=APROVADO")
+                    .contains("duracaoMs=")
+                    .doesNotContain("AQID")
+                    .doesNotContain(RESPOSTA_VALIDA);
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
     }
 
     @Test

@@ -18,8 +18,14 @@ Esses testes usam fakes e não acessam a Oracle:
 ```powershell
 cd app
 $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"
-.\mvnw.cmd "-Dtest=OciGenAiIntegrationServiceTest,OciGenAiConfigurationTest,VistoriaAnalysisProcessorTest" test
+.\mvnw.cmd "-Dtest=OciGenAiIntegrationServiceTest,OciGenAiConfigurationTest,OciGenAiHealthControllerTest,VistoriaAnalysisProcessorTest" test
 ```
+
+Com o backend OCI iniciado, um usuário autenticado pode consultar
+`GET /api/health/ia`. A resposta informa provider, região, modelo, modo de
+autenticação e se as credenciais foram carregadas. O campo
+`externalCallPerformed` permanece `false`: esse health check não envia imagem,
+não consulta o modelo e não consome créditos.
 
 ## 2. Pré-requisitos da chamada real
 

@@ -74,6 +74,16 @@ public class VlmIntegrationService implements IaIntegrationService {
         return VlmPreLaudoFormatter.format(analyzed);
     }
 
+    @Override
+    public String provedor() {
+        return "vlm";
+    }
+
+    @Override
+    public String modelo() {
+        return "vlm-legado";
+    }
+
     private void ensureModelReady() {
         try {
             VlmHealthResponse health = restClient.get()

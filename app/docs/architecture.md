@@ -100,6 +100,7 @@ sistema não fabrica sucesso, documento parcial ou fallback após uma exceção.
 - Falha ao persistir a evidência aciona a remoção compensatória do arquivo já armazenado.
 - `/vistorias/minhas` e `/vistorias/pendentes` são paginadas (`PaginaResponseDto`); a página é buscada sem `@EntityGraph` e as imagens da página são recarregadas em uma segunda consulta por lote de ids, evitando tanto paginação em memória (fetch join de coleção + `Pageable`) quanto N+1.
 - `GET /vistorias/{id}` permite buscar uma vistoria específica sem depender da lista paginada, com a mesma autorização por recurso das demais rotas de leitura.
+- `GET /api/health/ia` exige autenticação e expõe somente o estado seguro da configuração OCI; não realiza chamada ao modelo nem informa compartment, caminho de chave ou segredo.
 
 ## 7. Persistência
 
