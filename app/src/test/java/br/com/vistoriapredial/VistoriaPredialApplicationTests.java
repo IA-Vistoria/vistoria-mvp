@@ -1,5 +1,7 @@
 package br.com.vistoriapredial;
 
+import br.com.vistoriapredial.vistoria.application.IaIntegrationService;
+import br.com.vistoriapredial.vistoria.application.MockIaIntegrationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -15,10 +17,12 @@ class VistoriaPredialApplicationTests {
     @Autowired
     private Environment environment;
 
+    @Autowired
+    private IaIntegrationService iaIntegrationService;
+
     @Test
     void contextLoads() {
-        // Gate de compilação: verifica que o contexto da aplicação sobe sem erros
-        // @SpringBootTest ensures that the Spring ApplicationContext starts successfully
+        assertThat(iaIntegrationService).isInstanceOf(MockIaIntegrationService.class);
     }
 
     @Test

@@ -195,7 +195,12 @@ class OciGenAiConfigurationTest {
                         "app.ia.provider=oci",
                         "oci.genai.compartment-id=",
                         "oci.genai.auth-mode=config_file")
-                .run(context -> assertThat(context).hasFailed());
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .hasRootCauseMessage(
+                                    "OCI_COMPARTMENT_ID é obrigatório para o provider OCI.");
+                });
     }
 
     private OciGenAiConfiguration configuracao() {

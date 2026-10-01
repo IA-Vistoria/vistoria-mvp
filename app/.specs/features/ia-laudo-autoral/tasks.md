@@ -461,7 +461,7 @@ com erro claro e sem alterar os formatos aceitos.
 
 ### T14: Impedir mock silencioso e documentar configuração runtime
 
-**Status**: Pending  
+**Status**: Complete
 **What**: Tornar OCI o provider demonstrável, restringir mock a test/demo,
 manter VLM opt-in e definir variáveis Oracle sem placeholders utilizáveis.  
 **Where**: `src/main/resources/application.properties`  
@@ -476,11 +476,11 @@ manter VLM opt-in e definir variáveis Oracle sem placeholders utilizáveis.
 
 **Done when**:
 
-- [ ] Ambiente normal não inicia com mock implícito.
-- [ ] Testes continuam usando fake determinístico sem credencial OCI.
-- [ ] OCI sem compartment/configuração falha de forma clara antes de analisar.
-- [ ] Nenhum OCID, chave ou segredo real entra no repositório.
-- [ ] Testes de contexto cobrem `test`, `demo`, `oci` inválido e `vlm` explícito.
+- [x] Ambiente normal não inicia com mock implícito.
+- [x] Testes continuam usando fake determinístico sem credencial OCI.
+- [x] OCI sem compartment/configuração falha de forma clara antes de analisar.
+- [x] Nenhum OCID, chave ou segredo real entra no repositório.
+- [x] Testes de contexto cobrem `test`, `demo`, `oci` inválido e `vlm` explícito.
 
 **Tests**: contexto  
 **Gate**: Backend full  

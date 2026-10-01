@@ -1,6 +1,7 @@
 package br.com.vistoriapredial.vistoria.application;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import br.com.vistoriapredial.vistoria.application.ia.SolicitacaoAnaliseIa;
@@ -14,7 +15,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
-@ConditionalOnProperty(name = "app.ia.provider", havingValue = "mock", matchIfMissing = true)
+@Profile({"test", "demo"})
+@ConditionalOnProperty(name = "app.ia.provider", havingValue = "mock")
 public class MockIaIntegrationService implements IaIntegrationService {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
