@@ -12,18 +12,18 @@ O usuário principal é a pessoa que recebe, confere ou documenta um imóvel e p
 
 ## Product Purpose
 
-O Vistor.IA orienta a captura de evidências fotográficas, organiza a análise visual da IA, permite que o usuário confirme ou corrija o contexto e gera um Relatório de vistoria por IA rastreável. O sucesso é o usuário concluir esse percurso com evidências preservadas, limitações explícitas e um documento compreensível.
+O Vistor.IA orienta a captura de evidências fotográficas, produz uma conclusão visual automatizada por ambiente e gera um Relatório de vistoria por IA rastreável. O sucesso é o usuário concluir esse percurso com evidências preservadas, motivos claros, limitações explícitas e um documento compreensível.
 
 ## Positioning
 
-O produto mantém um rastro verificável entre foto, achado sugerido pela IA, decisão humana e trecho do relatório. A IA organiza e sugere; o usuário conserva o controle sobre o que entra no documento.
+O produto mantém um rastro verificável entre foto, achado, resultado automatizado e trecho do relatório. A IA define a conclusão do documento; o usuário pode concordar, contestar ou acrescentar contexto, mas sua manifestação permanece separada e não sobrescreve a leitura original.
 
 ## Operating Context
 
 - Captura móvel em ambientes internos e externos.
 - Upload de JPEG, PNG ou WebP para um roteiro próprio de ambientes.
 - Processamento assíncrono com retomada posterior.
-- Revisão de achados um a um antes da geração do relatório.
+- Consulta dos achados por ambiente e manifestação opcional depois da análise.
 - Consulta, impressão e compartilhamento do documento final.
 
 ## Capabilities and Constraints
@@ -32,7 +32,7 @@ O produto mantém um rastro verificável entre foto, achado sugerido pela IA, de
 - A jornada principal contém início, nova vistoria, captura guiada, análise, revisão e relatório.
 - A jornada cria cada vistoria com endereço, tipo do imóvel e ambientes ordenados; novos uploads informam ambiente e categoria da evidência.
 - Estados legados de engenharia podem permanecer no código por compatibilidade, mas não orientam a jornada principal do MVP.
-- A IA aponta indícios visuais; o produto não promete diagnóstico, conformidade normativa, validade jurídica ou certificação profissional.
+- A IA deriva um resultado visual padronizado e explica os indícios; o produto não promete diagnóstico, conformidade normativa, validade jurídica automática ou certificação profissional.
 - Fotos e progresso confirmados devem permanecer recuperáveis após falhas de upload ou análise.
 
 ## Brand Commitments
@@ -56,7 +56,7 @@ O produto mantém um rastro verificável entre foto, achado sugerido pela IA, de
 ## Product Principles
 
 1. Evidência antes da conclusão.
-2. IA explicável, corrigível e limitada.
+2. IA explicável, contestável e limitada; sua conclusão original é preservada.
 3. Uma decisão importante por tela.
 4. Progresso real, sem sucesso fabricado.
 5. Continuidade entre captura, revisão e relatório.

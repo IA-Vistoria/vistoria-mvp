@@ -1,0 +1,4 @@
+services:
+  backend:
+    volumes:
+      - ${OCI_CONFIG_DIR:?Defina OCI_CONFIG_DIR no arquivo .env}:/home/spring/.oci:ro

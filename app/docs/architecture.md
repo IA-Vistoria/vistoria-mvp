@@ -14,7 +14,7 @@ No protótipo, o repositório sobe o programa e a IA juntos no mesmo `docker-com
 | --- | --- | --- |
 | `frontend` | 3000 | Next.js |
 | `backend` | 8080 | Spring Boot |
-| `inference` | 8001 | FastAPI + VLM (análise visual) |
+| `inference` | 8001 | FastAPI + VLM legado, ativado apenas pelo profile Docker `vlm` |
 
 ```mermaid
 flowchart LR
@@ -24,12 +24,18 @@ flowchart LR
     API --> Storage["StorageService"]
     Storage --> Files[("Arquivos locais")]
     API --> IaPort["IaIntegrationService"]
-    IaPort -->|mock| Mock["MockIaIntegrationService"]
-    IaPort -->|vlm| Vlm["VlmIntegrationService"]
+    IaPort -->|oci| Oci["OciGenAiIntegrationService"]
+    Oci -->|"SDK oficial + Gemini configurável"| GenAi["OCI Generative AI"]
+    IaPort -->|mock test/demo| Mock["MockIaIntegrationService"]
+    IaPort -->|vlm legado opt-in| Vlm["VlmIntegrationService"]
     Vlm -->|"VLM_URL rede Docker"| Inference["inference VLM :8001"]
 ```
 
-`IaIntegrationService` é a porta de análise visual. Com `app.ia.provider=mock` usa `MockIaIntegrationService`; com `vlm` (default no compose) usa `VlmIntegrationService` contra o container `inference` (`VLM_URL=http://inference:8001` + `VLM_API_KEY`). O código da VLM fica em `inference/` neste repositório.
+`IaIntegrationService` é a porta de análise visual. `oci` é o provider padrão e
+usa o SDK oficial da OCI com autenticação `config_file` ou
+`instance_principal`. `mock` só existe nos profiles `test` e `demo` e emite o
+mesmo documento v2 com cenários explicitamente simulados. `vlm` permanece como
+adaptação legada opt-in contra o container `inference`.
 
 ## 3. Fronteiras do backend
 
@@ -68,13 +74,18 @@ O cliente HTTP aceita JSON, `FormData` e blobs, traduz erros RFC 9457 e expira a
 ## 5. Fluxo principal do MVP
 
 1. O usuário cria uma conta de cliente e recebe um JWT.
-2. O cliente cria uma vistoria em `EM_RASCUNHO` e envia evidências associadas aos 12 itens do protocolo.
+2. O cliente cria uma vistoria em `EM_RASCUNHO`, define um roteiro flexível e envia uma visão geral por ambiente, com detalhes opcionais.
 3. Ao submeter, o serviço exige ao menos uma evidência, responde `202 Accepted` e publica o processamento assíncrono.
-4. A porta de IA analisa as imagens. Sucesso conduz a `REVISAO_PENDENTE`; falha explícita conduz a `FALHA_IA`.
-5. O usuário confirma, corrige ou rejeita cada achado e registra o contexto observado. Cada decisão é persistida antes do avanço.
-6. Depois de todas as decisões, a conclusão conduz a `RELATORIO_DISPONIVEL` e apresenta o documento rastreável.
+4. A porta de IA analisa as imagens. Um documento válido conduz a `RELATORIO_DISPONIVEL`; falha explícita conduz a `FALHA_IA`.
+5. O sistema deriva uma conclusão automatizada por ambiente e para o imóvel, preservando motivo, severidade, confiança, limitações e rastreabilidade.
+6. O usuário pode concordar, contestar ou acrescentar contexto; a manifestação é persistida separadamente e não altera o achado nem a conclusão da IA.
+7. O relatório fica disponível assim que a análise válida é persistida; a manifestação é opcional.
 
-O Human-in-the-Loop do MVP é o contexto do próprio usuário sobre a evidência. O relatório não promete homologação de engenheiro, laudo técnico ou diagnóstico estrutural. Falhas de análise permanecem explícitas; o sistema não fabrica sucesso após uma exceção.
+O Human-in-the-Loop do MVP é uma manifestação sobre a evidência, não uma
+aprovação necessária nem uma forma de editar a conclusão. O relatório não
+promete homologação de engenheiro, laudo técnico, diagnóstico estrutural ou
+validade jurídica automática. Falhas de análise permanecem explícitas; o
+sistema não fabrica sucesso, documento parcial ou fallback após uma exceção.
 
 ## 6. Consistência e segurança
 

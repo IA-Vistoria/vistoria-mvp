@@ -1,4 +1,4 @@
-# Onboarding: conectando à infra real do VistoApto (ambiente dev)
+# Onboarding: conectando à infra real do Vistor.IA (ambiente dev)
 
 Este documento complementa `spec-ambiente-dev.md` com os valores reais do
 ambiente já provisionado (região, OCIDs, nomes) e com scripts prontos pra
@@ -43,19 +43,13 @@ e não mudam por pessoa:
 | Bucket de fotos | `vistoria-fotos` |
 | Autonomous DB (TNS aliases) | `vistoriadb_high`, `vistoriadb_medium`, `vistoriadb_low` |
 
-## 4. ⚠️ Atualização importante: o modelo da spec-backend.md foi descontinuado
+## 4. Modelo configurável no adaptador atual
 
-`docs/spec-backend.md` especifica `meta.llama-3.2-90b-vision-instruct`. Ao
-testar de verdade, esse modelo **não aparece mais no Playground** do console
-(só no catálogo antigo da API `ListModels`, que lista modelos já fora de
-serviço). Chamadas de chat contra ele retornam `404 Entity not found`.
-
-**Modelo vigente a usar**: `meta.llama-4-scout-17b-16e-instruct` — é
-nativamente multimodal (recebe imagem + texto, não precisa mais de um
-`-vision` separado) e aparece ativo no Playground. Antes de codificar
-`OciGenAiIntegrationService`, rode `list_available_models.py` (abaixo) pra
-confirmar o modelo vigente no momento, já que a OCI aposenta modelos com
-frequência.
+O backend usa `google.gemini-2.5-flash` como default do OCI Generative AI
+On-Demand. O valor não está fixado na regra de negócio: configure-o por
+`OCI_GENAI_MODEL_ID`. Antes do smoke real, confirme no catálogo da região e da
+tenancy se o identificador continua disponível. Uma resposta `404` é tratada
+como falha real; o sistema não troca silenciosamente para mock ou outro modelo.
 
 ## 5. Testando cada serviço isoladamente
 
@@ -77,16 +71,10 @@ Sobe um objeto pequeno, lê de volta, apaga. Validado ✅ em 2026-09-19.
 
 ### Generative AI
 
-```bash
-# 1. Descobrir o OCID do modelo vigente (muda com o tempo)
-OCI_COMPARTMENT_ID=ocid1.compartment.oc1..aaaaaaaaogefvhjugrkowz3p5bbtqjvypatdq4c7qtqebn2ef4bciyi44xuq \
-python scripts/smoke-tests/list_available_models.py
-
-# 2. Testar o chat com o OCID encontrado
-OCI_COMPARTMENT_ID=ocid1.compartment.oc1..aaaaaaaaogefvhjugrkowz3p5bbtqjvypatdq4c7qtqebn2ef4bciyi44xuq \
-GENAI_MODEL_ID=<ocid-do-modelo> \
-python scripts/smoke-tests/test_genai_chat.py
-```
+O smoke canônico do backend, com gate explícito de custo e fixture sintética,
+está em [`../../app/docs/oci-genai-smoke.md`](../../app/docs/oci-genai-smoke.md).
+Os scripts Python desta pasta são utilitários históricos para diagnóstico
+isolado e não substituem o teste do adaptador Java atual.
 
 Se der `429 throttled`: é limite de requisições da conta trial, não erro de
 config — espere um pouco e tente de novo. Se der `404 not found`: o modelo
@@ -127,5 +115,6 @@ autenticação) — nenhum código muda, só a variável de ambiente.
 ## 7. Rodando a aplicação de verdade
 
 Depois dos testes acima passarem, siga `spec-ambiente-dev.md` a partir do
-passo 3 (clonar `vistoria-predial`, copiar `.env.example` → `.env` com os
-valores da seção 3 deste documento, `docker compose up`).
+passo 3. Para desenvolvimento com `config_file`, copie `app/.env.example` para
+`app/.env` e use os dois arquivos Compose indicados no README; para workload
+na OCI, prefira `instance_principal` e não monte chave privada no container.

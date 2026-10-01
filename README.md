@@ -3,9 +3,10 @@
 ![Demonstração do protótipo navegável](prototipo/screenshots/onboarding-captura-checklist.png)
 
 **Vistor.IA** conduz o registro de um imóvel ambiente por ambiente e transforma
-fotos em um **Relatório de vistoria por IA**. A análise sugere indícios, o
-usuário confirma o contexto e o sistema mantém cada constatação ligada à
-evidência original.
+fotos em um **Relatório de vistoria por IA**. A IA produz uma conclusão
+automatizada por ambiente, explica os motivos e mantém cada achado ligado à
+evidência original. O usuário pode acrescentar contexto ou contestar a leitura,
+mas sua manifestação não sobrescreve o resultado da IA.
 
 🔗 **[Protótipo navegável](https://ia-vistoria.github.io/vistoria-mvp/prototipo/VistorIA-prototipo-navegavel.html)**
 
@@ -13,7 +14,7 @@ evidência original.
 
 - ✅ Jornada principal implementada em `app/`: acesso, imóvel, captura guiada, análise assíncrona, revisão e relatório.
 - ✅ Interface responsiva e relatório preparado para impressão ou PDF pelo navegador.
-- ✅ Uso da IA para avaliação de fotos validado localmente (prova de conceito técnica).
+- ✅ Contrato de análise v2, decisão automatizada por ambiente e relatório rastreável validados localmente.
 - ✅ Infraestrutura de nuvem provisionada na Oracle (rede, banco de dados, armazenamento de imagens).
 - ⏳ Generative AI (IA/Vision) da Oracle: ainda em validação — pendência de cota da conta.
 - ⏳ Instância (VM) da aplicação: aguardando liberação de capacidade da Oracle (limite do provedor).
@@ -35,10 +36,12 @@ destino da jornada principal do MVP.
 ## 1. Descrição da solução
 
 Vistorias de imóveis frequentemente ficam dispersas entre fotos e anotações.
-O Vistor.IA organiza a captura em 12 itens, usa um modelo multimodal para
-sugerir indícios visuais e pede que o usuário confirme, corrija ou rejeite
-cada achado com contexto. O resultado é um registro rastreável; ele não é
-laudo técnico, diagnóstico estrutural ou certificação profissional.
+O Vistor.IA cria um roteiro flexível a partir dos ambientes que realmente
+existem no imóvel, usa um modelo multimodal para analisar cada evidência e
+deriva resultados padronizados por ambiente e para o imóvel. A manifestação
+do usuário é registrada separadamente. O documento é rastreável, mas não é
+laudo técnico, diagnóstico estrutural, certificação profissional nem promessa
+de validade jurídica automática.
 
 ## 2. Tecnologias, linguagens e frameworks utilizados
 
@@ -47,7 +50,7 @@ laudo técnico, diagnóstico estrutural ou certificação profissional.
 | Protótipo de produto | HTML, CSS, JavaScript | `prototipo/` |
 | Backend do MVP | Java 21, Spring Boot, Spring Security, JPA, Flyway | `app/` |
 | Frontend do MVP | Next.js, React, TypeScript | `app/frontend/` |
-| Análise visual | Porta de IA com mock local ou VLM `Qwen/Qwen3-VL-2B-Instruct` | `app/` |
+| Análise visual | OCI Generative AI com Gemini via SDK oficial; mock somente em `test`/`demo`; VLM legado opt-in | `app/` |
 | Persistência | PostgreSQL como alvo e H2 para desenvolvimento local | `app/` |
 | Infraestrutura real | Terraform (`oracle/oci`), Ansible | `infra/` |
 | Nuvem | OCI: Object Storage, Autonomous Database, Generative AI | `infra/` |
@@ -98,7 +101,7 @@ Detalhes: [`infra/README.md`](infra/README.md) · [`app/docs/architecture.md`](a
 
 | Camada | No MVP (`app/`) | Ambiente OCI (`infra/`) |
 | --- | --- | --- |
-| Modelo de IA | VLM `Qwen/Qwen3-VL-2B-Instruct` self-hospedado | **OCI Generative AI** (`meta.llama-4-scout-17b-16e-instruct`) |
+| Modelo de IA | **OCI Generative AI** com `google.gemini-2.5-flash` configurável | Mesmo serviço, com `config_file` no desenvolvimento e `instance_principal` no workload OCI |
 | Banco de dados | PostgreSQL / H2 | **Oracle Autonomous Database** (Always Free, 26ai) |
 | Armazenamento | Sistema de arquivos local | **OCI Object Storage** |
 
@@ -111,30 +114,39 @@ Detalhes da validação do modelo de IA e scripts de teste isolado:
 > histórico continua disponível no
 > [link navegável](https://ia-vistoria.github.io/vistoria-mvp/prototipo/VistorIA-prototipo-navegavel.html).
 
-**Sem Docker** (H2 em memória e análise mock):
+**Sem Docker — demonstração local sem chamada externa** (H2 e fixture mock v2):
 
 ```powershell
 cd app
 $env:JWT_SECRET = "defina-um-segredo-local-com-pelo-menos-32-bytes"
+$env:SPRING_PROFILES_ACTIVE = "demo"
+$env:APP_IA_PROVIDER = "mock"
 .\mvnw.cmd spring-boot:run    # backend em :8080
 
 cd app/frontend
 npm ci && npm run dev         # frontend em :3000
 ```
 
-**Com Docker, IA real ligada** (requer GPU NVIDIA):
+**Com Docker e OCI Generative AI** (`config_file` local):
 
 ```powershell
 cd app
 copy .env.example .env
-docker compose up --build -d
-curl http://127.0.0.1:8001/health
+docker compose -f docker-compose.yml -f docker-compose.oci-config.yml up --build -d
 ```
 
-Jornada de teste: criar conta → cadastrar imóvel → enviar fotos pelo roteiro →
-submeter à IA → revisar cada achado → gerar, imprimir ou compartilhar o
-Relatório de vistoria por IA. Detalhes da integração visual:
-[`app/inference/README.md`](app/inference/README.md).
+Preencha `OCI_COMPARTMENT_ID` e `OCI_CONFIG_DIR` no `.env`. O arquivo
+`~/.oci/config` e a chave privada permanecem fora do repositório e são montados
+somente para leitura. Na OCI, use `OCI_AUTH_MODE=instance_principal` e execute o
+compose base sem o override de credenciais. O provider VLM legado continua
+disponível com `docker compose --profile vlm up --build`, desde que
+`APP_IA_PROVIDER=vlm` seja definido explicitamente.
+
+Jornada de teste: criar conta → definir os ambientes → enviar uma visão geral
+por ambiente → submeter à IA → consultar o resultado e, se necessário,
+registrar uma manifestação → imprimir ou compartilhar o relatório. O smoke
+real da OCI é opt-in porque usa credenciais e pode consumir créditos:
+[`app/docs/oci-genai-smoke.md`](app/docs/oci-genai-smoke.md).
 
 **Infraestrutura na OCI:**
 
@@ -156,11 +168,11 @@ Passo a passo completo: [`infra/docs/spec-ambiente-dev.md`](infra/docs/spec-ambi
 
 ## 7. Limitações conhecidas e próximos passos
 
-- `infra/` e `app/` ainda não estão conectados.
+- O adaptador OCI está implementado, mas o smoke real depende de acesso, cota e configuração da conta do time.
 - VM ainda não criada (capacidade Ampere A1 indisponível na OCI no momento).
 - Generative AI: limite de conta trial resolvido após upgrade, revalidar antes de considerar pronto.
 - Modelo de IA sem fine-tuning ou dataset próprio de defeitos de vistoria.
-- PoC com IA local exige GPU NVIDIA.
+- O provider VLM legado exige GPU NVIDIA quando utilizado.
 - A área de engenharia é um fluxo legado e não integra a jornada principal do MVP.
 - O relatório organiza evidências assistidas por IA e não substitui avaliação profissional quando ela for necessária.
 

@@ -17,7 +17,8 @@
 - **Trade-off**: Configuração manual de DTOs e URLs de integração.
 - **Scope**: Pacote integration/oci.
 - **Date**: 2026-09-18
-- **Status**: active
+- **Status**: superseded for Generative AI only; active for direct HTTP integrations
+- **Nota de revalidação (2026-09-30)**: a integração com OCI Generative AI usa o SDK oficial `oci-java-sdk-generativeaiinference`, necessário para assinatura, autenticação por `config_file`/`instance_principal`, serving mode e retries do serviço. Esta substituição não altera a preferência por `RestClient` nas integrações HTTP que não possuem adaptador SDK aprovado.
 
 ### AD-003
 - **Decision**: Empregar um único modelo multimodal via OCI Generative AI diretamente para visão e texto, numa chamada só.
@@ -26,7 +27,7 @@
 - **Scope**: Módulo de geração de laudos técnicos.
 - **Date**: 2026-09-18
 - **Status**: active
-- **Nota de revalidação (2026-09-19)**: o modelo citado originalmente (Gemini) nunca chegou a ser usado; a spec do time (repositório `infra`) mudou para `meta.llama-3.2-90b-vision-instruct` e, depois, esse também foi descontinuado pela OCI. Modelo vigente a confirmar antes de implementar: `meta.llama-4-scout-17b-16e-instruct` — ver `.specs/features/integracao-oci/spec.md`. Não fixar nome de modelo em código; a OCI aposenta modelos com frequência.
+- **Nota de revalidação (2026-09-30)**: o adaptador usa Gemini por padrão no OCI Generative AI, mas o identificador permanece configurável por `OCI_GENAI_MODEL_ID`. Disponibilidade, região e cota devem ser confirmadas no smoke real; nenhum modelo alternativo ou mock é selecionado silenciosamente.
 
 ### AD-004
 - **Decision**: Arquitetura Human-in-the-Loop com papéis distintos (ROLE_CLIENTE e ROLE_ENGENHEIRO).
@@ -68,13 +69,21 @@
 - **Date**: 2026-09-30
 - **Status**: active
 
+### AD-009
+- **Decision**: A conclusão visual do MVP é derivada deterministicamente do documento validado da IA e não pode ser sobrescrita pelo responsável pelo imóvel.
+- **Reason**: O valor central do produto é entregar um resultado automatizado, explicável e rastreável por ambiente. A manifestação humana continua necessária como direito de contestação e contexto, não como aprovação obrigatória nem como fonte do resultado.
+- **Trade-off**: O produto precisa separar visualmente resultado automatizado, limitações da análise e manifestação do usuário, além de evitar prometer responsabilidade técnica ou validade jurídica automática.
+- **Scope**: Contrato canônico de análise, máquina de estados, API, revisão, relatório e linguagem de produto.
+- **Date**: 2026-09-30
+- **Status**: active
+
 ## Handoff
 
-- **Feature**: `.specs/features/mvp-relatorio-ia`
-- **Phase / Task**: Validate — T1 a T8 concluídas; verificação independente em `validation.md` com PASS
-- **Completed**: jornada IA-first integrada de cadastro, captura, análise assíncrona, revisão de contexto e Relatório de vistoria por IA; 141 testes backend e 72 frontend verdes; lint, build, PostgreSQL e UAT responsiva aprovados
-- **In-progress**: nenhum trabalho funcional desta feature
-- **Next step**: publicar a branch `codex/especifica-interface-ia-first` para revisão do time
-- **Blockers**: nenhum bloqueio de implementação; somente materialização adicional no Figma permanece limitada pela cota Starter
+- **Feature**: `.specs/features/ia-laudo-autoral`
+- **Phase / Task**: Validate — T1 a T19 implementadas; verificação independente pendente
+- **Completed**: contrato v2 autoral, adaptador OCI via SDK oficial, conclusão automatizada por ambiente, manifestação separada, relatório explicável e jornada responsiva; 281 testes backend e 130 frontend verdes; lint, build, PostgreSQL e UAT local aprovados
+- **In-progress**: verificação independente da feature e registro final em `validation.md`
+- **Next step**: concluir a verificação independente e solicitar autorização explícita antes do push
+- **Blockers**: smoke real da OCI não executado; depende de credenciais, cota disponível e autorização explícita para uma chamada externa com possível custo
 - **Uncommitted files**: ver `git status` no momento da leitura — este documento não substitui a checagem real
 - **Branch**: `codex/especifica-interface-ia-first`

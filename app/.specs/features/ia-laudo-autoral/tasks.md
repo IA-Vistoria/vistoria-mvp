@@ -114,7 +114,7 @@ T18 -> T19
 
 ### T1: Introduzir a solicitação de análise contextual
 
-**Status**: Complete  
+**Status**: Complete
 **What**: Criar o contrato imutável que transporta vistoria, imagem, ambiente,
 categoria, caminho e tipo de conteúdo até a porta de IA.  
 **Where**: `src/main/java/br/com/vistoriapredial/vistoria/application/ia/`  
@@ -129,9 +129,9 @@ categoria, caminho e tipo de conteúdo até a porta de IA.
 
 **Done when**:
 
-- [ ] A solicitação rejeita lista nula/vazia e evidência sem identidade ou contexto obrigatório.
-- [ ] O contrato preserva IDs e nome do ambiente fornecidos pelo domínio.
-- [ ] Pelo menos 4 testes unitários novos passam e os 168 testes backend não diminuem.
+- [x] A solicitação rejeita lista nula/vazia e evidência sem identidade ou contexto obrigatório.
+- [x] O contrato preserva IDs e nome do ambiente fornecidos pelo domínio.
+- [x] Pelo menos 4 testes unitários novos passam e os 168 testes backend não diminuem.
 
 **Tests**: unit  
 **Gate**: Backend quick  
@@ -154,10 +154,10 @@ qualidade, achado descritivo e resultados v2 sem quebrar a leitura v1.
 
 **Done when**:
 
-- [ ] Os quatro resultados e enums de qualidade, gravidade e confiança são fechados.
-- [ ] O achado contém critério, descrição, evidência, impacto e recomendação.
-- [ ] Contratos v1 ainda podem ser projetados sem inventar metadados v2.
-- [ ] Pelo menos 4 testes unitários de contrato passam.
+- [x] Os quatro resultados e enums de qualidade, gravidade e confiança são fechados.
+- [x] O achado contém critério, descrição, evidência, impacto e recomendação.
+- [x] Contratos v1 ainda podem ser projetados sem inventar metadados v2.
+- [x] Pelo menos 4 testes unitários de contrato passam.
 
 **Tests**: unit  
 **Gate**: Backend quick  
@@ -180,11 +180,11 @@ geral conforme qualidade e maior gravidade.
 
 **Done when**:
 
-- [ ] Evidência insuficiente sem alternativa válida resulta em `INCONCLUSIVO`.
-- [ ] Gravidade alta/crítica resulta em `NAO_APROVADO`.
-- [ ] Gravidade baixa/média resulta em `APROVADO_COM_RESSALVAS`.
-- [ ] Evidência suficiente sem achado resulta em `APROVADO`.
-- [ ] Agregação geral usa a precedência definida e ao menos 10 testes cobrem todos os ramos.
+- [x] Evidência insuficiente sem alternativa válida resulta em `INCONCLUSIVO`.
+- [x] Gravidade alta/crítica resulta em `NAO_APROVADO`.
+- [x] Gravidade baixa/média resulta em `APROVADO_COM_RESSALVAS`.
+- [x] Evidência suficiente sem achado resulta em `APROVADO`.
+- [x] Agregação geral usa a precedência definida e ao menos 10 testes cobrem todos os ramos.
 
 **Tests**: unit  
 **Gate**: Backend quick  
@@ -207,10 +207,10 @@ associar IDs conhecidos e manter compatibilidade de leitura v1.
 
 **Done when**:
 
-- [ ] Documento v2 válido expõe execução, imagem, ambiente, achados e resultados.
-- [ ] Referência desconhecida, enum inválido, campo obrigatório vazio, texto excedente e 101º achado rejeitam o documento integral.
-- [ ] Documento v1 válido continua legível.
-- [ ] Pelo menos 12 cenários novos/atualizados passam.
+- [x] Documento v2 válido expõe execução, imagem, ambiente, achados e resultados.
+- [x] Referência desconhecida, enum inválido, campo obrigatório vazio, texto excedente e 101º achado rejeitam o documento integral.
+- [x] Documento v1 válido continua legível.
+- [x] Pelo menos 12 cenários novos/atualizados passam.
 
 **Tests**: unit  
 **Gate**: Backend full  
@@ -233,10 +233,10 @@ metadados da execução e resultados calculados em JSON v2.
 
 **Done when**:
 
-- [ ] Cada resposta conserva imagem, ambiente e categoria originais.
-- [ ] Metadados registram provider, modelo, prompt, analysisId e instante.
-- [ ] Resultados são derivados pelo calculador, não aceitos do texto livre.
-- [ ] Pelo menos 6 testes de payload verificam valores de todos os campos nomeados.
+- [x] Cada resposta conserva imagem, ambiente e categoria originais.
+- [x] Metadados registram provider, modelo, prompt, analysisId e instante.
+- [x] Resultados são derivados pelo calculador, não aceitos do texto livre.
+- [x] Pelo menos 6 testes de payload verificam valores de todos os campos nomeados.
 
 **Tests**: unit  
 **Gate**: Backend quick  
@@ -259,10 +259,10 @@ metadados da execução e resultados calculados em JSON v2.
 
 **Done when**:
 
-- [ ] `AGUARDANDO_IA` só vira `RELATORIO_DISPONIVEL` com documento válido.
-- [ ] `dataConclusao` usa instante recebido pelo caso de uso.
-- [ ] Falha preserva `FALHA_IA` e não cria relatório.
-- [ ] Pelo menos 5 testes de domínio cobrem sucesso, falha e estados inválidos.
+- [x] `AGUARDANDO_IA` só vira `RELATORIO_DISPONIVEL` com documento válido.
+- [x] `dataConclusao` usa instante recebido pelo caso de uso.
+- [x] Falha preserva `FALHA_IA` e não cria relatório.
+- [x] Pelo menos 5 testes de domínio cobrem sucesso, falha e estados inválidos.
 
 **Tests**: unit  
 **Gate**: Backend full  
@@ -285,9 +285,9 @@ OCI SDK em versões compatíveis, sem alterar a stack Spring.
 
 **Done when**:
 
-- [ ] A árvore resolve uma única versão coerente do OCI SDK.
-- [ ] O projeto compila em Java 21 sem conflito de Jackson/Jersey.
-- [ ] Os 168 testes backend permanecem verdes.
+- [x] A árvore resolve uma única versão coerente do OCI SDK.
+- [x] O projeto compila em Java 21 sem conflito de Jackson/Jersey.
+- [x] Os 168 testes backend permanecem verdes.
 
 **Tests**: none — build/config conforme matriz  
 **Gate**: Build  
@@ -600,7 +600,7 @@ resultados, manifestações e impressão sem overflow desktop/mobile.
 
 ### T19: Consolidar operação, rastreabilidade e aceite local
 
-**Status**: Pending  
+**Status**: Complete
 **What**: Atualizar decisão arquitetural, exemplos de ambiente, Docker e roteiro
 de smoke opt-in; executar os gates e UAT local sem serviço pago.  
 **Where**: `.specs/STATE.md`  
@@ -615,12 +615,12 @@ de smoke opt-in; executar os gates e UAT local sem serviço pago.
 
 **Done when**:
 
-- [ ] AD-002 é supersedida apenas para GenAI pelo SDK oficial; AD-003 permanece configurável.
-- [ ] `.env.example`/Docker documentam auth mode, região, compartment e modelo sem segredo.
-- [ ] Smoke OCI é explicitamente opt-in e usa fixture não pessoal.
-- [ ] Backend tem pelo menos 168 testes, frontend pelo menos 110, lint e build passam.
-- [ ] UAT local comprova falha real sem OCI, ausência de fallback, resultado por ambiente, manifestação opcional e relatório.
-- [ ] Bloqueio de acesso/cota OCI, se existir, é registrado como bloqueio externo e não como PASS real.
+- [x] AD-002 é supersedida apenas para GenAI pelo SDK oficial; AD-003 permanece configurável.
+- [x] `.env.example`/Docker documentam auth mode, região, compartment e modelo sem segredo.
+- [x] Smoke OCI é explicitamente opt-in e usa fixture não pessoal.
+- [x] Backend tem pelo menos 168 testes, frontend pelo menos 110, lint e build passam.
+- [x] UAT local comprova falha real sem OCI, ausência de fallback, resultado por ambiente, manifestação opcional e relatório.
+- [x] Bloqueio de acesso/cota OCI, se existir, é registrado como bloqueio externo e não como PASS real.
 
 **Tests**: integração + UAT local  
 **Gate**: Integrated  
