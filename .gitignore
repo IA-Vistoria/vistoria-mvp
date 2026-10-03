@@ -1,0 +1,4 @@
+# Skills do Claude Code (tooling local, symlinks com caminho absoluto da máquina)
+.agents/
+.claude/
+skills-lock.json
